@@ -1,10 +1,8 @@
-import Exemple from 'components/Exemple';
 import './global.css';
+import Navigation from 'navigation/Navigation';
 
 export default function App() {
   return (
-    <>
-      <Exemple></Exemple>
-    </>
+    <Navigation></Navigation>
   );
 }
