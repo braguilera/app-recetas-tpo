@@ -13,10 +13,11 @@ import DetailsRecipes from "screens/recipes/DetailsRecipes";
 
 const HomeRecipesNavigator = createNativeStackNavigator();
 
+//Functions to move to details
 function MyStackRecipes() {
     return(
         <HomeRecipesNavigator.Navigator
-            initialRouteName="Home"
+            initialRouteName="HomeRecipe"
         >
             <HomeRecipesNavigator.Screen
                 name="HomeRecipe"
@@ -38,7 +39,7 @@ const HomeCoursesNavigator = createNativeStackNavigator();
 function MyStackCourses() {
     return(
         <HomeCoursesNavigator.Navigator
-            initialRouteName="Home"
+            initialRouteName="HomeCourse"
         >
             <HomeCoursesNavigator.Screen
                 name="HomeCourse"
@@ -62,6 +63,8 @@ const Tab = createBottomTabNavigator();
     tabBarLaber: "Otro nombre" Con este cambiamos el nombre del Tab
     headerShow:false, Para ocultar el Header
 */}
+
+//Tabs to move to Screens
 const MyTabs = () => {
     return(
         <Tab.Navigator
