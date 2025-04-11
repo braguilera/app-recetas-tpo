@@ -1,14 +1,16 @@
 "use client"
 
 import { useState } from "react"
-import { ScrollView, Text, View, TouchableOpacity, Image, TextInput, SafeAreaView, FlatList } from "react-native"
+import { ScrollView, Text, View, TouchableOpacity, Image, TextInput, FlatList, StatusBar } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { AntDesign, FontAwesome, Ionicons } from "@expo/vector-icons"
+import { useSafeAreaInsets } from "react-native-safe-area-context"
 import recetas from "../../test/recipes"
 
 const HomeRecipes = () => {
   const navigation = useNavigation()
   const [activeFilter, setActiveFilter] = useState("Todo")
+  const insets = useSafeAreaInsets()
 
   // Get the latest 3 recipes
   const latestRecipes = [...recetas].sort((a, b) => new Date(b.fechaCreacion) - new Date(a.fechaCreacion)).slice(0, 3)
@@ -41,7 +43,7 @@ const HomeRecipes = () => {
       <TouchableOpacity
         key={recipe.idReceta}
         className={`mb-4 rounded-xl overflow-hidden ${isRandom ? "bg-amber-50 p-4 flex-row items-center" : "bg-white"}`}
-        onPress={() => navigation.navigate("DetailsRecipes", { recipeId: recipe.idReceta })}
+        onPress={() => navigation.navigate("StackRecipes", { recipeId: recipe.idReceta })}
       >
         {isRandom ? (
           <>
@@ -106,11 +108,17 @@ const HomeRecipes = () => {
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-gray-50">
+    <View style={{ flex: 1, backgroundColor: "#F5F3E4", paddingTop: insets.top }}>
+      <StatusBar barStyle="dark-content" backgroundColor="#F5F3E4" />
       <ScrollView className="flex-1">
         {/* Header */}
         <View className="flex-row justify-between items-center p-4 bg-amber-100">
-          <Text className="text-2xl font-bold text-gray-800">RYOURI</Text>
+          <View className="flex-row items-center">
+            <View className="w-10 h-10 rounded-full bg-red-600 mr-1 items-center justify-center">
+              <Text className="text-white text-xl font-bold">R</Text>
+            </View>
+            <Text className="text-xl font-bold text-gray-800">YOURI</Text>
+          </View>
           <TouchableOpacity>
             <Image
               source={{ uri: "https://picsum.photos/200" }}
@@ -118,6 +126,15 @@ const HomeRecipes = () => {
               accessibilityLabel="Perfil de usuario"
             />
           </TouchableOpacity>
+        </View>
+
+        {/* User Greeting */}
+        <View className="p-4 flex-row items-center">
+          <Image source={{ uri: "https://picsum.photos/seed/user/200" }} className="w-16 h-16 rounded-full mr-4" />
+          <View>
+            <Text className="text-xl font-bold text-gray-800">Hola, Julian Bonavota</Text>
+            <Text className="text-gray-500">Empecemos a cocinar</Text>
+          </View>
         </View>
 
         {/* Latest Recipes */}
@@ -202,15 +219,16 @@ const HomeRecipes = () => {
 
       {/* Floating Action Button */}
       <TouchableOpacity
-        className="absolute bottom-6 right-6 bg-amber-400 w-14 h-14 rounded-full items-center justify-center shadow-lg"
+        className="absolute bottom-20 right-6 bg-amber-400 w-14 h-14 rounded-full items-center justify-center shadow-lg"
         onPress={() => {
           /* Add new recipe */
         }}
         accessibilityLabel="Añadir nueva receta"
+        style={{ bottom: insets.bottom + 70 }}
       >
         <AntDesign name="plus" size={24} color="white" />
       </TouchableOpacity>
-    </SafeAreaView>
+    </View>
   )
 }
 

@@ -1,107 +1,131 @@
-import React from "react";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import { NavigationContainer } from "@react-navigation/native";
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { View, Text, TouchableOpacity, StatusBar, Platform } from "react-native"
+import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
+import { createNativeStackNavigator } from "@react-navigation/native-stack"
+import { NavigationContainer } from "@react-navigation/native"
+import { MaterialCommunityIcons } from "@expo/vector-icons"
+import { SafeAreaProvider } from "react-native-safe-area-context"
 
-//screens
-import HomeCourses from "screens/courses/HomeCourses";
-import DetailsCourses from "screens/courses/DetailsCourses";
+// Screens
+import HomeCourses from "screens/courses/HomeCourses"
+import DetailsCourses from "screens/courses/DetailsCourses"
+import HomeRecipes from "screens/recipes/HomeRecipes"
+import DetailsRecipes from "screens/recipes/DetailsRecipes"
 
-import HomeRecipes from "screens/recipes/HomeRecipes";
-import DetailsRecipes from "screens/recipes/DetailsRecipes";
+// Stack Navigator para Recetas
+const RecipesStack = createNativeStackNavigator()
 
-const HomeRecipesNavigator = createNativeStackNavigator();
-
-//Functions to move to details
-function MyStackRecipes() {
-    return(
-        <HomeRecipesNavigator.Navigator
-            initialRouteName="HomeRecipe"
-        >
-            <HomeRecipesNavigator.Screen
-                name="HomeRecipe"
-                component={HomeRecipes}
-            />
-            <HomeRecipesNavigator.Screen
-                name="StackRecipes"
-                component={DetailsRecipes}
-                options={{
-                    headerBackTitle:false,
-                }}
-            />
-        </HomeRecipesNavigator.Navigator>
-    )
+function RecipesStackNavigator() {
+  return (
+    <RecipesStack.Navigator
+      initialRouteName="HomeRecipes"
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: "white" },
+        animation: "slide_from_right",
+      }}
+    >
+      <RecipesStack.Screen name="HomeRecipes" component={HomeRecipes} />
+      <RecipesStack.Screen name="StackRecipes" component={DetailsRecipes} />
+    </RecipesStack.Navigator>
+  )
 }
 
-const HomeCoursesNavigator = createNativeStackNavigator();
+// Stack Navigator para Cursos
+const CoursesStack = createNativeStackNavigator()
 
-function MyStackCourses() {
-    return(
-        <HomeCoursesNavigator.Navigator
-            initialRouteName="HomeCourse"
-        >
-            <HomeCoursesNavigator.Screen
-                name="HomeCourse"
-                component={HomeCourses}
-            />
-            <HomeCoursesNavigator.Screen
-                name="StackCourses"
-                component={DetailsCourses}
-                options={{
-                    headerBackTitle:false,
-                }}
-            />
-        </HomeCoursesNavigator.Navigator>
-    )
+function CoursesStackNavigator() {
+  return (
+    <CoursesStack.Navigator
+      initialRouteName="HomeCourses"
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: "white" },
+        animation: "slide_from_right",
+      }}
+    >
+      <CoursesStack.Screen name="HomeCourses" component={HomeCourses} />
+      <CoursesStack.Screen name="StackCourses" component={DetailsCourses} />
+    </CoursesStack.Navigator>
+  )
 }
 
-const Tab = createBottomTabNavigator();
+// Tab Navigator
+const Tab = createBottomTabNavigator()
 
-{/*
-    tabBarBadge:3, Sirve para poner notificaciones
-    tabBarLaber: "Otro nombre" Con este cambiamos el nombre del Tab
-    headerShow:false, Para ocultar el Header
-*/}
+// Componente personalizado para el Tab Bar
+function CustomTabBar({ state, descriptors, navigation }) {
+  return (
+    <View
+      style={{
+        flexDirection: "row",
+        height: 60,
+        backgroundColor: "white",
+        borderTopWidth: 1,
+        borderTopColor: "#E5E7EB",
+        paddingBottom: Platform.OS === "ios" ? 20 : 5,
+      }}
+    >
+      {state.routes.map((route, index) => {
+        const { options } = descriptors[route.key]
+        const label = options.tabBarLabel || options.title || route.name
+        const isFocused = state.index === index
 
-//Tabs to move to Screens
-const MyTabs = () => {
-    return(
+        // Determinar qué icono mostrar
+        let iconName
+        if (route.name === "Recetas") {
+          iconName = "chef-hat"
+        } else if (route.name === "Cursos") {
+          iconName = "school"
+        }
+
+        const onPress = () => {
+          const event = navigation.emit({
+            type: "tabPress",
+            target: route.key,
+            canPreventDefault: true,
+          })
+
+          if (!isFocused && !event.defaultPrevented) {
+            navigation.navigate(route.name)
+          }
+        }
+
+        return (
+          <TouchableOpacity
+            key={index}
+            accessibilityRole="button"
+            accessibilityState={isFocused ? { selected: true } : {}}
+            accessibilityLabel={options.tabBarAccessibilityLabel}
+            testID={options.tabBarTestID}
+            onPress={onPress}
+            style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
+          >
+            <MaterialCommunityIcons name={iconName} size={24} color={isFocused ? "#F59E0B" : "#9CA3AF"} />
+            <Text style={{ color: isFocused ? "#F59E0B" : "#9CA3AF", fontSize: 12, marginTop: 2 }}>{label}</Text>
+          </TouchableOpacity>
+        )
+      })}
+    </View>
+  )
+}
+
+// Componente principal de navegación
+export default function Navigation() {
+  return (
+    <SafeAreaProvider>
+      <StatusBar barStyle="dark-content" backgroundColor="#F5F3E4" />
+      <NavigationContainer>
         <Tab.Navigator
-            initialRouteName="Recetas"
-            screenOptions={{
-                tabBarActiveTintColor:"yellow",
-                animation:"fade"
-            }}
+          initialRouteName="Recetas"
+          tabBar={(props) => <CustomTabBar {...props} />}
+          screenOptions={{
+            headerShown: false,
+          }}
         >
-            <Tab.Screen 
-                name="Recetas" 
-                component={MyStackRecipes}
-                options={{
-                    tabBarIcon: ({color, size}) => (
-                        <MaterialCommunityIcons name="chef-hat" size={24} color={color} />
-                    ),
-                    headerShown:false
-                }}
-            />
-            <Tab.Screen 
-                name="Cursos" 
-                component={MyStackCourses}
-                options={{
-                    tabBarIcon: ({color, size}) => (
-                        <MaterialCommunityIcons name="school" size={24} color={color} />
-                    ),
-                    headerShown:false
-                }}
-            />
+          <Tab.Screen name="Recetas" component={RecipesStackNavigator} />
+          <Tab.Screen name="Cursos" component={CoursesStackNavigator} />
         </Tab.Navigator>
-    )
-}
-
-export default function Navigation(){
-    return(
-        <NavigationContainer>
-            <MyTabs/>
-        </NavigationContainer>
-    )
+      </NavigationContainer>
+    </SafeAreaProvider>
+  )
 }
