@@ -1,4 +1,4 @@
-export const courses = [
+const courses = [
   {
     "idCurso": 202,
     "nombreCurso": "Pastelería Avanzada",
@@ -109,3 +109,5 @@ export const courses = [
     ]
   }
 ];
+
+export default courses;

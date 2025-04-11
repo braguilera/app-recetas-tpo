@@ -1,6 +1,7 @@
 import React from 'react'
 import { Text, View } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
+import CommonButton from 'components/common/CommonButton';
 
 
 const HomeCourses = () => {
@@ -10,8 +11,10 @@ const HomeCourses = () => {
   return (
     <View className='w-full h-full flex justify-center items-center'>
         <Text>Cursos</Text>
-        <Text onPress={()=> navigation.navigate("StackCourses")}>Ver Cursos</Text>
-        
+        <CommonButton
+          onPress={()=> navigation.navigate("StackCourses")}
+          text="Ver cursos"
+        />
     </View>
       
   )

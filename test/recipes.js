@@ -1,279 +1,311 @@
-export const recipes = [
+const recetas = [
   {
-    "idReceta": 101,
-    "titulo": "Tortillas de papa con atún",
-    "descripcion": "Deliciosas tortillas de papa con atún, perfectas como entrada o plato principal.",
-    "porciones": 4,
-    "tipoReceta": "Principal",
-    "fechaCreacion": "2025-04-08T14:30:00Z",
-    "estadoPublicacion": "pendiente", 
-    "usuario": {
-      "idUsuario": "u1001",
-      "alias": "ChefPepito"
+    idReceta: 1,
+    titulo: "Hamburguesa Clásica",
+    descripcion: "Una deliciosa hamburguesa con carne, queso, lechuga y tomate.",
+    tipoReceta: "Hamburguesa",
+    fechaCreacion: "2024-01-20",
+    usuario: {
+      alias: "JuanPerez",
     },
-    "ingredientes": [
+    calificaciones: [
       {
-        "idIngredienteReceta": 1,
-        "nombre": "Papa",
-        "cantidad": 3,
-        "unidadMedida": "unidades"
+        puntuacion: 4,
       },
       {
-        "idIngredienteReceta": 2,
-        "nombre": "Atún",
-        "cantidad": 1,
-        "unidadMedida": "lata"
+        puntuacion: 5,
       },
-      {
-        "idIngredienteReceta": 3,
-        "nombre": "Cebolla",
-        "cantidad": 1,
-        "unidadMedida": "unidad"
-      },
-      {
-        "idIngredienteReceta": 4,
-        "nombre": "Aceite de oliva",
-        "cantidad": 2,
-        "unidadMedida": "cucharadas"
-      }
     ],
-    "pasos": [
+    ingredientes: [
       {
-        "orden": 1,
-        "descripcionPaso": "Pelar y picar la cebolla, luego freírla en aceite."
+        idIngredienteReceta: 1,
+        nombre: "Pan de hamburguesa",
+        cantidad: 2,
+        unidadMedida: "unidades",
       },
       {
-        "orden": 2,
-        "descripcionPaso": "Hervir las papas y hacer un puré."
+        idIngredienteReceta: 2,
+        nombre: "Carne molida",
+        cantidad: 200,
+        unidadMedida: "gramos",
       },
       {
-        "orden": 3,
-        "descripcionPaso": "Mezclar el puré con el atún y la cebolla frita."
+        idIngredienteReceta: 3,
+        nombre: "Queso cheddar",
+        cantidad: 50,
+        unidadMedida: "gramos",
       },
-      {
-        "orden": 4,
-        "descripcionPaso": "Formar las tortillas y freírlas en una sartén hasta dorar."
-      }
     ],
-    "multimedia": [
+    pasos: [
       {
-        "idMultimedia": 5001,
-        "tipo": "imagen",
-        "url": "https://misitio.com/recetas/101/paso1.jpg"
+        orden: 1,
+        descripcionPaso: "Cocinar la carne a la parrilla.",
       },
       {
-        "idMultimedia": 5002,
-        "tipo": "video",
-        "url": "https://misitio.com/recetas/101/preparacion.mp4"
-      }
+        orden: 2,
+        descripcionPaso: "Colocar el queso sobre la carne.",
+      },
+      {
+        orden: 3,
+        descripcionPaso: "Armar la hamburguesa con lechuga y tomate.",
+      },
     ],
-    "calificaciones": [
+    comentarios: [
       {
-        "idCalificacion": 301,
-        "puntuacion": 5,
-        "comentarioCalificacion": "¡Excelente receta, muy fácil de hacer!",
-        "usuario": {
-          "idUsuario": "u2002",
-          "alias": "FanDeLaCocina"
-        }
+        idComentario: 1,
+        usuario: {
+          alias: "MariaLopez",
+        },
+        fechaComentario: "2024-01-21",
+        contenido: "¡Muy rica!",
       },
-      {
-        "idCalificacion": 302,
-        "puntuacion": 4,
-        "comentarioCalificacion": "Me gustó, pero le faltó un toque de sabor.",
-        "usuario": {
-          "idUsuario": "u2005",
-          "alias": "CocineroCasero"
-        }
-      }
     ],
-    "comentarios": [
-      {
-        "idComentario": 801,
-        "contenido": "Agregué un poco de perejil y quedó espectacular.",
-        "fechaComentario": "2025-04-09T11:20:00Z",
-        "usuario": {
-          "idUsuario": "u2003",
-          "alias": "ComensalFeliz"
-        }
-      },
-      {
-        "idComentario": 802,
-        "contenido": "Podría usarse menos aceite para hacerlo más ligero.",
-        "fechaComentario": "2025-04-10T09:45:00Z",
-        "usuario": {
-          "idUsuario": "u2007",
-          "alias": "SaludableChef"
-        }
-      }
-    ]
   },
   {
-    "idReceta": 102,
-    "titulo": "Ensalada Mediterránea",
-    "descripcion": "Una ensalada fresca con ingredientes típicos mediterráneos.",
-    "porciones": 2,
-    "tipoReceta": "Entrada",
-    "fechaCreacion": "2025-04-10T10:00:00Z",
-    "estadoPublicacion": "aprobado", 
-    "usuario": {
-      "idUsuario": "u1002",
-      "alias": "VerdeVida"
+    idReceta: 2,
+    titulo: "Ensalada César",
+    descripcion: "Una refrescante ensalada con lechuga romana, crutones y aderezo César.",
+    tipoReceta: "Ensalada",
+    fechaCreacion: "2024-02-15",
+    usuario: {
+      alias: "SofiaGomez",
     },
-    "ingredientes": [
+    calificaciones: [
       {
-        "idIngredienteReceta": 5,
-        "nombre": "Tomate",
-        "cantidad": 2,
-        "unidadMedida": "unidades"
+        puntuacion: 5,
       },
-      {
-        "idIngredienteReceta": 6,
-        "nombre": "Pepino",
-        "cantidad": 1,
-        "unidadMedida": "unidad"
-      },
-      {
-        "idIngredienteReceta": 7,
-        "nombre": "Aceitunas negras",
-        "cantidad": 10,
-        "unidadMedida": "unidades"
-      },
-      {
-        "idIngredienteReceta": 8,
-        "nombre": "Queso feta",
-        "cantidad": 100,
-        "unidadMedida": "gramos"
-      }
     ],
-    "pasos": [
+    ingredientes: [
       {
-        "orden": 1,
-        "descripcionPaso": "Cortar los tomates y el pepino en cubos."
+        idIngredienteReceta: 4,
+        nombre: "Lechuga romana",
+        cantidad: 1,
+        unidadMedida: "unidad",
       },
       {
-        "orden": 2,
-        "descripcionPaso": "Agregar las aceitunas y el queso feta desmenuzado."
+        idIngredienteReceta: 5,
+        nombre: "Crutones",
+        cantidad: 50,
+        unidadMedida: "gramos",
       },
       {
-        "orden": 3,
-        "descripcionPaso": "Mezclar y aderezar con aceite de oliva y orégano."
-      }
+        idIngredienteReceta: 6,
+        nombre: "Aderezo César",
+        cantidad: 30,
+        unidadMedida: "ml",
+      },
     ],
-    "multimedia": [
+    pasos: [
       {
-        "idMultimedia": 5003,
-        "tipo": "imagen",
-        "url": "https://misitio.com/recetas/102/ensalada.jpg"
-      }
+        orden: 1,
+        descripcionPaso: "Lavar y cortar la lechuga.",
+      },
+      {
+        orden: 2,
+        descripcionPaso: "Mezclar la lechuga con los crutones.",
+      },
+      {
+        orden: 3,
+        descripcionPaso: "Agregar el aderezo César.",
+      },
     ],
-    "calificaciones": [
+    comentarios: [
       {
-        "idCalificacion": 303,
-        "puntuacion": 4,
-        "comentarioCalificacion": "Muy fresca y saludable.",
-        "usuario": {
-          "idUsuario": "u2008",
-          "alias": "SaludYBienestar"
-        }
-      }
+        idComentario: 2,
+        usuario: {
+          alias: "CarlosRuiz",
+        },
+        fechaComentario: "2024-02-16",
+        contenido: "¡Perfecta para el verano!",
+      },
     ],
-    "comentarios": [
-      {
-        "idComentario": 803,
-        "contenido": "Le agregué albahaca fresca, ¡fantástico!",
-        "fechaComentario": "2025-04-11T12:30:00Z",
-        "usuario": {
-          "idUsuario": "u2009",
-          "alias": "AmanteDeLaCocina"
-        }
-      }
-    ]
   },
   {
-    "idReceta": 103,
-    "titulo": "Brownies de Chocolate",
-    "descripcion": "Brownies esponjosos y ricos en sabor, perfectos para el postre.",
-    "porciones": 8,
-    "tipoReceta": "Postre",
-    "fechaCreacion": "2025-04-12T16:00:00Z",
-    "estadoPublicacion": "aprobado", 
-    "usuario": {
-      "idUsuario": "u1004",
-      "alias": "DulcePasión"
+    idReceta: 3,
+    titulo: "Pizza Margarita",
+    descripcion: "Una pizza clásica con tomate, mozzarella y albahaca.",
+    tipoReceta: "Pizza",
+    fechaCreacion: "2024-03-01",
+    usuario: {
+      alias: "LauraFernandez",
     },
-    "ingredientes": [
+    calificaciones: [
       {
-        "idIngredienteReceta": 9,
-        "nombre": "Chocolate negro",
-        "cantidad": 200,
-        "unidadMedida": "gramos"
+        puntuacion: 4,
       },
       {
-        "idIngredienteReceta": 10,
-        "nombre": "Mantequilla",
-        "cantidad": 100,
-        "unidadMedida": "gramos"
+        puntuacion: 3,
       },
-      {
-        "idIngredienteReceta": 11,
-        "nombre": "Harina",
-        "cantidad": 150,
-        "unidadMedida": "gramos"
-      },
-      {
-        "idIngredienteReceta": 12,
-        "nombre": "Huevos",
-        "cantidad": 3,
-        "unidadMedida": "unidades"
-      }
     ],
-    "pasos": [
+    ingredientes: [
       {
-        "orden": 1,
-        "descripcionPaso": "Derretir el chocolate y la mantequilla juntos."
+        idIngredienteReceta: 7,
+        nombre: "Masa de pizza",
+        cantidad: 1,
+        unidadMedida: "unidad",
       },
       {
-        "orden": 2,
-        "descripcionPaso": "Batir los huevos y mezclarlos con la harina."
+        idIngredienteReceta: 8,
+        nombre: "Salsa de tomate",
+        cantidad: 150,
+        unidadMedida: "gramos",
       },
       {
-        "orden": 3,
-        "descripcionPaso": "Incorporar el chocolate derretido a la mezcla y verter en un molde."
+        idIngredienteReceta: 9,
+        nombre: "Mozzarella",
+        cantidad: 100,
+        unidadMedida: "gramos",
+      },
+    ],
+    pasos: [
+      {
+        orden: 1,
+        descripcionPaso: "Extender la masa de pizza.",
       },
       {
-        "orden": 4,
-        "descripcionPaso": "Hornear durante 25-30 minutos a 180°C."
-      }
-    ],
-    "multimedia": [
+        orden: 2,
+        descripcionPaso: "Cubrir con salsa de tomate y mozzarella.",
+      },
       {
-        "idMultimedia": 5004,
-        "tipo": "imagen",
-        "url": "https://misitio.com/recetas/103/brownie.jpg"
-      }
+        orden: 3,
+        descripcionPaso: "Hornear hasta que el queso se derrita.",
+      },
     ],
-    "calificaciones": [
+    comentarios: [
       {
-        "idCalificacion": 304,
-        "puntuacion": 5,
-        "comentarioCalificacion": "Increíble, se derrite en la boca.",
-        "usuario": {
-          "idUsuario": "u2010",
-          "alias": "ChocoLover"
-        }
-      }
+        idComentario: 3,
+        usuario: {
+          alias: "PedroSanchez",
+        },
+        fechaComentario: "2024-03-02",
+        contenido: "¡La mejor pizza!",
+      },
     ],
-    "comentarios": [
+  },
+  {
+    idReceta: 4,
+    titulo: "Pollo al Curry",
+    descripcion: "Exquisito pollo al curry con arroz basmati.",
+    tipoReceta: "Pollo",
+    fechaCreacion: "2024-03-10",
+    usuario: {
+      alias: "AnaMartinez",
+    },
+    calificaciones: [
       {
-        "idComentario": 804,
-        "contenido": "Le puse nueces y le dio un toque crujiente.",
-        "fechaComentario": "2025-04-13T14:10:00Z",
-        "usuario": {
-          "idUsuario": "u2011",
-          "alias": "NuezAdicto"
-        }
-      }
-    ]
-  }
-];
+        puntuacion: 5,
+      },
+    ],
+    ingredientes: [
+      {
+        idIngredienteReceta: 10,
+        nombre: "Pechugas de pollo",
+        cantidad: 500,
+        unidadMedida: "gramos",
+      },
+      {
+        idIngredienteReceta: 11,
+        nombre: "Curry en polvo",
+        cantidad: 2,
+        unidadMedida: "cucharadas",
+      },
+      {
+        idIngredienteReceta: 12,
+        nombre: "Arroz basmati",
+        cantidad: 200,
+        unidadMedida: "gramos",
+      },
+    ],
+    pasos: [
+      {
+        orden: 1,
+        descripcionPaso: "Cortar el pollo en trozos.",
+      },
+      {
+        orden: 2,
+        descripcionPaso: "Sofreír el pollo con el curry.",
+      },
+      {
+        orden: 3,
+        descripcionPaso: "Servir con arroz basmati.",
+      },
+    ],
+    comentarios: [
+      {
+        idComentario: 4,
+        usuario: {
+          alias: "LuisGarcia",
+        },
+        fechaComentario: "2024-03-11",
+        contenido: "¡Delicioso y fácil de preparar!",
+      },
+    ],
+  },
+  {
+    idReceta: 5,
+    titulo: "Ensalada Griega",
+    descripcion: "Una refrescante ensalada con tomate, pepino, aceitunas y queso feta.",
+    tipoReceta: "Ensalada",
+    fechaCreacion: "2024-03-15",
+    usuario: {
+      alias: "ElenaRodriguez",
+    },
+    calificaciones: [
+      {
+        puntuacion: 4,
+      },
+    ],
+    ingredientes: [
+      {
+        idIngredienteReceta: 13,
+        nombre: "Tomate",
+        cantidad: 2,
+        unidadMedida: "unidades",
+      },
+      {
+        idIngredienteReceta: 14,
+        nombre: "Pepino",
+        cantidad: 1,
+        unidadMedida: "unidad",
+      },
+      {
+        idIngredienteReceta: 15,
+        nombre: "Aceitunas negras",
+        cantidad: 50,
+        unidadMedida: "gramos",
+      },
+      {
+        idIngredienteReceta: 16,
+        nombre: "Queso feta",
+        cantidad: 100,
+        unidadMedida: "gramos",
+      },
+    ],
+    pasos: [
+      {
+        orden: 1,
+        descripcionPaso: "Cortar el tomate y el pepino.",
+      },
+      {
+        orden: 2,
+        descripcionPaso: "Mezclar con las aceitunas y el queso feta.",
+      },
+      {
+        orden: 3,
+        descripcionPaso: "Aliñar con aceite de oliva y orégano.",
+      },
+    ],
+    comentarios: [
+      {
+        idComentario: 5,
+        usuario: {
+          alias: "JavierPerez",
+        },
+        fechaComentario: "2024-03-16",
+        contenido: "¡Muy buena!",
+      },
+    ],
+  },
+]
+
+export default recetas
