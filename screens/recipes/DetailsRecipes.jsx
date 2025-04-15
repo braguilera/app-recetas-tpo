@@ -13,21 +13,16 @@ const DetailsRecipes = () => {
   const { recipeId } = route.params || {}
   const insets = useSafeAreaInsets()
 
-  // Find the recipe by ID
   const recipe = recetas.find((r) => r.idReceta === recipeId) || recetas[0]
 
-  // State for active tab
   const [activeTab, setActiveTab] = useState("ingredientes")
 
-  // State for number of people
   const [peopleCount, setPeopleCount] = useState(2)
 
-  // Calculate average rating
   const ratings = recipe.calificaciones || []
   const avgRating =
     ratings.length > 0 ? ratings.reduce((sum, rating) => sum + rating.puntuacion, 0) / ratings.length : 0
 
-  // Function to get meal type based on recipe type
   const getMealType = (tipo) => {
     switch (tipo) {
       case "Principal":
@@ -41,12 +36,10 @@ const DetailsRecipes = () => {
     }
   }
 
-  // Function to calculate ingredient amount based on people count
   const calculateAmount = (baseAmount, baseCount = 4) => {
     const ratio = peopleCount / baseCount
     const newAmount = baseAmount * ratio
 
-    // Format number to avoid too many decimals
     if (Number.isInteger(newAmount)) {
       return newAmount
     } else {
@@ -54,26 +47,22 @@ const DetailsRecipes = () => {
     }
   }
 
-  // Function to increase people count
   const increasePeople = () => {
     if (peopleCount < 10) {
       setPeopleCount(peopleCount + 1)
     }
   }
 
-  // Function to decrease people count
   const decreasePeople = () => {
     if (peopleCount > 1) {
       setPeopleCount(peopleCount - 1)
     }
   }
 
-  // Function to get user ID safely
   const getUserId = (user) => {
     return user && user.idUsuario ? user.idUsuario : "default"
   }
 
-  // Function to get user alias safely
   const getUserAlias = (user) => {
     return user && user.alias ? user.alias : "Usuario"
   }

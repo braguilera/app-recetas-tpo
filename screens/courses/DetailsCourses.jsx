@@ -11,33 +11,25 @@ const DetailsCourses = () => {
   const route = useRoute()
   const { courseId } = route.params || {}
 
-  // Find the course by ID
   const course = courses.find((c) => c.idCurso === courseId) || courses[0]
 
-  // State for selected tab
   const [activeTab, setActiveTab] = useState("descripcion")
 
-  // Function to format price
   const formatPrice = (price) => {
     return `$${price.toLocaleString()}`
   }
 
-  // Function to get random discount
   const getRandomDiscount = () => {
     const discounts = [10, 15, 20, 25]
     return discounts[Math.floor(Math.random() * discounts.length)]
   }
 
-  // Function to get course duration
   const getCourseDuration = () => {
-    // Random number of classes between 6 and 12
     const classes = Math.floor(Math.random() * 7) + 6
-    // Random hours per class between 2 and 3
     const hours = Math.floor(Math.random() * 2) + 2
     return `${classes} clases de ${hours} horas`
   }
 
-  // Function to format date
   const formatDate = (dateString) => {
     const date = new Date(dateString)
     return date.toLocaleDateString("es-ES", {
@@ -46,7 +38,6 @@ const DetailsCourses = () => {
     })
   }
 
-  // Calculate discount
   const discount = getRandomDiscount()
   const originalPrice = course.precioBase
   const discountedPrice = originalPrice * (1 - discount / 100)

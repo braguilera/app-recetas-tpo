@@ -12,35 +12,27 @@ const HomeCourses = () => {
   const [activeFilter, setActiveFilter] = useState("Todo")
   const insets = useSafeAreaInsets()
 
-  // Filter options
   const filterOptions = ["Todo", "Presencial", "Remoto", "Virtual"]
 
-  // Function to format price
   const formatPrice = (price) => {
     return `${price.toLocaleString()}`
   }
 
-  // Function to get random discount
   const getRandomDiscount = () => {
     const discounts = [10, 15, 20, 25]
     return discounts[Math.floor(Math.random() * discounts.length)]
   }
 
-  // Function to get course duration
   const getCourseDuration = (course) => {
-    // Random number of classes between 6 and 12
     const classes = Math.floor(Math.random() * 7) + 6
-    // Random hours per class between 2 and 3
     const hours = Math.floor(Math.random() * 2) + 2
     return `${classes} clases de ${hours} horas`
   }
 
-  // Function to get course dates
   const getCourseDates = (course) => {
     const startDate = new Date(course.sedes[0].fechaInicio)
     const endDate = new Date(course.sedes[0].fechaFin)
 
-    // Format to "5 jun - 7 ago" style
     const formatShortDate = (date) => {
       const day = date.getDate()
       const month = date.toLocaleString("es-ES", { month: "short" })
@@ -50,12 +42,10 @@ const HomeCourses = () => {
     return `${formatShortDate(startDate)} - ${formatShortDate(endDate)}`
   }
 
-  // Function to check if course is popular (random for demo)
   const isPopular = (course) => {
     return course.idCurso % 2 === 0
   }
 
-  // Filter courses based on active filter
   const filteredCourses =
     activeFilter === "Todo"
       ? courses
@@ -238,7 +228,6 @@ const HomeCourses = () => {
       <TouchableOpacity
         className="absolute bottom-20 right-6 bg-amber-400 w-14 h-14 rounded-full items-center justify-center shadow-lg"
         onPress={() => {
-          /* Add action */
         }}
         accessibilityLabel="Acción principal"
         style={{ bottom: insets.bottom + 70 }}

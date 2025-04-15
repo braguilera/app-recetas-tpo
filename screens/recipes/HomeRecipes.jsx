@@ -12,19 +12,15 @@ const HomeRecipes = () => {
   const [activeFilter, setActiveFilter] = useState("Todo")
   const insets = useSafeAreaInsets()
 
-  // Get the latest 3 recipes
   const latestRecipes = [...recetas].sort((a, b) => new Date(b.fechaCreacion) - new Date(a.fechaCreacion)).slice(0, 3)
 
-  // Function to get a random recipe
   const getRandomRecipe = () => {
     const randomIndex = Math.floor(Math.random() * recetas.length)
     return recetas[randomIndex]
   }
 
-  // Filter categories
   const categories = ["Todo", "Pollo", "Hamburguesa", "Ensalada", "Pizza"]
 
-  // Icons for categories
   const categoryIcons = {
     Todo: "🍽️",
     Pollo: "🍗",
@@ -34,7 +30,6 @@ const HomeRecipes = () => {
   }
 
   const renderRecipeCard = (recipe, isNew = false, isRandom = false) => {
-    // Calculate average rating
     const ratings = recipe.calificaciones || []
     const avgRating =
       ratings.length > 0 ? ratings.reduce((sum, rating) => sum + rating.puntuacion, 0) / ratings.length : 0
@@ -72,7 +67,6 @@ const HomeRecipes = () => {
               <TouchableOpacity
                 className="absolute top-2 right-2"
                 onPress={() => {
-                  /* Add to favorites */
                 }}
                 accessibilityLabel="Guardar receta"
               >
@@ -221,7 +215,6 @@ const HomeRecipes = () => {
       <TouchableOpacity
         className="absolute bottom-20 right-6 bg-amber-400 w-14 h-14 rounded-full items-center justify-center shadow-lg"
         onPress={() => {
-          /* Add new recipe */
         }}
         accessibilityLabel="Añadir nueva receta"
         style={{ bottom: insets.bottom + 70 }}
