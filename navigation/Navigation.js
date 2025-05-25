@@ -1,4 +1,6 @@
-import { View, Text, TouchableOpacity, StatusBar, Platform } from "react-native"
+"use client"
+
+import { StatusBar, Platform } from "react-native"
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
 import { createNativeStackNavigator } from "@react-navigation/native-stack"
 import { NavigationContainer } from "@react-navigation/native"
@@ -10,121 +12,149 @@ import HomeCourses from "screens/courses/HomeCourses"
 import DetailsCourses from "screens/courses/DetailsCourses"
 import HomeRecipes from "screens/recipes/HomeRecipes"
 import DetailsRecipes from "screens/recipes/DetailsRecipes"
+import CreateRecipe from "screens/recipes/CreateRecipe"
+import BuyCourse from "screens/courses/BuyCourse"
+import Login from "screens/auth/Login"
+import Register from "screens/auth/Register"
+import VerifyCode from "screens/auth/VerifyCode"
+import ForgotPassword from "screens/auth/ForgotPassword"
+import ResetPassword from "screens/auth/ResetPassword"
+import SuccessScreen from "screens/auth/SuccessScreen"
 
-// Stack Navigator para Recetas
+const Tab = createBottomTabNavigator()
 const RecipesStack = createNativeStackNavigator()
+const CoursesStack = createNativeStackNavigator()
+const AuthStack = createNativeStackNavigator()
+const RootStack = createNativeStackNavigator()
 
-function RecipesStackNavigator() {
+// Stack de autenticación completo
+function AuthStackScreen() {
   return (
-    <RecipesStack.Navigator
-      initialRouteName="HomeRecipes"
+    <AuthStack.Navigator
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: "white" },
         animation: "slide_from_right",
+        contentStyle: { backgroundColor: "#FEF3E2" },
+      }}
+    >
+      <AuthStack.Screen name="Login" component={Login} />
+      <AuthStack.Screen name="Register" component={Register} />
+      <AuthStack.Screen name="VerifyCode" component={VerifyCode} />
+      <AuthStack.Screen name="ForgotPassword" component={ForgotPassword} />
+      <AuthStack.Screen name="ResetPassword" component={ResetPassword} />
+      <AuthStack.Screen name="SuccessScreen" component={SuccessScreen} />
+    </AuthStack.Navigator>
+  )
+}
+
+// Stack de recetas
+function RecipesStackScreen() {
+  return (
+    <RecipesStack.Navigator
+      screenOptions={{
+        headerShown: false,
+        animation: "slide_from_right",
+        contentStyle: { backgroundColor: "white" },
       }}
     >
       <RecipesStack.Screen name="HomeRecipes" component={HomeRecipes} />
-      <RecipesStack.Screen name="StackRecipes" component={DetailsRecipes} />
+      <RecipesStack.Screen name="DetailsRecipes" component={DetailsRecipes} />
+      <RecipesStack.Screen name="CreateRecipe" component={CreateRecipe} />
     </RecipesStack.Navigator>
   )
 }
 
-// Stack Navigator para Cursos
-const CoursesStack = createNativeStackNavigator()
-
-function CoursesStackNavigator() {
+// Stack de cursos
+function CoursesStackScreen() {
   return (
     <CoursesStack.Navigator
-      initialRouteName="HomeCourses"
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: "white" },
         animation: "slide_from_right",
+        contentStyle: { backgroundColor: "white" },
       }}
     >
       <CoursesStack.Screen name="HomeCourses" component={HomeCourses} />
-      <CoursesStack.Screen name="StackCourses" component={DetailsCourses} />
+      <CoursesStack.Screen name="DetailsCourses" component={DetailsCourses} />
+      <CoursesStack.Screen name="BuyCourse" component={BuyCourse} />
     </CoursesStack.Navigator>
   )
 }
 
-// Tab Navigator
-const Tab = createBottomTabNavigator()
-
-// Componente personalizado para el Tab Bar
-function CustomTabBar({ state, descriptors, navigation }) {
+// Tabs principales
+function MyTabs() {
   return (
-    <View
-      style={{
-        flexDirection: "row",
-        height: 60,
-        backgroundColor: "white",
-        borderTopWidth: 1,
-        borderTopColor: "#E5E7EB",
-        paddingBottom: Platform.OS === "ios" ? 20 : 5,
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: {
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: "#F5F3E4",
+          borderTopWidth: 0,
+          elevation: 0,
+          height: Platform.OS === "ios" ? 80 : 60,
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          marginBottom: Platform.OS === "ios" ? 10 : 0,
+        },
+        tabBarActiveTintColor: "#F59E0B",
+        tabBarInactiveTintColor: "#9CA3AF",
       }}
-    >
-      {state.routes.map((route, index) => {
-        const { options } = descriptors[route.key]
-        const label = options.tabBarLabel || options.title || route.name
-        const isFocused = state.index === index
-
-        // Determinar qué icono mostrar
-        let iconName
-        if (route.name === "Recetas") {
-          iconName = "chef-hat"
-        } else if (route.name === "Cursos") {
-          iconName = "school"
-        }
-
-        const onPress = () => {
-          const event = navigation.emit({
-            type: "tabPress",
-            target: route.key,
-            canPreventDefault: true,
-          })
-
-          if (!isFocused && !event.defaultPrevented) {
-            navigation.navigate(route.name)
-          }
-        }
-
-        return (
-          <TouchableOpacity
-            key={index}
-            accessibilityRole="button"
-            accessibilityState={isFocused ? { selected: true } : {}}
-            accessibilityLabel={options.tabBarAccessibilityLabel}
-            testID={options.tabBarTestID}
-            onPress={onPress}
-            style={{ flex: 1, alignItems: "center", justifyContent: "center" }}
-          >
-            <MaterialCommunityIcons name={iconName} size={24} color={isFocused ? "#F59E0B" : "#9CA3AF"} />
-            <Text style={{ color: isFocused ? "#F59E0B" : "#9CA3AF", fontSize: 12, marginTop: 2 }}>{label}</Text>
-          </TouchableOpacity>
-        )
-      })}
-    </View>
+    >         
+      <Tab.Screen
+        name="Recetas"
+        component={RecipesStackScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="chef-hat" color={color} size={size} />,
+        }}
+      />
+      <Tab.Screen
+        name="Cursos"
+        component={CoursesStackScreen}
+        options={{
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="school" color={color} size={size} />
+          ),
+        }}
+      />
+    </Tab.Navigator>
   )
 }
 
-// Componente principal de navegación
 export default function Navigation() {
   return (
     <SafeAreaProvider>
       <StatusBar barStyle="dark-content" backgroundColor="#F5F3E4" />
       <NavigationContainer>
-        <Tab.Navigator
-          initialRouteName="Recetas"
-          tabBar={(props) => <CustomTabBar {...props} />}
+        <RootStack.Navigator
           screenOptions={{
             headerShown: false,
+            animation: "slide_from_right",
           }}
         >
-          <Tab.Screen name="Recetas" component={RecipesStackNavigator} />
-          <Tab.Screen name="Cursos" component={CoursesStackNavigator} />
-        </Tab.Navigator>
+          {/* Pantalla principal con tabs */}
+          <RootStack.Screen
+            name="MainTabs"
+            component={MyTabs}
+            options={{
+              gestureEnabled: false,
+            }}
+          />
+
+          {/* Stack de autenticación completo */}
+          <RootStack.Screen
+            name="AuthStack"
+            component={AuthStackScreen}
+            options={{
+              presentation: "modal",
+              gestureEnabled: true,
+            }}
+          />
+        </RootStack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>
   )

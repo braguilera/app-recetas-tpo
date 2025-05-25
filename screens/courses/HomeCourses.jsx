@@ -66,18 +66,20 @@ const HomeCourses = () => {
             </View>
             <Text className="text-xl font-bold text-gray-800">YOURI</Text>
           </View>
-          <TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("AuthStack", { screen: "Login" })}
+          >
             <Image
-              source={{ uri: "https://picsum.photos/seed/user/100" }}
+              source={{ uri: "https://randomuser.me/api/portraits/men/1.jpg" }}
               className="w-10 h-10 rounded-full"
               accessibilityLabel="Perfil de usuario"
             />
           </TouchableOpacity>
         </View>
 
-        {/* User Greeting */}
+        {/* User */}
         <View className="p-4 flex-row items-center">
-          <Image source={{ uri: "https://picsum.photos/seed/user/200" }} className="w-16 h-16 rounded-full mr-4" />
+          <Image source={{ uri: "https://randomuser.me/api/portraits/men/1.jpg" }} className="w-16 h-16 rounded-full mr-4" />
           <View>
             <Text className="text-xl font-bold text-gray-800">Hola, Julian Bonavota</Text>
             <Text className="text-gray-500">Empecemos a estudiar</Text>
@@ -141,73 +143,45 @@ const HomeCourses = () => {
                     <View className="flex-row justify-between items-start">
                       <View className="flex-1">
                         <Text className="text-lg font-bold text-gray-800">{course.nombreCurso}</Text>
-                        <Text className="text-xs text-gray-500 mb-3">
-                          {course.idCurso === 202
-                            ? "Academia de Cocina 'La Dolce Vita'"
-                            : course.idCurso === 203
-                              ? "Escuela de Repostería 'Le Petit Pain'"
-                              : "Instituto Gastronómico 'Saburu'"}
-                        </Text>
-                      </View>
-                      {popular && (
-                        <View className="bg-amber-400 px-2 py-1 rounded-md">
-                          <Text className="text-xs font-bold text-white">Popular</Text>
-                        </View>
-                      )}
-                    </View>
-
-                    <View className="flex-row flex-wrap">
-                      <View className="bg-gray-100 rounded-md px-3 py-2 mr-2 mb-2 flex-row items-center">
-                        <FontAwesome5 name="utensils" size={12} color="#9CA3AF" />
-                        <Text className="text-xs text-gray-600 ml-2">
-                          {course.insumosRequeridos.length > 0 ? "Requiere insumos" : "No hay requerimientos"}
-                        </Text>
                       </View>
 
-                      <View className="bg-gray-100 rounded-md px-3 py-2 mr-2 mb-2 flex-row items-center">
-                        <AntDesign name="clockcircleo" size={12} color="#9CA3AF" />
-                        <Text className="text-xs text-gray-600 ml-2">{duration}</Text>
-                      </View>
-
-                      <View className="bg-gray-100 rounded-md px-3 py-2 mr-2 mb-2 flex-row items-center">
-                        <AntDesign name="calendar" size={12} color="#9CA3AF" />
-                        <Text className="text-xs text-gray-600 ml-2">{dates}</Text>
-                      </View>
-
-                      <View className="bg-gray-100 rounded-md px-3 py-2 mb-2 flex-row items-center">
+                      <View className="bg-amber-50 rounded-md px-3 py-2 mb-2 flex-row items-center">
                         <MaterialIcons
                           name={course.modalidad === "presencial" ? "location-on" : "laptop"}
                           size={12}
-                          color="#9CA3AF"
+                          color="#f59e0b"
                         />
-                        <Text className="text-xs text-gray-600 ml-2">
-                          {course.modalidad === "presencial" ? course.sedes[0].direccion.split(",")[0] : "Remoto"}
+                        <Text className="text-xs text-amber-600 ml-2">
+                          {course.modalidad}
                         </Text>
                       </View>
                     </View>
 
-                    <View className="flex-row justify-between items-center mt-2">
+                    <View className="w-full">
+                      <View className="bg-gray-100 w-full rounded-md px-3 py-2 mr-2 mb-2 flex-row items-center">
+                        <Text className="text-xs text-gray-600 ml-2">
+                          {course.descripcionCompleta}
+                        </Text>
+                      </View>
+
+                    </View>
+
+                    <View className="flex-row  mt-2">
+                    {/* 
                       <View className="flex-row items-center">
                         <View className="bg-amber-100 px-2 py-1 rounded-full">
                           <Text className="text-xs font-medium text-amber-800">{discount}%</Text>
                         </View>
                         <Text className="text-xl font-bold text-amber-500 ml-2">${formatPrice(discountedPrice)}</Text>
                       </View>
+                    */}
 
-                      <View className="flex-row">
+                      <View className="flex-1"> 
                         <TouchableOpacity
-                          className="bg-amber-400 px-4 py-2 rounded-md mr-2"
-                          onPress={() => navigation.navigate("StackCourses", { courseId: course.idCurso })}
+                          className="bg-amber-400 w-full px-4 py-2 rounded-md mr-2"
+                          onPress={() => navigation.navigate("DetailsCourses", { courseId: course.idCurso })}
                         >
-                          <Text className="text-white font-bold">Inscribirse</Text>
-                        </TouchableOpacity>
-
-                        <TouchableOpacity
-                          className="bg-white border border-gray-200 px-4 py-2 rounded-md flex-row items-center"
-                          onPress={() => navigation.navigate("StackCourses", { courseId: course.idCurso })}
-                        >
-                          <Text className="text-gray-700 mr-1">Ver más</Text>
-                          <AntDesign name="right" size={12} color="#9CA3AF" />
+                          <Text className="text-white text-center font-bold">Inscribirse</Text>
                         </TouchableOpacity>
                       </View>
                     </View>
@@ -224,16 +198,6 @@ const HomeCourses = () => {
         </View>
       </ScrollView>
 
-      {/* Floating Action Button */}
-      <TouchableOpacity
-        className="absolute bottom-20 right-6 bg-amber-400 w-14 h-14 rounded-full items-center justify-center shadow-lg"
-        onPress={() => {
-        }}
-        accessibilityLabel="Acción principal"
-        style={{ bottom: insets.bottom + 70 }}
-      >
-        <AntDesign name="plus" size={24} color="white" />
-      </TouchableOpacity>
     </View>
   )
 }

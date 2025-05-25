@@ -1,5 +1,3 @@
-"use client"
-
 import { useState } from "react"
 import { ScrollView, Text, View, TouchableOpacity, Image, TextInput, FlatList, StatusBar } from "react-native"
 import { useNavigation } from "@react-navigation/native"
@@ -13,12 +11,6 @@ const HomeRecipes = () => {
   const insets = useSafeAreaInsets()
 
   const latestRecipes = [...recetas].sort((a, b) => new Date(b.fechaCreacion) - new Date(a.fechaCreacion)).slice(0, 3)
-
-  const getRandomRecipe = () => {
-    const randomIndex = Math.floor(Math.random() * recetas.length)
-    return recetas[randomIndex]
-  }
-
   const categories = ["Todo", "Pollo", "Hamburguesa", "Ensalada", "Pizza"]
 
   const categoryIcons = {
@@ -38,7 +30,7 @@ const HomeRecipes = () => {
       <TouchableOpacity
         key={recipe.idReceta}
         className={`mb-4 rounded-xl overflow-hidden ${isRandom ? "bg-amber-50 p-4 flex-row items-center" : "bg-white"}`}
-        onPress={() => navigation.navigate("StackRecipes", { recipeId: recipe.idReceta })}
+        onPress={() => navigation.navigate("DetailsRecipes", { recipeId: recipe.idReceta })}
       >
         {isRandom ? (
           <>
@@ -113,22 +105,15 @@ const HomeRecipes = () => {
             </View>
             <Text className="text-xl font-bold text-gray-800">YOURI</Text>
           </View>
-          <TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => navigation.navigate("AuthStack", { screen: "Login" })}
+          >
             <Image
-              source={{ uri: "https://picsum.photos/200" }}
+              source={{ uri: "https://randomuser.me/api/portraits/men/1.jpg" }}
               className="w-10 h-10 rounded-full"
               accessibilityLabel="Perfil de usuario"
             />
           </TouchableOpacity>
-        </View>
-
-        {/* User Greeting */}
-        <View className="p-4 flex-row items-center">
-          <Image source={{ uri: "https://picsum.photos/seed/user/200" }} className="w-16 h-16 rounded-full mr-4" />
-          <View>
-            <Text className="text-xl font-bold text-gray-800">Hola, Julian Bonavota</Text>
-            <Text className="text-gray-500">Empecemos a cocinar</Text>
-          </View>
         </View>
 
         {/* Latest Recipes */}
@@ -161,8 +146,6 @@ const HomeRecipes = () => {
           </View>
         </View>
 
-        {/* Random Recipe */}
-        <View className="px-4 mb-6">{renderRecipeCard(getRandomRecipe(), false, true)}</View>
 
         {/* Recipe Collection */}
         <View className="p-4">
@@ -211,11 +194,10 @@ const HomeRecipes = () => {
         </View>
       </ScrollView>
 
-      {/* Floating Action Button */}
+      {/* Create recipe */}
       <TouchableOpacity
         className="absolute bottom-20 right-6 bg-amber-400 w-14 h-14 rounded-full items-center justify-center shadow-lg"
-        onPress={() => {
-        }}
+        onPress={() => navigation.navigate("CreateRecipe")}
         accessibilityLabel="Añadir nueva receta"
         style={{ bottom: insets.bottom + 70 }}
       >

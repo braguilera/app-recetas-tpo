@@ -94,7 +94,6 @@ const DetailsRecipes = () => {
             </TouchableOpacity>
           </View>
 
-          {/* Recipe Tags */}
           <View className="absolute bottom-4 right-4 flex-row">
             <TouchableOpacity className="bg-white w-8 h-8 rounded-full items-center justify-center mr-2">
               <MaterialCommunityIcons name="leaf" size={18} color="#22C55E" />
@@ -169,7 +168,6 @@ const DetailsRecipes = () => {
                 </View>
               ))}
 
-              {/* People Count Selector */}
               <View className="flex-row justify-center items-center mt-6 bg-gray-100 rounded-full py-2 px-4 self-center">
                 <TouchableOpacity onPress={decreasePeople} disabled={peopleCount <= 1}>
                   <AntDesign name="minus" size={20} color={peopleCount <= 1 ? "#D1D5DB" : "#F59E0B"} />
@@ -293,7 +291,6 @@ const DetailsRecipes = () => {
         </View>
       </ScrollView>
 
-      {/* Bottom Action Button */}
       <View
         className="p-4 border-t border-gray-200 bg-white"
         style={{ paddingBottom: insets.bottom > 0 ? insets.bottom : 16 }}
