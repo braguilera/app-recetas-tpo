@@ -1,17 +1,17 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { ScrollView, Text, View, TouchableOpacity, Image, TextInput, FlatList, StatusBar } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { AntDesign, FontAwesome, Ionicons } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import recetas from "../../test/recipes"
+import { getDatos } from "api/crud"
 
 const HomeRecipes = () => {
   const navigation = useNavigation()
   const [activeFilter, setActiveFilter] = useState("Todo")
   const insets = useSafeAreaInsets()
+  const [recipeList, setRecipeList] = useState({})
 
-  const latestRecipes = [...recetas].sort((a, b) => new Date(b.fechaCreacion) - new Date(a.fechaCreacion)).slice(0, 3)
-  const categories = ["Todo", "Pollo", "Hamburguesa", "Ensalada", "Pizza"]
+  const categories = ["Todasdo", "Pollo", "Hamburguesa", "Ensalada", "Pizza"]
 
   const categoryIcons = {
     Todo: "🍽️",
@@ -21,77 +21,92 @@ const HomeRecipes = () => {
     Pizza: "🍕",
   }
 
-  const renderRecipeCard = (recipe, isNew = false, isRandom = false) => {
-    const ratings = recipe.calificaciones || []
-    const avgRating =
-      ratings.length > 0 ? ratings.reduce((sum, rating) => sum + rating.puntuacion, 0) / ratings.length : 0
+      
+  const fetchRecipes = async () => {
+    try {
+      const data = await getDatos('recipe/page', 'Error al cargar recetas')
+      setRecipeList(data)
+      console.log("Recetas cargadas", data)
+    } catch (error) {
+      console.error("Error fetching recipes:", error.message)
+    }
 
+  }
+
+    useEffect(() => {
+    fetchRecipes();
+  },[])
+
+  const renderRecipeCard = (recipe, news = false) => {
+  if (news) {
     return (
       <TouchableOpacity
-        key={recipe.idReceta}
-        className={`mb-4 rounded-xl overflow-hidden ${isRandom ? "bg-amber-50 p-4 flex-row items-center" : "bg-white"}`}
-        onPress={() => navigation.navigate("DetailsRecipes", { recipeId: recipe.idReceta })}
+        key={recipe.id}
+        className="mb-4 w-full rounded-xl overflow-hidden bg-slate-500"
+        onPress={() => navigation.navigate("DetailsRecipes", { recipeId: recipe.id })}
       >
-        {isRandom ? (
-          <>
-            <View className="mr-4 bg-amber-100 p-3 rounded-full">
-              <AntDesign name="star" size={24} color="#F59E0B" />
+        <Image
+          source={{ uri: `https://picsum.photos/seed/${recipe.id}/400/300` }}
+          className="w-full h-40"
+          accessibilityLabel={`Imagen de ${recipe.recipeName}`}
+        />
+        <View className="p-3">
+          <Text className="text-lg font-bold text-white">{recipe.recipeName}</Text>
+          <Text className="text-gray-300 text-sm mb-2" numberOfLines={2}>
+            {/*recipe.descripcion*/} Descripción breve de la receta que se muestra aquí para dar una idea del contenido.
+          </Text>
+          <View className="flex-row justify-between items-center">
+            <View className="flex-row items-center">
+              <AntDesign name="star" size={16} color="#F59E0B" />
+              <Text className="ml-1 text-amber-400 font-medium">{recipe.averageRating}</Text>
             </View>
-            <View className="flex-1">
-              <Text className="text-base font-bold mb-1">¡Descubre algo nuevo!</Text>
-              <Text className="text-sm text-gray-600">Encuentra una receta sorpresa para inspirarte</Text>
+            <View className="flex-row items-center">
+              <AntDesign name="clockcircleo" size={14} color="#D1D5DB" />
+              <Text className="text-xs text-gray-300 ml-1">15 min</Text>
             </View>
-            <AntDesign name="arrowright" size={24} color="#F59E0B" />
-          </>
-        ) : (
-          <>
-            <View className="relative">
-              <Image
-                source={{ uri: `https://picsum.photos/seed/${recipe.idReceta}/400/300` }}
-                className="w-full h-48 rounded-t-xl"
-                accessibilityLabel={`Imagen de ${recipe.titulo}`}
-              />
-              {isNew && (
-                <View className="absolute top-2 right-2 bg-amber-400 px-2 py-1 rounded-md">
-                  <Text className="text-xs font-bold text-white">Nueva</Text>
-                </View>
-              )}
-              <TouchableOpacity
-                className="absolute top-2 right-2"
-                onPress={() => {
-                }}
-                accessibilityLabel="Guardar receta"
-              >
-                {!isNew && <AntDesign name="heart" size={24} color="white" />}
-              </TouchableOpacity>
+          </View>
+        </View>
+      </TouchableOpacity>
+    )
+  } else {
+    return (
+      <TouchableOpacity
+        key={recipe.id}
+        className="flex-row mb-4 rounded-xl overflow-hidden bg-white w-full"
+        onPress={() => navigation.navigate("DetailsRecipes", { recipeId: recipe.id })}
+      >
+        <Image
+          source={{ uri: `https://picsum.photos/seed/${recipe.id}/200/200` }}
+          className="w-28 h-28"
+          accessibilityLabel={`Imagen de ${recipe.recipeName}`}
+        />
+        <View className="flex-1 p-3">
+          <View className="flex-row justify-between items-center mb-1">
+            <Text className="text-lg font-bold">{recipe.recipeName}</Text>
+            <View className="flex-row items-center">
+              <AntDesign name="star" size={16} color="#F59E0B" />
+              <Text className="ml-1 text-amber-500 font-medium">{recipe.averageRating}</Text>
             </View>
-            <View className="p-3">
-              <View className="flex-row justify-between items-center mb-1">
-                <Text className="text-lg font-bold">{recipe.titulo}</Text>
-                <View className="flex-row items-center">
-                  <AntDesign name="star" size={16} color="#F59E0B" />
-                  <Text className="ml-1 text-amber-500 font-medium">{avgRating.toFixed(1)}</Text>
-                </View>
-              </View>
-              <Text className="text-gray-600 text-sm mb-2" numberOfLines={2}>
-                {recipe.descripcion}
-              </Text>
-              <View className="flex-row items-center">
-                <View className="flex-row items-center mr-4">
-                  <FontAwesome name="user" size={14} color="#9CA3AF" />
-                  <Text className="text-xs text-gray-500 ml-1">Por {recipe.usuario.alias}</Text>
-                </View>
-                <View className="flex-row items-center">
-                  <AntDesign name="clockcircleo" size={14} color="#9CA3AF" />
-                  <Text className="text-xs text-gray-500 ml-1">15 min</Text>
-                </View>
-              </View>
+          </View>
+          <Text className="text-gray-600 text-sm mb-2" numberOfLines={2}>
+            {/*recipe.descripcion*/} Descripción breve de la receta que se muestra aquí para dar una idea del contenido.
+          </Text>
+          <View className="flex-row items-center">
+            <View className="flex-row items-center mr-4">
+              <FontAwesome name="user" size={14} color="#9CA3AF" />
+              <Text className="text-xs text-gray-500 ml-1">Por {recipe.authorName}</Text>
             </View>
-          </>
-        )}
+            <View className="flex-row items-center">
+              <AntDesign name="clockcircleo" size={14} color="#9CA3AF" />
+              <Text className="text-xs text-gray-500 ml-1">15 min</Text>
+            </View>
+          </View>
+        </View>
       </TouchableOpacity>
     )
   }
+}
+
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F5F3E4", paddingTop: insets.top }}>
@@ -127,13 +142,18 @@ const HomeRecipes = () => {
 
           {/* Recipe Carousel */}
           <FlatList
-            data={latestRecipes}
+            data={recipeList.content}
             horizontal
             showsHorizontalScrollIndicator={false}
-            keyExtractor={(item) => item.idReceta.toString()}
-            renderItem={({ item }) => <View className="w-300 mr-4">{renderRecipeCard(item, true)}</View>}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={({ item }) => (
+              <View style={{ width: 300, marginRight: 16 }}>
+                {renderRecipeCard(item, true)}
+              </View>
+            )}
             className="mb-4"
           />
+
 
           {/* Pagination Dots */}
           <View className="flex-row justify-center mb-4">
@@ -189,8 +209,18 @@ const HomeRecipes = () => {
             ))}
           </ScrollView>
 
-          {/* All Recipes */}
-          {recetas.map((recipe) => renderRecipeCard(recipe))}
+          {/* Recipe Cards */}
+          <View className="space-y-4">
+            {recipeList.content && recipeList.content.length > 0 ? (
+              recipeList.content.map((recipe) => (
+                <View key={recipe.id} className="w-full">
+                  {renderRecipeCard(recipe)}
+                </View>
+              ))
+            ) : (
+              <Text className="text-gray-500 text-center">No hay recetas disponibles</Text>
+            )}
+            </View>
         </View>
       </ScrollView>
 
