@@ -32,6 +32,32 @@ export const getDatos = async (endpoint, errorMessage = 'Error al obtener datos'
   }
 };
 
+// GET con parámetros para recetas
+export const getRecipesPaginated = async (params = {}, errorMessage = 'Error al obtener recetas') => {
+  try {
+    const queryParams = new URLSearchParams();
+    
+    if (params.page !== undefined) queryParams.append('page', params.page);
+    if (params.size !== undefined) queryParams.append('size', params.size);
+    if (params.sort && params.sort.length > 0) {
+      params.sort.forEach(sortParam => queryParams.append('sort', sortParam));
+    }
+    if (params.name) queryParams.append('name', params.name);
+    if (params.userName) queryParams.append('userName', params.userName);
+    if (params.rating !== undefined) queryParams.append('rating', params.rating);
+    if (params.ingredients !== undefined) queryParams.append('ingredients', params.ingredients);
+
+    const url = `${API_CONFIG.BASE_URL}recipe/page${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+    
+    const response = await fetch(url, {
+      headers: getHeaders()
+    });
+    return handleResponse(response, errorMessage);
+  } catch (error) {
+    throw new Error(`${errorMessage}: ${error.message}`);
+  }
+};
+
 // POST
 export const postDatos = async (endpoint, data, errorMessage = 'Error al crear recurso') => {
   try {

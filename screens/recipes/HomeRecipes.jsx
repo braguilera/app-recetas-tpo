@@ -1,17 +1,25 @@
 import { useEffect, useState } from "react"
 import { ScrollView, Text, View, TouchableOpacity, Image, TextInput, FlatList, StatusBar } from "react-native"
 import { useNavigation } from "@react-navigation/native"
-import { AntDesign, FontAwesome, Ionicons } from "@expo/vector-icons"
+import { AntDesign, FontAwesome, Ionicons, Entypo  } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { getDatos } from "api/crud"
+import { getDatos, getRecipesPaginated } from "api/crud"
 
 const HomeRecipes = () => {
   const navigation = useNavigation()
   const [activeFilter, setActiveFilter] = useState("Todo")
   const insets = useSafeAreaInsets()
   const [recipeList, setRecipeList] = useState({})
+  const [currentPage, setCurrentPage] = useState(0)
+  const [loading, setLoading] = useState(false)
+  const [showFilter, setShowFilter] = useState(false)
+  const [nameReceta, setNameReceta] = useState("")
+  const [allIngredients, setAllIngredients] = useState([])
+  const [ingredientRecipe, setIngredientRecipe] = useState("")
+  const [excludedIngredients, setExcludedIngredients] = useState([])
+  const pageSize = 2
 
-  const categories = ["Todasdo", "Pollo", "Hamburguesa", "Ensalada", "Pizza"]
+  const categories = ["Todo", "Pollo", "Hamburguesa", "Ensalada", "Pizza"]
 
   const categoryIcons = {
     Todo: "🍽️",
@@ -21,97 +29,199 @@ const HomeRecipes = () => {
     Pizza: "🍕",
   }
 
-      
-  const fetchRecipes = async () => {
+  const getPaginationNumbers = () => {
+    const totalPages = recipeList.totalPages || 1
+    const current = currentPage
+    const maxVisible = 1
+    
+    if (totalPages <= maxVisible + 2) {
+      return Array.from({ length: totalPages }, (_, i) => i)
+    }
+    
+    const numbers = []
+    
+    if (current <= 1) {
+      numbers.push(0, 1, 2)
+      if (totalPages > 4) {
+        numbers.push('...')
+        numbers.push(totalPages - 1)
+      }
+    } else if (current >= totalPages - 2) {
+      numbers.push(0)
+      if (totalPages > 4) {
+        numbers.push('...')
+      }
+      numbers.push(totalPages - 3, totalPages - 2, totalPages - 1)
+    } else {
+      numbers.push(0)
+      numbers.push('...')
+      numbers.push(current - 1, current, current + 1)
+      numbers.push('...')
+      numbers.push(totalPages - 1)
+    }
+    
+    return numbers
+  }
+
+  const fetchRecipes = async (page = 0, reset = false) => {
+    if (loading) return
+    
+    setLoading(true)
     try {
-      const data = await getDatos('recipe/page', 'Error al cargar recetas')
-      setRecipeList(data)
+      const params = {
+        page: page,
+        size: pageSize,
+        sort: ["nombreReceta", "asc"],
+        name: nameReceta,
+        userName:"",
+        rating:"",
+        ingredients:ingredientRecipe,
+      }
+      
+      const data = await getRecipesPaginated(params, 'Error al cargar recetas')
+      console.log(data)
+      if (reset) {
+        setRecipeList(data)
+      } else {
+        setRecipeList(prevData => ({
+          ...data,
+          content: [...(prevData.content || []), ...data.content]
+        }))
+      }
+      
+      setCurrentPage(page)
       console.log("Recetas cargadas", data)
     } catch (error) {
       console.error("Error fetching recipes:", error.message)
+    } finally {
+      setLoading(false)
     }
-
   }
 
-    useEffect(() => {
-    fetchRecipes();
-  },[])
+  const getAllIngredients = async () => {
+    try{
+      const data = await getDatos("ingridient/find-all", "Error al obtener todos los ingredientes")
+      console.log(data)
+      setAllIngredients(data)
+    } catch (error) {
+      console.error("Error fetching ingredients:", error.message)
+    }
+  }
+
+  const refreshRecipes = () => {
+    setCurrentPage(0)
+    fetchRecipes(0, true)
+  }
+
+  // Limpiar filtros de manera centralizada
+  const clearFilters = () => {
+    setIngredientRecipe("")
+    setExcludedIngredients([])
+    setNameReceta("")
+  }
+
+  useEffect(() => {
+    fetchRecipes(0, true);
+    getAllIngredients();
+  }, [])
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setCurrentPage(0)
+      fetchRecipes(0, true)
+    }, 300)
+    return () => clearTimeout(timeoutId)
+  }, [nameReceta])
+
+  // Nuevo useEffect para detectar cambios en los filtros de ingredientes
+  useEffect(() => {
+    if (ingredientRecipe !== undefined) {
+      const timeoutId = setTimeout(() => {
+        setCurrentPage(0)
+        fetchRecipes(0, true)
+      }, 100)
+      return () => clearTimeout(timeoutId)
+    }
+  }, [ingredientRecipe, excludedIngredients])
+
+  const handleSearchRecipe = (text) => {
+    setNameReceta(text)
+  }
 
   const renderRecipeCard = (recipe, news = false) => {
-  if (news) {
-    return (
-      <TouchableOpacity
-        key={recipe.id}
-        className="mb-4 w-full rounded-xl overflow-hidden bg-slate-500"
-        onPress={() => navigation.navigate("DetailsRecipes", { recipeId: recipe.id })}
-      >
-        <Image
-          source={{ uri: `https://picsum.photos/seed/${recipe.id}/400/300` }}
-          className="w-full h-40"
-          accessibilityLabel={`Imagen de ${recipe.recipeName}`}
-        />
-        <View className="p-3">
-          <Text className="text-lg font-bold text-white">{recipe.recipeName}</Text>
-          <Text className="text-gray-300 text-sm mb-2" numberOfLines={2}>
-            {/*recipe.descripcion*/} Descripción breve de la receta que se muestra aquí para dar una idea del contenido.
-          </Text>
-          <View className="flex-row justify-between items-center">
-            <View className="flex-row items-center">
-              <AntDesign name="star" size={16} color="#F59E0B" />
-              <Text className="ml-1 text-amber-400 font-medium">{recipe.averageRating}</Text>
-            </View>
-            <View className="flex-row items-center">
-              <AntDesign name="clockcircleo" size={14} color="#D1D5DB" />
-              <Text className="text-xs text-gray-300 ml-1">15 min</Text>
-            </View>
-          </View>
-        </View>
-      </TouchableOpacity>
-    )
-  } else {
-    return (
-      <TouchableOpacity
-        key={recipe.id}
-        className="flex-row mb-4 rounded-xl overflow-hidden bg-white w-full"
-        onPress={() => navigation.navigate("DetailsRecipes", { recipeId: recipe.id })}
-      >
-        <Image
-          source={{ uri: `https://picsum.photos/seed/${recipe.id}/200/200` }}
-          className="w-28 h-28"
-          accessibilityLabel={`Imagen de ${recipe.recipeName}`}
-        />
-        <View className="flex-1 p-3">
-          <View className="flex-row justify-between items-center mb-1">
-            <Text className="text-lg font-bold">{recipe.recipeName}</Text>
-            <View className="flex-row items-center">
-              <AntDesign name="star" size={16} color="#F59E0B" />
-              <Text className="ml-1 text-amber-500 font-medium">{recipe.averageRating}</Text>
+    if (news) {
+      return (
+        <TouchableOpacity
+          key={recipe.id}
+          className="mb-4 w-full rounded-xl overflow-hidden bg-slate-500"
+          onPress={() => navigation.navigate("DetailsRecipes", { recipeId: recipe.id })}
+        >
+          <Image
+            source={{ uri: `https://picsum.photos/seed/${recipe.id}/400/300` }}
+            className="w-full h-40"
+            accessibilityLabel={`Imagen de ${recipe.recipeName}`}
+          />
+          <View className="p-3">
+            <Text className="text-lg font-bold text-white">{recipe.recipeName}</Text>
+            <Text className="text-gray-300 text-sm mb-2" numberOfLines={2}>
+              Descripción breve de la receta que se muestra aquí para dar una idea del contenido.
+            </Text>
+            <View className="flex-row justify-between items-center">
+              <View className="flex-row items-center">
+                <AntDesign name="star" size={16} color="#F59E0B" />
+                <Text className="ml-1 text-amber-400 font-medium">{recipe.averageRating}</Text>
+              </View>
+              <View className="flex-row items-center">
+                <AntDesign name="clockcircleo" size={14} color="#D1D5DB" />
+                <Text className="text-xs text-gray-300 ml-1">15 min</Text>
+              </View>
             </View>
           </View>
-          <Text className="text-gray-600 text-sm mb-2" numberOfLines={2}>
-            {/*recipe.descripcion*/} Descripción breve de la receta que se muestra aquí para dar una idea del contenido.
-          </Text>
-          <View className="flex-row items-center">
-            <View className="flex-row items-center mr-4">
-              <FontAwesome name="user" size={14} color="#9CA3AF" />
-              <Text className="text-xs text-gray-500 ml-1">Por {recipe.authorName}</Text>
+        </TouchableOpacity>
+      )
+    } else {
+      return (
+        <TouchableOpacity
+          key={recipe.id}
+          className="flex-row mb-4 rounded-xl overflow-hidden bg-white w-full"
+          onPress={() => navigation.navigate("DetailsRecipes", { recipeId: recipe.id })}
+        >
+          <Image
+            source={{ uri: `https://picsum.photos/seed/${recipe.id}/200/200` }}
+            className="w-28 h-28"
+            accessibilityLabel={`Imagen de ${recipe.recipeName}`}
+          />
+          <View className="flex-1 p-3">
+            <View className="flex-row justify-between items-center mb-1">
+              <Text className="text-lg font-bold">{recipe.recipeName}</Text>
+              <View className="flex-row items-center">
+                <AntDesign name="star" size={16} color="#F59E0B" />
+                <Text className="ml-1 text-amber-500 font-medium">{recipe.averageRating}</Text>
+              </View>
             </View>
+            <Text className="text-gray-600 text-sm mb-2" numberOfLines={2}>
+              Descripción breve de la receta que se muestra aquí para dar una idea del contenido.
+            </Text>
             <View className="flex-row items-center">
-              <AntDesign name="clockcircleo" size={14} color="#9CA3AF" />
-              <Text className="text-xs text-gray-500 ml-1">15 min</Text>
+              <View className="flex-row items-center mr-4">
+                <FontAwesome name="user" size={14} color="#9CA3AF" />
+                <Text className="text-xs text-gray-500 ml-1">Por {recipe.authorName}</Text>
+              </View>
+              <View className="flex-row items-center">
+                <AntDesign name="clockcircleo" size={14} color="#9CA3AF" />
+                <Text className="text-xs text-gray-500 ml-1">15 min</Text>
+              </View>
             </View>
           </View>
-        </View>
-      </TouchableOpacity>
-    )
+        </TouchableOpacity>
+      )
+    }
   }
-}
-
 
   return (
     <View style={{ flex: 1, backgroundColor: "#F5F3E4", paddingTop: insets.top }}>
       <StatusBar barStyle="dark-content" backgroundColor="#F5F3E4" />
-      <ScrollView className="flex-1">
+      <ScrollView className="flex-1 pb-40">
         {/* Header */}
         <View className="flex-row justify-between items-center p-4 bg-amber-100">
           <View className="flex-row items-center">
@@ -142,7 +252,7 @@ const HomeRecipes = () => {
 
           {/* Recipe Carousel */}
           <FlatList
-            data={recipeList.content}
+            data={recipeList.content ? recipeList.content.slice(0, 3) : []}
             horizontal
             showsHorizontalScrollIndicator={false}
             keyExtractor={(item) => item.id.toString()}
@@ -153,7 +263,6 @@ const HomeRecipes = () => {
             )}
             className="mb-4"
           />
-
 
           {/* Pagination Dots */}
           <View className="flex-row justify-center mb-4">
@@ -166,11 +275,24 @@ const HomeRecipes = () => {
           </View>
         </View>
 
-
         {/* Recipe Collection */}
         <View className="p-4">
-          <Text className="text-xl font-bold text-gray-800 mb-1">Explora Nuestro Recetario</Text>
-          <Text className="text-sm text-gray-600 mb-4">Encuentra la receta perfecta para cualquier ocasión</Text>
+          <View className="flex-row justify-between items-center mb-1">
+            <Text className="text-xl font-bold text-gray-800">Explora Nuestro Recetario</Text>
+            <TouchableOpacity onPress={refreshRecipes} disabled={loading}>
+              <AntDesign 
+                name="reload1" 
+                size={20} 
+                color={loading ? "#9CA3AF" : "#F59E0B"} 
+              />
+            </TouchableOpacity>
+          </View>
+          <Text className="text-sm text-gray-600 mb-4">
+            Encuentra la receta perfecta para cualquier ocasión
+            {recipeList.totalElements && (
+              <Text className="text-amber-600"> ({recipeList.totalElements} recetas total)</Text>
+            )}
+          </Text>
 
           {/* Search Bar */}
           <View className="flex-row items-center bg-white rounded-lg border border-gray-200 px-3 py-2 mb-4">
@@ -179,10 +301,12 @@ const HomeRecipes = () => {
               placeholder="Buscar recetas por nombre..."
               className="flex-1 ml-2"
               accessibilityLabel="Buscar recetas"
+              value={nameReceta}
+              onChangeText={handleSearchRecipe}
             />
-            <TouchableOpacity>
+            <TouchableOpacity onPress={()=> setShowFilter(true)}>
               <View className="bg-amber-400 p-1 rounded">
-                <AntDesign name="right" size={20} color="white" />
+                <Ionicons name="options" size={24} color="white" />
               </View>
             </TouchableOpacity>
           </View>
@@ -220,7 +344,77 @@ const HomeRecipes = () => {
             ) : (
               <Text className="text-gray-500 text-center">No hay recetas disponibles</Text>
             )}
+          </View>
+
+          {/* Pagination Controls */}
+          {recipeList.totalPages > 1 && (
+            <View className="flex-row justify-center items-center mb-20">
+              <View className="bg-white rounded-lg p-2 flex-row items-center shadow-sm">
+                {/* Botón anterior */}
+                <TouchableOpacity
+                  onPress={() => fetchRecipes(currentPage - 1, true)}
+                  disabled={currentPage === 0 || loading}
+                  className={`w-8 h-8 rounded-md items-center justify-center mr-1 ${
+                    currentPage === 0 || loading 
+                      ? "hidden" 
+                      : "bg-gray-50 hover:bg-gray-100"
+                  }`}
+                >
+                  <AntDesign 
+                    name="left" 
+                    size={14} 
+                    color={currentPage === 0 || loading ? "#D1D5DB" : "#6B7280"} 
+                  />
+                </TouchableOpacity>
+
+                {/* Números de página */}
+                {getPaginationNumbers().map((item, index) => (
+                  <View key={index}>
+                    {item === '...' ? (
+                      <View className="w-8 h-8 items-center justify-center">
+                        <Text className="text-gray-400 text-sm">...</Text>
+                      </View>
+                    ) : (
+                      <TouchableOpacity
+                        onPress={() => fetchRecipes(item, true)}
+                        disabled={loading}
+                        className={`w-8 h-8 rounded-md items-center justify-center mx-0.5 ${
+                          currentPage === item
+                            ? "bg-amber-400"
+                            : "bg-gray-50 hover:bg-gray-100"
+                        }`}
+                      >
+                        <Text className={`text-sm font-medium ${
+                          currentPage === item
+                            ? "text-white"
+                            : "text-gray-700"
+                        }`}>
+                          {item + 1}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                ))}
+
+                {/* Botón siguiente */}
+                <TouchableOpacity
+                  onPress={() => fetchRecipes(currentPage + 1, true)}
+                  disabled={recipeList.last || loading}
+                  className={`w-8 h-8 rounded-md items-center justify-center ml-1 ${
+                    recipeList.last || loading 
+                      ? "hidden" 
+                      : "bg-gray-50 hover:bg-gray-100"
+                  }`}
+                >
+                  <AntDesign 
+                    name="right" 
+                    size={14} 
+                    color={recipeList.last || loading ? "#D1D5DB" : "#6B7280"} 
+                  />
+                </TouchableOpacity>
+              </View>
             </View>
+          )}
         </View>
       </ScrollView>
 
@@ -233,6 +427,123 @@ const HomeRecipes = () => {
       >
         <AntDesign name="plus" size={24} color="white" />
       </TouchableOpacity>
+
+      
+      {showFilter &&
+      <View className="absolute w-full h-full bg-black/50"> 
+        <View className="w-4/5 h-full bg-white absolute right-0 shadow-lg">
+          <ScrollView className="flex-1 px-6 py-6">
+            {/* Header */}
+            <View className="flex-row justify-between items-center pb-4 border-b border-gray-200 mb-6">
+              <Text className="font-bold text-2xl text-gray-800">Filtros</Text>
+              <TouchableOpacity 
+                onPress={() => setShowFilter(false)}
+                className="bg-gray-100 p-2 rounded-full"
+              >
+                <Entypo name="cross" size={20} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+
+            {/* Ingredientes que DEBE tener */}
+            <View className="mb-8">
+              <Text className="font-semibold text-lg text-gray-800 mb-4">Ingredientes requeridos</Text>
+              <Text className="text-sm text-gray-600 mb-3">Selecciona un ingrediente que debe estar en la receta:</Text>
+              
+              <View className="flex-row flex-wrap">
+                <TouchableOpacity
+                  onPress={() => setIngredientRecipe("")}
+                  className={`mr-2 mb-2 px-3 py-2 rounded-full border ${
+                    ingredientRecipe === "" 
+                      ? "bg-amber-400 border-amber-400" 
+                      : "bg-white border-gray-300"
+                  }`}
+                >
+                  <Text className={`text-sm ${
+                    ingredientRecipe === "" 
+                      ? "text-white font-medium" 
+                      : "text-gray-700"
+                  }`}>
+                    Todos
+                  </Text>
+                </TouchableOpacity>
+                
+                {allIngredients.map(ingredient => (
+                  <TouchableOpacity
+                    key={ingredient.idIngrediente}
+                    onPress={() => setIngredientRecipe(ingredient.idIngrediente)}
+                    className={`mr-2 mb-2 px-3 py-2 rounded-full border ${
+                      ingredientRecipe === ingredient.idIngrediente 
+                        ? "bg-amber-400 border-amber-400" 
+                        : "bg-white border-gray-300"
+                    }`}
+                  >
+                    <Text className={`text-sm ${
+                      ingredientRecipe === ingredient.idIngrediente 
+                        ? "text-white font-medium" 
+                        : "text-gray-700"
+                    }`}>
+                      {ingredient.nombre}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {/* Ingredientes que NO debe tener */}
+            <View className="mb-8">
+              <Text className="font-semibold text-lg text-gray-800 mb-4">Ingredientes excluidos</Text>
+              <Text className="text-sm text-gray-600 mb-3">Selecciona ingredientes que NO quieres en la receta:</Text>
+              
+              <View className="flex-row flex-wrap">
+                {allIngredients.map(ingredient => (
+                  <TouchableOpacity
+                    key={`exclude-${ingredient.idIngrediente}`}
+                    onPress={() => {setExcludedIngredients(ingredient.idIngrediente)}}
+                    className={`mr-2 mb-2 px-3 py-2 rounded-full border ${
+                      excludedIngredients.includes(ingredient.nombre)
+                        ? "bg-red-400 border-red-400" 
+                        : "bg-white border-gray-300"
+                    }`}
+                  >
+                    <Text className={`text-sm ${
+                      excludedIngredients.includes(ingredient.nombre)
+                        ? "text-white font-medium" 
+                        : "text-gray-700"
+                    }`}>
+                      {ingredient.nombre}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </View>
+
+            {/* Botones de acción */}
+            <View className="border-t border-gray-200 pt-6 pb-4">
+              <View className="flex-row space-x-3">
+                <TouchableOpacity
+                  onPress={clearFilters}
+                  className="flex-1 bg-gray-100 py-3 rounded-lg"
+                >
+                  <Text className="text-center text-gray-700 font-medium">Limpiar filtros</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity
+                  onPress={() => {
+                    setShowFilter(false)
+                    setCurrentPage(0)
+                    fetchRecipes(0, true)
+                  }}
+                  className="flex-1 bg-amber-400 py-3 rounded-lg"
+                >
+                  <Text className="text-center text-white font-medium">Aplicar filtros</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+      </View>
+      }
+
     </View>
   )
 }
