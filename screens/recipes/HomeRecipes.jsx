@@ -14,6 +14,7 @@ const HomeRecipes = () => {
   const [loading, setLoading] = useState(false)
   const [showFilter, setShowFilter] = useState(false)
   const [nameReceta, setNameReceta] = useState("")
+  const [userNameReceta, setUserNameReceta] = useState("")
   const [allIngredients, setAllIngredients] = useState([])
   const [ingredientRecipe, setIngredientRecipe] = useState("")
   const [excludedIngredients, setExcludedIngredients] = useState([])
@@ -73,7 +74,7 @@ const HomeRecipes = () => {
         size: pageSize,
         sort: ["nombreReceta", "asc"],
         name: nameReceta,
-        userName:"",
+        userName:userNameReceta,
         rating:"",
         ingredients:ingredientRecipe,
       }
@@ -118,6 +119,11 @@ const HomeRecipes = () => {
     setIngredientRecipe("")
     setExcludedIngredients([])
     setNameReceta("")
+    setUserNameReceta("")
+  }
+
+  const handleSearchUserName = (text) => {
+    setUserNameReceta(text)
   }
 
   useEffect(() => {
@@ -132,6 +138,15 @@ const HomeRecipes = () => {
     }, 300)
     return () => clearTimeout(timeoutId)
   }, [nameReceta])
+
+  // useEffect para userName
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setCurrentPage(0)
+      fetchRecipes(0, true)
+    }, 300)
+    return () => clearTimeout(timeoutId)
+  }, [userNameReceta])
 
   // Nuevo useEffect para detectar cambios en los filtros de ingredientes
   useEffect(() => {
@@ -334,7 +349,7 @@ const HomeRecipes = () => {
           </ScrollView>
 
           {/* Recipe Cards */}
-          <View className="space-y-4">
+          <View className="space-y-4 pb-12">
             {recipeList.content && recipeList.content.length > 0 ? (
               recipeList.content.map((recipe) => (
                 <View key={recipe.id} className="w-full">
@@ -432,7 +447,7 @@ const HomeRecipes = () => {
       {showFilter &&
       <View className="absolute w-full h-full bg-black/50"> 
         <View className="w-4/5 h-full bg-white absolute right-0 shadow-lg">
-          <ScrollView className="flex-1 px-6 py-6">
+          <ScrollView className="flex-1 px-6 py-6 mb-32">
             {/* Header */}
             <View className="flex-row justify-between items-center pb-4 border-b border-gray-200 mb-6">
               <Text className="font-bold text-2xl text-gray-800">Filtros</Text>
@@ -442,6 +457,36 @@ const HomeRecipes = () => {
               >
                 <Entypo name="cross" size={20} color="#6B7280" />
               </TouchableOpacity>
+            </View>
+
+            {/* Búsqueda por usuario */}
+            <View className="mb-8">
+              <Text className="font-semibold text-lg text-gray-800 mb-4">Buscar por autor</Text>
+              <Text className="text-sm text-gray-600 mb-3">Encuentra recetas de un usuario específico:</Text>
+              
+              <View className="flex-row items-center bg-gray-50 rounded-lg border border-gray-200 px-3 py-3">
+                <FontAwesome name="user" size={18} color="#9CA3AF" />
+                <TextInput
+                  placeholder="Buscar por nombre de usuario..."
+                  className="flex-1 ml-3 text-gray-800"
+                  accessibilityLabel="Buscar por usuario"
+                  value={userNameReceta}
+                  onChangeText={handleSearchUserName}
+                />
+                {userNameReceta.length > 0 && (
+                  <TouchableOpacity onPress={() => setUserNameReceta("")}>
+                    <Entypo name="cross" size={18} color="#9CA3AF" />
+                  </TouchableOpacity>
+                )}
+              </View>
+              
+              {userNameReceta.length > 0 && (
+                <View className="mt-2 bg-amber-50 border border-amber-200 rounded-lg p-3">
+                  <Text className="text-sm text-amber-800">
+                    Buscando recetas de: <Text className="font-semibold">"{userNameReceta}"</Text>
+                  </Text>
+                </View>
+              )}
             </View>
 
             {/* Ingredientes que DEBE tener */}
@@ -518,8 +563,8 @@ const HomeRecipes = () => {
             </View>
 
             {/* Botones de acción */}
-            <View className="border-t border-gray-200 pt-6 pb-4">
-              <View className="flex-row space-x-3">
+            <View className="border-t border-gray-200 pt-6 pb-16">
+              <View className="flex-row gap-8 space-x-3">
                 <TouchableOpacity
                   onPress={clearFilters}
                   className="flex-1 bg-gray-100 py-3 rounded-lg"
