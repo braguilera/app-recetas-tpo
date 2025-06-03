@@ -1,8 +1,10 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { ScrollView, Text, View, TouchableOpacity, Image, TextInput, StatusBar, Alert } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { AntDesign } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { getDatos, postDatos } from "api/crud"
+import { Picker } from '@react-native-picker/picker'
 
 const CreateRecipe = () => {
   const navigation = useNavigation()
@@ -12,6 +14,8 @@ const CreateRecipe = () => {
   const [recipeDescription, setRecipeDescription] = useState("")
   const [portions, setPortions] = useState("")
   const [peopleCount, setPeopleCount] = useState("")
+  const [selectedTypeRecipe, setSelectedTypeRecipe] = useState("")
+  const [allTypeRecipe, setAllTypeRecipe] = useState([])
   const [ingredients, setIngredients] = useState([
     { id: 1, name: "", quantity: "", unit: "" },
     { id: 2, name: "", quantity: "", unit: "" },
@@ -71,17 +75,28 @@ const CreateRecipe = () => {
     }
   }
 
-  const handleSubmitRecipe = () => {
-    //if (!recipeName.trim()) {
-    //  Alert.alert("Error", "Por favor ingresa el nombre de la receta")
-    //  return
-    //}
-//
-    //if (!recipeDescription.trim()) {
-    //  Alert.alert("Error", "Por favor ingresa la descripción de la receta")
-    //  return
-    //}
-//
+  const fetchTypesRecipe = async () => {
+    try {
+      const data = await getDatos("recipe/types")
+      setAllTypeRecipe(data)
+    } catch (error) {
+      console.error("Error fetching recipes:", error.message)
+    }
+  }
+
+  useEffect(() => {
+    fetchTypesRecipe()
+  }, [])
+
+  const handleSubmitRecipe = async () => {
+    if (!recipeName.trim()) {
+      Alert.alert("Error", "Por favor ingresa el nombre de la receta")
+      return
+    }
+    if (!recipeDescription.trim()) {
+      Alert.alert("Error", "Por favor ingresa la descripción de la receta")
+      return
+    }
     //if (ingredients.some((ing) => !ing.name.trim())) {
     //  Alert.alert("Error", "Por favor completa todos los ingredientes")
     //  return
@@ -93,14 +108,25 @@ const CreateRecipe = () => {
     //}
 
     const recipeData = {
-      idReceta: 6,
       nombreReceta: recipeName,
       descripcionReceta: recipeDescription,
       fotoPrincipal: "https://example.com/fotos/curry_garbanzos.jpg",
       porciones: Number.parseInt(portions) || 1,
       cantidadPersonas: Number.parseInt(peopleCount) || 1,
-      nombreUsuario: "mary",
-      tipoRecetaDescripcion: "Desayuno"
+      idUsuario: 2,
+      idTipoReceta: selectedTypeRecipe
+    }
+
+    try {
+      await postDatos("recipe/create", recipeData, "Error al crear receta")
+
+      console.log("Datos de la receta:", JSON.stringify(recipeData, null, 2))
+
+      Alert.alert("¡Receta creada!", "La receta se ha creado exitosamente. Revisa la consola para ver los datos.", [
+        { text: "OK", onPress: () => navigation.goBack() },
+      ])
+    } catch (error) {
+      console.error("Error fetching recipes:", error.message)
     }
 
     //const recipeData = {
@@ -128,12 +154,6 @@ const CreateRecipe = () => {
     //  calificaciones: [],
     //  comentarios: [],
     //}
-
-    console.log("Datos de la receta:", JSON.stringify(recipeData, null, 2))
-
-    Alert.alert("¡Receta creada!", "La receta se ha creado exitosamente. Revisa la consola para ver los datos.", [
-      { text: "OK", onPress: () => navigation.goBack() },
-    ])
   }
 
   return (
@@ -190,6 +210,23 @@ const CreateRecipe = () => {
               textAlignVertical="top"
             />
           </View>
+
+          <View className="mb-2">
+            <Text className="text-gray-700 mb-2">Selecciona el tipo de receta</Text>
+            <View className="bg-gray-100 rounded-lg">
+              <Picker
+                selectedValue={selectedTypeRecipe}
+                onValueChange={(itemValue) => setSelectedTypeRecipe(itemValue)}
+                style={{ color: '#1F2937' }}
+              >
+                <Picker.Item label="Seleccione una opción..." value="" enabled={false} />
+                {allTypeRecipe.map((type) => (
+                  <Picker.Item key={type.id} label={type.name} value={type.id} />
+                ))}
+              </Picker>
+            </View>
+          </View>
+
         </View>
 
         <View className="h-px bg-gray-300 mx-4 mb-6" />

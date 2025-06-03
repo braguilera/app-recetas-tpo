@@ -80,7 +80,6 @@ const HomeRecipes = () => {
       }
       
       const data = await getRecipesPaginated(params, 'Error al cargar recetas')
-      console.log(data)
       if (reset) {
         setRecipeList(data)
       } else {
@@ -91,7 +90,6 @@ const HomeRecipes = () => {
       }
       
       setCurrentPage(page)
-      console.log("Recetas cargadas", data)
     } catch (error) {
       console.error("Error fetching recipes:", error.message)
     } finally {
@@ -102,7 +100,6 @@ const HomeRecipes = () => {
   const getAllIngredients = async () => {
     try{
       const data = await getDatos("ingridient/find-all", "Error al obtener todos los ingredientes")
-      console.log(data)
       setAllIngredients(data)
     } catch (error) {
       console.error("Error fetching ingredients:", error.message)
