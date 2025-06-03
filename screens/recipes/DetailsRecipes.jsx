@@ -1,19 +1,33 @@
-"use client"
-
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { ScrollView, Text, View, TouchableOpacity, Image, StatusBar } from "react-native"
 import { useNavigation, useRoute } from "@react-navigation/native"
-import { AntDesign, FontAwesome, Ionicons, MaterialCommunityIcons } from "@expo/vector-icons"
+import { AntDesign, FontAwesome} from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import recetas from "../../test/recipes"
+import { getDatos } from "api/crud"
 
 const DetailsRecipes = () => {
   const navigation = useNavigation()
   const route = useRoute()
-  const { recipeId } = route.params || {}
+  const { recipeId, rating } = route.params || {}
   const insets = useSafeAreaInsets()
+  const [recipe, setRecipe] = useState({})
 
-  const recipe = recetas.find((r) => r.idReceta === recipeId) || recetas[0]
+  const fetchRecipe = async () => {
+    console.log(recipeId)
+    try {
+      const data = await getDatos(`recipe/${recipeId}`)
+      setRecipe(data)
+      console.log("Receta unica", data)
+    } catch (error) {
+      console.error("Error fetching recipes:", error.message)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchRecipe();
+  }, [])
 
   const [activeTab, setActiveTab] = useState("ingredientes")
 
@@ -59,24 +73,16 @@ const DetailsRecipes = () => {
     }
   }
 
-  const getUserId = (user) => {
-    return user && user.idUsuario ? user.idUsuario : "default"
-  }
-
-  const getUserAlias = (user) => {
-    return user && user.alias ? user.alias : "Usuario"
-  }
-
   return (
-    <View style={{ flex: 1, backgroundColor: "white", paddingTop: insets.top }}>
+    <View style={{ paddingTop: insets.top}} className=" pb-20 flex-1 bg-slate-50 ">
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
-      <ScrollView className="flex-1">
+      <ScrollView className="flex-1 pb-40">
         {/* Header Image */}
         <View className="relative">
           <Image
             source={{ uri: `https://picsum.photos/seed/${recipe.idReceta}/800/500` }}
             className="w-full h-64"
-            accessibilityLabel={`Imagen de ${recipe.titulo}`}
+            accessibilityLabel={`Imagen de ${recipe.nombreReceta}`}
           />
           <View className="absolute top-0 left-0 right-0 p-4 flex-row justify-between">
             <TouchableOpacity
@@ -94,33 +100,36 @@ const DetailsRecipes = () => {
             </TouchableOpacity>
           </View>
 
-          <View className="absolute bottom-4 right-4 flex-row">
-            <TouchableOpacity className="bg-white w-8 h-8 rounded-full items-center justify-center mr-2">
-              <MaterialCommunityIcons name="leaf" size={18} color="#22C55E" />
-            </TouchableOpacity>
-            <TouchableOpacity className="bg-white w-8 h-8 rounded-full items-center justify-center mr-2">
-              <MaterialCommunityIcons name="wheat" size={18} color="#F59E0B" />
-            </TouchableOpacity>
-            <TouchableOpacity className="bg-white w-8 h-8 rounded-full items-center justify-center">
-              <Ionicons name="flame" size={18} color="#EF4444" />
-            </TouchableOpacity>
+          <View className="absolute bottom-4 right-4 bg-amber-400 rounded-full">
+            <Text className="text-white px-3 py-1 font-medium">{recipe.tipoRecetaDescripcion}</Text>
           </View>
         </View>
 
         {/* Recipe Info */}
         <View className="p-4">
-          <Text className="text-amber-500 font-medium">{getMealType(recipe.tipoReceta)}</Text>
-          <Text className="text-3xl font-bold text-gray-800 mb-2">{recipe.titulo}</Text>
 
-          <View className="flex-row items-center mb-4">
-            <FontAwesome name="user" size={14} color="#9CA3AF" />
-            <Text className="text-sm text-gray-500 ml-1">Por {recipe.usuario ? recipe.usuario.alias : "Usuario"}</Text>
+          <Text className="text-3xl font-bold text-gray-800">{recipe.nombreReceta}</Text>
+          <Text className="text-lg  text-gray-400 mb-2">{recipe.descripcionReceta}</Text>
+
+          <View className="flex-row items-center justify-around mb-4">
+            <View className="flex flex-row items-center">
+              <FontAwesome name="user" size={14} color="#9CA3AF" />
+              <Text className="text-sm text-gray-500 ml-1">Por {recipe.nombreUsuario}</Text>
+            </View>
+            
             <View className="w-1 h-1 bg-gray-300 rounded-full mx-2" />
-            <AntDesign name="clockcircleo" size={14} color="#9CA3AF" />
-            <Text className="text-sm text-gray-500 ml-1">15 min</Text>
+            
+            <View className="flex flex-row items-center">
+              <FontAwesome name="users" size={14} color="#9CA3AF" />            
+              <Text className="text-sm text-gray-500 ml-1">{recipe.porciones}</Text>
+            </View>
+            
             <View className="w-1 h-1 bg-gray-300 rounded-full mx-2" />
-            <AntDesign name="star" size={14} color="#F59E0B" />
-            <Text className="text-sm text-amber-500 ml-1">{avgRating.toFixed(1)}</Text>
+            
+            <View className="flex flex-row items-center">
+              <AntDesign name="star" size={14} color="#F59E0B" />
+              <Text className="text-sm text-amber-500 ml-1">{rating}</Text>
+            </View>
           </View>
 
           {/* Tabs */}
@@ -151,8 +160,21 @@ const DetailsRecipes = () => {
             </TouchableOpacity>
           </View>
 
+              <View className="flex-row justify-center items-center mt-6 bg-gray-100 rounded-full py-2 px-4 self-center">
+                <TouchableOpacity onPress={decreasePeople} disabled={peopleCount <= 1}>
+                  <AntDesign name="minus" size={20} color={peopleCount <= 1 ? "#D1D5DB" : "#F59E0B"} />
+                </TouchableOpacity>
+                <View className="flex-row items-center mx-4">
+                  <FontAwesome name="user" size={16} color="#4B5563" />
+                  <Text className="text-gray-700 font-bold mx-1">×</Text>
+                  <Text className="text-gray-700 font-bold">{recipe.cantidadPersonas}</Text>
+                </View>
+                <TouchableOpacity onPress={increasePeople} disabled={peopleCount >= 10}>
+                  <AntDesign name="plus" size={20} color={peopleCount >= 10 ? "#D1D5DB" : "#F59E0B"} />
+                </TouchableOpacity>
+              </View>
           {/* Ingredients Tab */}
-          {activeTab === "ingredientes" && (
+          {/*activeTab === "ingredientes" && (
             <View>
               {recipe.ingredientes.map((ingrediente, index) => (
                 <View
@@ -168,21 +190,8 @@ const DetailsRecipes = () => {
                 </View>
               ))}
 
-              <View className="flex-row justify-center items-center mt-6 bg-gray-100 rounded-full py-2 px-4 self-center">
-                <TouchableOpacity onPress={decreasePeople} disabled={peopleCount <= 1}>
-                  <AntDesign name="minus" size={20} color={peopleCount <= 1 ? "#D1D5DB" : "#F59E0B"} />
-                </TouchableOpacity>
-                <View className="flex-row items-center mx-4">
-                  <FontAwesome name="user" size={16} color="#4B5563" />
-                  <Text className="text-gray-700 font-bold mx-1">×</Text>
-                  <Text className="text-gray-700 font-bold">{peopleCount}</Text>
-                </View>
-                <TouchableOpacity onPress={increasePeople} disabled={peopleCount >= 10}>
-                  <AntDesign name="plus" size={20} color={peopleCount >= 10 ? "#D1D5DB" : "#F59E0B"} />
-                </TouchableOpacity>
-              </View>
             </View>
-          )}
+          )*/}
 
           {/* Instructions Tab */}
           {activeTab === "instrucciones" && (

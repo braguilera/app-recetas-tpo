@@ -72,51 +72,62 @@ const CreateRecipe = () => {
   }
 
   const handleSubmitRecipe = () => {
-    if (!recipeName.trim()) {
-      Alert.alert("Error", "Por favor ingresa el nombre de la receta")
-      return
-    }
-
-    if (!recipeDescription.trim()) {
-      Alert.alert("Error", "Por favor ingresa la descripción de la receta")
-      return
-    }
-
-    if (ingredients.some((ing) => !ing.name.trim())) {
-      Alert.alert("Error", "Por favor completa todos los ingredientes")
-      return
-    }
-
-    if (steps.some((step) => !step.description.trim())) {
-      Alert.alert("Error", "Por favor completa todos los pasos")
-      return
-    }
+    //if (!recipeName.trim()) {
+    //  Alert.alert("Error", "Por favor ingresa el nombre de la receta")
+    //  return
+    //}
+//
+    //if (!recipeDescription.trim()) {
+    //  Alert.alert("Error", "Por favor ingresa la descripción de la receta")
+    //  return
+    //}
+//
+    //if (ingredients.some((ing) => !ing.name.trim())) {
+    //  Alert.alert("Error", "Por favor completa todos los ingredientes")
+    //  return
+    //}
+//
+    //if (steps.some((step) => !step.description.trim())) {
+    //  Alert.alert("Error", "Por favor completa todos los pasos")
+    //  return
+    //}
 
     const recipeData = {
-      titulo: recipeName,
-      descripcion: recipeDescription,
-      imagen: recipeImage,
+      idReceta: 6,
+      nombreReceta: recipeName,
+      descripcionReceta: recipeDescription,
+      fotoPrincipal: "https://example.com/fotos/curry_garbanzos.jpg",
       porciones: Number.parseInt(portions) || 1,
       cantidadPersonas: Number.parseInt(peopleCount) || 1,
-      tipoReceta: "Principal", 
-      fechaCreacion: new Date().toISOString(),
-      usuario: {
-        alias: "Julian Bonavota", 
-      },
-      ingredientes: ingredients.map((ingredient, index) => ({
-        idIngredienteReceta: index + 1,
-        nombre: ingredient.name,
-        cantidad: Number.parseFloat(ingredient.quantity) || 0,
-        unidadMedida: ingredient.unit || "unidades",
-      })),
-      pasos: steps.map((step, index) => ({
-        orden: index + 1,
-        descripcionPaso: step.description,
-        imagenPaso: step.image,
-      })),
-      calificaciones: [],
-      comentarios: [],
+      nombreUsuario: "mary",
+      tipoRecetaDescripcion: "Desayuno"
     }
+
+    //const recipeData = {
+    //  titulo: recipeName,
+    //  descripcion: recipeDescription,
+    //  imagen: recipeImage,
+    //  porciones: Number.parseInt(portions) || 1,
+    //  cantidadPersonas: Number.parseInt(peopleCount) || 1,
+    //  tipoReceta: "Principal", 
+    //  fechaCreacion: new Date().toISOString(),
+    //  usuario: {
+    //    alias: "Julian Bonavota", 
+    //  },
+    //  ingredientes: ingredients.map((ingredient, index) => ({
+    //    idIngredienteReceta: index + 1,
+    //    nombre: ingredient.name,
+    //    cantidad: Number.parseFloat(ingredient.quantity) || 0,
+    //    unidadMedida: ingredient.unit || "unidades",
+    //  })),
+    //  pasos: steps.map((step, index) => ({
+    //    orden: index + 1,
+    //    descripcionPaso: step.description,
+    //    imagenPaso: step.image,
+    //  })),
+    //  calificaciones: [],
+    //  comentarios: [],
+    //}
 
     console.log("Datos de la receta:", JSON.stringify(recipeData, null, 2))
 
@@ -126,7 +137,7 @@ const CreateRecipe = () => {
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: "white", paddingTop: insets.top }}>
+    <View style={{ flex: 1, backgroundColor: "white", paddingTop: insets.top }} className="pb-20">
       <StatusBar barStyle="dark-content" backgroundColor="white" />
 
       {/* Header */}
@@ -210,7 +221,7 @@ const CreateRecipe = () => {
             </View>
           </View>
 
-          {ingredients.map((ingredient, index) => (
+          {/*ingredients.map((ingredient, index) => (
             <View key={ingredient.id} className="mb-3">
               <View className="flex-row items-center justify-between mb-2">
                 <Text className="text-gray-700">Ingrediente {index + 1}</Text>
@@ -242,7 +253,7 @@ const CreateRecipe = () => {
                 />
               </View>
             </View>
-          ))}
+          ))*/}
 
           <TouchableOpacity className="bg-gray-200 rounded-lg py-3 items-center mt-2" onPress={addIngredient}>
             <Text className="text-gray-700 font-medium">agregar ingrediente</Text>
@@ -255,7 +266,7 @@ const CreateRecipe = () => {
         <View className="px-4 mb-6">
           <Text className="text-lg font-bold text-gray-800 mb-4">Pasos</Text>
 
-          {steps.map((step, index) => (
+          {/*steps.map((step, index) => (
             <View key={step.id} className="mb-4">
               <View className="flex-row items-center justify-between mb-2">
                 <View className="flex-row items-center">
@@ -295,7 +306,7 @@ const CreateRecipe = () => {
                 )}
               </TouchableOpacity>
             </View>
-          ))}
+          ))*/}
 
           <TouchableOpacity className="bg-gray-200 rounded-lg py-3 items-center mt-2" onPress={addStep}>
             <Text className="text-gray-700 font-medium">Agregar paso</Text>

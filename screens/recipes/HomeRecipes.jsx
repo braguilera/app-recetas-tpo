@@ -167,12 +167,12 @@ const HomeRecipes = () => {
     if (news) {
       return (
         <TouchableOpacity
-          key={recipe.id}
+          key={recipe.idReceta}
           className="mb-4 w-full rounded-xl overflow-hidden bg-slate-500"
-          onPress={() => navigation.navigate("DetailsRecipes", { recipeId: recipe.id })}
+          onPress={() => navigation.navigate("DetailsRecipes", { recipeId: recipe.idReceta })}
         >
           <Image
-            source={{ uri: `https://picsum.photos/seed/${recipe.id}/400/300` }}
+            source={{ uri: `https://picsum.photos/seed/${recipe.idReceta}/400/300` }}
             className="w-full h-40"
             accessibilityLabel={`Imagen de ${recipe.recipeName}`}
           />
@@ -197,35 +197,46 @@ const HomeRecipes = () => {
     } else {
       return (
         <TouchableOpacity
-          key={recipe.id}
-          className="flex-row mb-4 rounded-xl overflow-hidden bg-white w-full"
-          onPress={() => navigation.navigate("DetailsRecipes", { recipeId: recipe.id })}
+          key={recipe.idReceta}
+          className="flex-row mb-4 p-2 rounded-xl  bg-white w-full"
+          onPress={() => navigation.navigate("DetailsRecipes", { recipeId: recipe.idReceta, rating:recipe.averageRating })}
         >
-          <Image
-            source={{ uri: `https://picsum.photos/seed/${recipe.id}/200/200` }}
-            className="w-28 h-28"
+          <View className="w-28 h-28 relative">
+            <Image
+            source={{ uri: `https://picsum.photos/seed/${recipe.idReceta}/200/200` }}
+            className="w-full h-full rounded-lg "
             accessibilityLabel={`Imagen de ${recipe.recipeName}`}
           />
+            <Text className="absolute top-1 left-1 font-bold text-amber-500 text-sm bg-amber-100 px-2 py-1 rounded-lg">{recipe.tipoRecetaDescripcion}</Text>
+          </View>
           <View className="flex-1 p-3">
             <View className="flex-row justify-between items-center mb-1">
-              <Text className="text-lg font-bold">{recipe.recipeName}</Text>
+              <Text className="text-lg font-bold">{recipe.nombreReceta}</Text>
               <View className="flex-row items-center">
                 <AntDesign name="star" size={16} color="#F59E0B" />
                 <Text className="ml-1 text-amber-500 font-medium">{recipe.averageRating}</Text>
               </View>
             </View>
-            <Text className="text-gray-600 text-sm mb-2" numberOfLines={2}>
+            <Text className="text-gray-600 text-sm" numberOfLines={2}>
               Descripción breve de la receta que se muestra aquí para dar una idea del contenido.
             </Text>
             <View className="flex-row items-center">
               <View className="flex-row items-center mr-4">
                 <FontAwesome name="user" size={14} color="#9CA3AF" />
-                <Text className="text-xs text-gray-500 ml-1">Por {recipe.authorName}</Text>
+                <Text className="text-xs text-gray-500 ml-1">Por {recipe.userNickname}</Text>
               </View>
               <View className="flex-row items-center">
                 <AntDesign name="clockcircleo" size={14} color="#9CA3AF" />
                 <Text className="text-xs text-gray-500 ml-1">15 min</Text>
               </View>
+              {/*<View className="flex-row items-center">
+                <AntDesign name="piechart" size={14} color="#9CA3AF" />
+                <Text className="text-xs text-gray-500 ml-1">{recipe.porciones}</Text>
+              </View>
+              <View className="flex-row items-center">
+                <AntDesign name="team" size={14} color="#9CA3AF" />
+                <Text className="text-xs text-gray-500 ml-1">{recipe.cantidadPersonas}</Text>
+              </View>*/}
             </View>
           </View>
         </TouchableOpacity>
@@ -270,7 +281,7 @@ const HomeRecipes = () => {
             data={recipeList.content ? recipeList.content.slice(0, 3) : []}
             horizontal
             showsHorizontalScrollIndicator={false}
-            keyExtractor={(item) => item.id.toString()}
+            keyExtractor={(item) => item.idReceta}
             renderItem={({ item }) => (
               <View style={{ width: 300, marginRight: 16 }}>
                 {renderRecipeCard(item, true)}
@@ -328,9 +339,9 @@ const HomeRecipes = () => {
 
           {/* Category Filters */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
-            {categories.map((category) => (
+            {categories.map((category,index) => (
               <TouchableOpacity
-                key={category}
+                key={index}
                 className={`mr-2 px-3 py-2 rounded-full flex-row items-center ${
                   activeFilter === category ? "bg-amber-400" : "bg-white border border-gray-200"
                 }`}
