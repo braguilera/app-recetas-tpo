@@ -1,18 +1,22 @@
 import { useEffect, useState } from "react"
-import { ScrollView, Text, View, TouchableOpacity, Image, StatusBar } from "react-native"
+import { ScrollView, Text, View, TouchableOpacity, Image, StatusBar, TextInput } from "react-native"
 import { useNavigation, useRoute } from "@react-navigation/native"
 import { AntDesign, FontAwesome } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { getDatos } from "api/crud"
+import { Picker } from "@react-native-picker/picker"
 
 const DetailsRecipes = () => {
   const navigation = useNavigation()
   const route = useRoute()
   const { recipeId, rating } = route.params || {}
   const insets = useSafeAreaInsets()
+
   const [recipe, setRecipe] = useState({})
   const [activeTab, setActiveTab] = useState("ingredientes")
   const [peopleCount, setPeopleCount] = useState(2)
+  const [comentario, setComentario] = useState("")
+  const [puntuacion, setPuntuacion] = useState("5")
 
   const fetchRecipe = async () => {
     try {
@@ -169,31 +173,86 @@ const DetailsRecipes = () => {
           )}
 
           {/* Calificaciones */}
-            {activeTab === "calificaciones" && (
-              <View className="mb-8">
-
-                {recipe.calification.length === 0 ? (
-                  <View className="items-center justify-center p-10">
-                    <Text className="text-gray-400 text-base italic text-center">
-                      🍽️ Aún no hay calificaciones para esta receta.<Text className="text-amber-500"> ¡Sé el primero en dejar tu opinión!</Text>
+          {activeTab === "calificaciones" && (
+            <View className="mb-8">
+              {/* Lista de calificaciones */}
+              {recipe.calification?.length === 0 ? (
+                <View className="items-center justify-center p-10">
+                  <Text className="text-gray-400 text-base italic text-center">
+                    🍽️ Aún no hay calificaciones para esta receta.
+                    <Text className="text-amber-500"> ¡Sé el primero en dejar tu opinión!</Text>
+                  </Text>
+                </View>
+              ) : (
+                (recipe.calification || []).map((r, i) => (
+                  <View
+                    key={i}
+                    className={`mb-4 p-4 rounded-xl shadow-sm ${
+                      i % 2 === 0 ? "bg-white" : "bg-gray-50"
+                    }`}
+                  >
+                    <Text className="text-gray-400 text-sm mb-1">“{r.nombreUsuario}”</Text>
+                    <Text className="text-gray-700 font-semibold mb-1">“{r.comentarios}”</Text>
+                    <Text className="text-sm text-gray-400">
+                      Puntaje: <Text className="text-amber-500 font-bold">{r.calificacion}</Text>
                     </Text>
                   </View>
-                ) : (
-                  (recipe.calification || []).map((r, i) => (
-                    <View
-                      key={i}
-                      className={`mb-4 p-4 rounded-xl shadow-sm ${
-                        i % 2 === 0 ? "bg-white" : "bg-gray-50"
-                      }`}
+                ))
+              )}
+
+              {/* Formulario funcional para nueva calificación */}
+              <View className="mt-6 p-4 bg-white rounded-2xl shadow-sm border border-gray-100">
+                <Text className="text-gray-700 font-bold text-lg mb-2">Deja tu comentario</Text>
+                {/* Calificación */}
+                <View className="mb-4">
+                  <Text className="text-sm text-gray-600 mb-1">Calificación (estrellas)</Text>
+                  <View className="bg-gray-100 rounded-lg px-3 py-1">
+                    <Picker
+                      selectedValue={puntuacion}
+                      onValueChange={(itemValue) => setPuntuacion(itemValue)}
+                      dropdownIconColor="#F59E0B"
                     >
-                      <Text className="text-gray-300  text-sm mb-1">“{r.nombreUsuario}”</Text>
-                      <Text className="text-gray-700 font-semibold mb-1">“{r.comentarios}”</Text>
-                      <Text className="text-sm text-gray-400">Puntaje: <Text className="text-amber-500 font-bold">{r.calificacion}</Text></Text>
-                    </View>
-                  ))
-                )}
+                      <Picker.Item label="⭐ 1" value="1" />
+                      <Picker.Item label="⭐⭐ 2" value="2" />
+                      <Picker.Item label="⭐⭐⭐ 3" value="3" />
+                      <Picker.Item label="⭐⭐⭐⭐ 4" value="4" />
+                      <Picker.Item label="⭐⭐⭐⭐⭐ 5" value="5" />
+                    </Picker>
+                  </View>
+                </View>
+
+                {/* Comentario */}
+                <View className="mb-4">
+                  <Text className="text-sm text-gray-600 mb-1">Comentario</Text>
+                  <TextInput
+                    value={comentario}
+                    onChangeText={setComentario}
+                    placeholder="Escribe aquí tu opinión..."
+                    multiline
+                    className="bg-gray-100 rounded-lg px-2 py-4 text-gray-800"
+                  />
+                </View>
+
+                {/* Botón Enviar */}
+                <TouchableOpacity
+                  className="bg-amber-400 py-3 rounded-full items-center shadow-sm"
+                  onPress={() => {
+                    const nuevoComentario = {
+                      comentario,
+                      puntuacion: parseInt(puntuacion),
+                      idReceta: recipe.idReceta,
+                      fecha: new Date().toISOString(),
+                    }
+                    console.log("Comentario enviado:", JSON.stringify(nuevoComentario, null, 2))
+                  }}
+                >
+                  <Text className="text-white font-semibold">Enviar Comentario</Text>
+                </TouchableOpacity>
               </View>
-            )}
+
+            </View>
+          )}
+
 
         </View>
       </ScrollView>

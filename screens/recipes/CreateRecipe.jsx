@@ -9,6 +9,7 @@ import { Picker } from '@react-native-picker/picker'
 const CreateRecipe = () => {
   const navigation = useNavigation()
   const insets = useSafeAreaInsets()
+  
   const [recipeImage, setRecipeImage] = useState(null)
   const [recipeName, setRecipeName] = useState("")
   const [recipeDescription, setRecipeDescription] = useState("")
