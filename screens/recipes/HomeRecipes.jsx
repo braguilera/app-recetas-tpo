@@ -281,7 +281,7 @@ const HomeRecipes = () => {
           <View className="space-y-4 pb-12">
             {recipeList.content && recipeList.content.length > 0 ? (
               recipeList.content.map((recipe) => (
-                <View key={recipe.id} className="w-full">
+                <View key={recipe.idReceta} className="w-full">
                   <RecipeCardHome recipe={recipe}></RecipeCardHome>
                 </View>
               ))
