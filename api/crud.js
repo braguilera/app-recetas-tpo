@@ -45,7 +45,9 @@ export const getRecipesPaginated = async (params = {}, errorMessage = 'Error al 
     if (params.name) queryParams.append('name', params.name);
     if (params.userName) queryParams.append('userName', params.userName);
     if (params.rating !== undefined) queryParams.append('rating', params.rating);
-    if (params.ingredients !== undefined) queryParams.append('ingredients', params.ingredients);
+    if (params.includeIngredientId !== undefined) queryParams.append('includeIngredientId', params.includeIngredientId);
+    if (params.excludeIngredientId !== undefined) queryParams.append('excludeIngredientId', params.excludeIngredientId);
+    if (params.tipoRecetaId !== undefined) queryParams.append('tipoRecetaId', params.tipoRecetaId);
 
     const url = `${API_CONFIG.BASE_URL}recipe/page${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     

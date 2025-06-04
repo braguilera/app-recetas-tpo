@@ -18,8 +18,10 @@ const HomeRecipes = () => {
   const [nameReceta, setNameReceta] = useState("")
   const [userNameReceta, setUserNameReceta] = useState("")
   const [allIngredients, setAllIngredients] = useState([])
-  const [ingredientRecipe, setIngredientRecipe] = useState("")
-  const [excludedIngredients, setExcludedIngredients] = useState([])
+  const [ingredientRecipe, setIngredientRecipe] = useState(2)
+  const [excludedIngredients, setExcludedIngredients] = useState("")
+  const [typeRecipe, setTypeRecipe] = useState("")
+  const [searchRating, setSearchRating] = useState("")
   const pageSize = 2
 
   const categories = ["Todo", "Pollo", "Hamburguesa", "Ensalada", "Pizza"]
@@ -77,8 +79,10 @@ const HomeRecipes = () => {
         sort: ["nombreReceta", "asc"],
         name: nameReceta,
         userName:userNameReceta,
-        rating:"",
-        ingredients:ingredientRecipe,
+        rating:searchRating,
+        includeIngredientId:ingredientRecipe,
+        excludeIngredientId:excludedIngredients,
+        tipoRecetaId:typeRecipe
       }
       
       const data = await getRecipesPaginated(params, 'Error al cargar recetas')
@@ -116,7 +120,7 @@ const HomeRecipes = () => {
   // Limpiar filtros de manera centralizada
   const clearFilters = () => {
     setIngredientRecipe("")
-    setExcludedIngredients([])
+    setExcludedIngredients("")
     setNameReceta("")
     setUserNameReceta("")
   }
@@ -474,13 +478,13 @@ const HomeRecipes = () => {
                     key={`exclude-${ingredient.idIngrediente}`}
                     onPress={() => {setExcludedIngredients(ingredient.idIngrediente)}}
                     className={`mr-2 mb-2 px-3 py-2 rounded-full border ${
-                      excludedIngredients.includes(ingredient.nombre)
+                      excludedIngredients === ingredient.idIngrediente 
                         ? "bg-red-400 border-red-400" 
                         : "bg-white border-gray-300"
                     }`}
                   >
                     <Text className={`text-sm ${
-                      excludedIngredients.includes(ingredient.nombre)
+                      excludedIngredients === ingredient.idIngrediente 
                         ? "text-white font-medium" 
                         : "text-gray-700"
                     }`}>
