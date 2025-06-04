@@ -18,6 +18,7 @@ const HomeRecipes = () => {
   const [nameReceta, setNameReceta] = useState("")
   const [userNameReceta, setUserNameReceta] = useState("")
   const [allIngredients, setAllIngredients] = useState([])
+  const [allTypes, setAllTypes] = useState([])
   const [ingredientRecipe, setIngredientRecipe] = useState(2)
   const [excludedIngredients, setExcludedIngredients] = useState("")
   const [typeRecipe, setTypeRecipe] = useState("")
@@ -103,6 +104,15 @@ const HomeRecipes = () => {
     }
   }
 
+  const getAllTypes = async () => {
+    try{
+      const data = await getDatos("recipe/types", "Error al obtener todos los ingredientes")
+      setAllTypes(data)
+    } catch (error) {
+      console.error("Error fetching ingredients:", error.message)
+    }
+  }
+  
   const getAllIngredients = async () => {
     try{
       const data = await getDatos("ingridient/find-all", "Error al obtener todos los ingredientes")
@@ -132,6 +142,7 @@ const HomeRecipes = () => {
   useEffect(() => {
     fetchRecipes(0, true);
     getAllIngredients();
+    getAllTypes();
   }, [])
 
   useEffect(() => {
@@ -261,21 +272,31 @@ const HomeRecipes = () => {
 
           {/* Category Filters */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
-            {categories.map((category,index) => (
+              <TouchableOpacity
+                key={"Todo"}
+                className={`mr-2 px-3 py-2 rounded-full flex-row items-center ${
+                  activeFilter === "Todo" ? "bg-amber-400" : "bg-white border border-gray-200"
+                }`}
+                onPress={() => setActiveFilter("Todo")}
+                accessibilityLabel={`Filtrar por todo`}
+                accessibilityState={{ selected: activeFilter === "Todo" }}
+              >
+                <Text className={`${activeFilter === "Todo" ? "text-white font-medium" : "text-gray-700"}`}>
+                  Todo
+                </Text>
+              </TouchableOpacity>
+            {allTypes.map((types,index) => (
               <TouchableOpacity
                 key={index}
                 className={`mr-2 px-3 py-2 rounded-full flex-row items-center ${
-                  activeFilter === category ? "bg-amber-400" : "bg-white border border-gray-200"
+                  activeFilter === types ? "bg-amber-400" : "bg-white border border-gray-200"
                 }`}
-                onPress={() => setActiveFilter(category)}
-                accessibilityLabel={`Filtrar por ${category}`}
-                accessibilityState={{ selected: activeFilter === category }}
+                onPress={() => setActiveFilter(types)}
+                accessibilityLabel={`Filtrar por ${types}`}
+                accessibilityState={{ selected: activeFilter === types }}
               >
-                <Text className={`mr-1 ${activeFilter === category ? "text-white" : "text-gray-700"}`}>
-                  {categoryIcons[category]}
-                </Text>
-                <Text className={`${activeFilter === category ? "text-white font-medium" : "text-gray-700"}`}>
-                  {category}
+                <Text className={`${activeFilter === types ? "text-white font-medium" : "text-gray-700"}`}>
+                  {types.name}
                 </Text>
               </TouchableOpacity>
             ))}

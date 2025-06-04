@@ -1,17 +1,20 @@
-"use client"
-
 import { useEffect, useState } from "react"
 import { ScrollView, Text, View, TouchableOpacity, Image, StatusBar } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { getRecipesPaginated } from "api/crud"
+import { deleteDatos, getRecipesPaginated } from "api/crud"
+import ConfirmModal from "../../components/common/ConfirmModal"
+
 
 const Profile = () => {
   const navigation = useNavigation()
   const insets = useSafeAreaInsets()
   const [activeTab, setActiveTab] = useState("favoritos")
   const [myRecipes, setMyRecipes] = useState([])
+  const [confirmVisible, setConfirmVisible] = useState(false)
+  const [recipeToDelete, setRecipeToDelete] = useState(null)
+
 
   // Datos simulados
   const favoriteCategories = [
@@ -66,6 +69,20 @@ const Profile = () => {
     { id: "calificaciones", name: "Calificaciones" },
   ]
 
+  const confirmDeleteRecipe = async () => {
+    if (!recipeToDelete) return
+    try {
+      await deleteDatos(`recipe/delete/${recipeToDelete.idReceta}`, "Error al borrar la receta")
+      await fetchRecipes(0)
+    } catch (error) {
+      console.error("Error al borrar receta:", error.message)
+    } finally {
+      setConfirmVisible(false)
+      setRecipeToDelete(null)
+    }
+  }
+
+
   const fetchRecipes = async (page = 0) => {
     try {
       const params = {
@@ -89,6 +106,16 @@ const Profile = () => {
       console.error("Error fetching recipes:", error.message)
     }
   }
+  
+  const handleDeleteRecipe = async (idReceta) => {
+    try {
+      await deleteDatos(`recipe/delete/${idReceta}`, "Error al borrar la receta")
+      await fetchRecipes(0)
+    } catch (error) {
+      console.error("Error borrando receta:", error.message)
+    }
+  }
+
   
   useEffect(() => {
     fetchRecipes(0);
@@ -157,12 +184,32 @@ const Profile = () => {
                 <Text className="text-amber-500 ml-2 font-medium">Editar</Text>
               </View>
             </TouchableOpacity>
-            <TouchableOpacity className="flex-1 py-3 items-center">
+            <TouchableOpacity
+              className="flex-1 py-3 items-center"
+              onPress={() => {
+                setRecipeToDelete(recipe)
+                setConfirmVisible(true)
+              }}
+            >
               <View className="flex-row items-center">
                 <AntDesign name="delete" size={16} color="#EF4444" />
                 <Text className="text-red-500 ml-2 font-medium">Eliminar</Text>
               </View>
             </TouchableOpacity>
+            
+            <ConfirmModal
+              visible={confirmVisible}
+              title="¿Eliminar receta?"
+              message="¿Estás seguro de que quieres eliminar esta receta? Esta acción no se puede deshacer."
+              onCancel={() => {
+                setConfirmVisible(false)
+                setRecipeToDelete(null)
+              }}
+              onConfirm={confirmDeleteRecipe}
+            />
+
+
+
           </View>
         </View>
       ))}
