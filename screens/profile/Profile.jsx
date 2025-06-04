@@ -1,15 +1,17 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { ScrollView, Text, View, TouchableOpacity, Image, StatusBar } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
+import { getRecipesPaginated } from "api/crud"
 
 const Profile = () => {
   const navigation = useNavigation()
   const insets = useSafeAreaInsets()
   const [activeTab, setActiveTab] = useState("favoritos")
+  const [myRecipes, setMyRecipes] = useState([])
 
   // Datos simulados
   const favoriteCategories = [
@@ -17,30 +19,6 @@ const Profile = () => {
     { id: 2, name: "Equivalencias", icon: "swap-horizontal", count: 8 },
     { id: 3, name: "Postres", icon: "cupcake", count: 15 },
     { id: 4, name: "Saludables", icon: "leaf", count: 6 },
-  ]
-
-  const myRecipes = [
-    {
-      id: 1,
-      title: "Hamburguesa Clásica",
-      description: "Una deliciosa hamburguesa con carne, queso, lechuga y tomate.",
-      image: "https://picsum.photos/seed/recipe1/300/200",
-      createdAt: "2024-01-15",
-    },
-    {
-      id: 2,
-      title: "Pizza Margarita",
-      description: "Pizza clásica con tomate, mozzarella y albahaca fresca.",
-      image: "https://picsum.photos/seed/recipe2/300/200",
-      createdAt: "2024-01-10",
-    },
-    {
-      id: 3,
-      title: "Ensalada César",
-      description: "Refrescante ensalada con lechuga romana, crutones y aderezo.",
-      image: "https://picsum.photos/seed/recipe3/300/200",
-      createdAt: "2024-01-05",
-    },
   ]
 
   const myCourses = {
@@ -88,6 +66,34 @@ const Profile = () => {
     { id: "calificaciones", name: "Calificaciones" },
   ]
 
+  const fetchRecipes = async (page = 0) => {
+    try {
+      const params = {
+        page: "",
+        size: "",
+        sort: ["nombreReceta", "asc"],
+        name: "",
+        userName: "Mary",
+        rating:"",
+        includeIngredientId:"",
+        excludeIngredientId:"",
+        tipoRecetaId:"",
+      }
+      
+      const data = await getRecipesPaginated(params, 'Error al cargar recetas')
+      setMyRecipes(data)
+      console.log(data)
+      
+      //setCurrentPage(page)
+    } catch (error) {
+      console.error("Error fetching recipes:", error.message)
+    }
+  }
+  
+  useEffect(() => {
+    fetchRecipes(0);
+  }, [])
+
   const renderStars = (rating) => {
     return Array.from({ length: 5 }, (_, index) => (
       <AntDesign key={index} name="star" size={14} color={index < rating ? "#F59E0B" : "#E5E7EB"} />
@@ -123,19 +129,24 @@ const Profile = () => {
 
   const renderMisRecetas = () => (
     <View className="p-4">
-      {myRecipes.map((recipe) => (
-        <View key={recipe.id} className="bg-white rounded-xl mb-4 overflow-hidden border border-gray-100 shadow-sm">
+      {myRecipes.content.map((recipe) => (
+        <View key={recipe.idReceta} className="bg-white rounded-xl mb-4 overflow-hidden border border-gray-100 shadow-sm">
           <TouchableOpacity
-            onPress={() => navigation.navigate("DetailsRecipes", { recipeId: recipe.id })}
+            onPress={() => navigation.navigate("DetailsRecipes", { recipeId: recipe.idReceta })}
             className="flex-row"
           >
-            <Image source={{ uri: recipe.image }} className="w-24 h-24" />
+            <Image source={{uri: `https://picsum.photos/seed/${recipe.idReceta}/200/200`}} className="w-24 h-24" />
             <View className="flex-1 p-4">
-              <Text className="text-lg font-bold text-gray-800 mb-1">{recipe.title}</Text>
-              <Text className="text-gray-600 text-sm mb-2" numberOfLines={2}>
-                {recipe.description}
+              <View className="flex-row justify-between items-center mb-1">
+                  <Text className="text-lg font-bold">{recipe.nombreReceta}</Text>
+                  <View className="flex-row items-center">
+                  <AntDesign name="star" size={16} color="#F59E0B" />
+                  <Text className="ml-1 text-amber-500 font-medium">{recipe.averageRating}</Text>
+                  </View>
+              </View>
+              <Text className="text-gray-600 text-sm" numberOfLines={2}>
+                  Descripción breve de la receta que se muestra aquí para dar una idea del contenido.
               </Text>
-              <Text className="text-gray-400 text-xs">Creada el {recipe.createdAt}</Text>
             </View>
           </TouchableOpacity>
 
