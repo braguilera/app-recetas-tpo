@@ -5,6 +5,7 @@ import { AntDesign } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { getDatos, postDatos } from "api/crud"
 import { Picker } from '@react-native-picker/picker'
+import UploadMediaFile from "components/utils/UploadMediaFIle"
 
 const CreateRecipe = () => {
   const navigation = useNavigation()
@@ -172,19 +173,7 @@ const CreateRecipe = () => {
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Imagen de la receta */}
         <View className="p-4">
-          <TouchableOpacity
-            className="bg-gray-100 rounded-xl h-40 items-center justify-center border-2 border-dashed border-gray-300"
-            onPress={() => handleImageUpload("recipe")}
-          >
-            {recipeImage ? (
-              <Image source={{ uri: recipeImage }} className="w-full h-full rounded-xl" />
-            ) : (
-              <View className="items-center">
-                <AntDesign name="upload" size={32} color="#9CA3AF" />
-                <Text className="text-gray-500 mt-2">cargar imagen</Text>
-              </View>
-            )}
-          </TouchableOpacity>
+          <UploadMediaFile></UploadMediaFile>
         </View>
 
         {/* Información básica */}
