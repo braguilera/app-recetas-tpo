@@ -67,7 +67,7 @@ const HomeCourses = () => {
             <Text className="text-xl font-bold text-gray-800">YOURI</Text>
           </View>
           <TouchableOpacity
-            onPress={() => navigation.navigate("AuthStack", { screen: "Login" })}
+            onPress={() => navigation.navigate("ProfileStack", { screen: "ProfileScreen" })}
           >
             <Image
               source={{ uri: "https://randomuser.me/api/portraits/men/1.jpg" }}

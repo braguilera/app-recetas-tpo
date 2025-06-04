@@ -20,14 +20,36 @@ import VerifyCode from "screens/auth/VerifyCode"
 import ForgotPassword from "screens/auth/ForgotPassword"
 import ResetPassword from "screens/auth/ResetPassword"
 import SuccessScreen from "screens/auth/SuccessScreen"
+import ProfileScreen from "screens/profile/Profile"
+import EditProfile from "screens/profile/EditProfile"
+import SaveRecipe from "screens/profile/SaveRecipe"
 
 const Tab = createBottomTabNavigator()
 const RecipesStack = createNativeStackNavigator()
 const CoursesStack = createNativeStackNavigator()
 const AuthStack = createNativeStackNavigator()
 const RootStack = createNativeStackNavigator()
+const ProfileStack = createNativeStackNavigator()
 
-// Stack de autenticación completo
+// Stack de prfile
+function ProfileStackScreen() {
+  return (
+    <ProfileStack.Navigator
+      screenOptions={{
+        headerShown: false,
+        animation: "slide_from_right",
+        contentStyle: { backgroundColor: "#FEF3E2" },
+      }}
+    >
+      <ProfileStack.Screen name="ProfileScreen" component={ProfileScreen} />
+      <ProfileStack.Screen name="EditProfile" component={EditProfile} />
+      <ProfileStack.Screen name="SaveRecipe" component={SaveRecipe} />
+      <ProfileStack.Screen name="VerifyCode" component={VerifyCode} />
+    </ProfileStack.Navigator>
+  )
+}
+
+// Stack de autenticación
 function AuthStackScreen() {
   return (
     <AuthStack.Navigator
@@ -149,6 +171,15 @@ export default function Navigation() {
           <RootStack.Screen
             name="AuthStack"
             component={AuthStackScreen}
+            options={{
+              presentation: "modal",
+              gestureEnabled: true,
+            }}
+          />
+          
+          <RootStack.Screen
+            name="ProfileStack"
+            component={ProfileStackScreen}
             options={{
               presentation: "modal",
               gestureEnabled: true,
