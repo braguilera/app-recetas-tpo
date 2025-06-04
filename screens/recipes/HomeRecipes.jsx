@@ -4,6 +4,8 @@ import { useNavigation } from "@react-navigation/native"
 import { AntDesign, FontAwesome, Ionicons, Entypo  } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { getDatos, getRecipesPaginated } from "api/crud"
+import RecipeCardCarrousel from "components/recipes/RecipeCardCarrousel"
+import RecipeCardHome from "components/recipes/RecipeCardHome"
 
 const HomeRecipes = () => {
   const navigation = useNavigation()
@@ -160,87 +162,6 @@ const HomeRecipes = () => {
     setNameReceta(text)
   }
 
-  const renderRecipeCard = (recipe, news = false) => {
-    if (news) {
-      return (
-        <TouchableOpacity
-          key={recipe.idReceta}
-          className="mb-4 w-full rounded-xl overflow-hidden bg-slate-500"
-          onPress={() => navigation.navigate("DetailsRecipes", { recipeId: recipe.idReceta })}
-        >
-          <Image
-            source={{ uri: `https://picsum.photos/seed/${recipe.idReceta}/400/300` }}
-            className="w-full h-40"
-            accessibilityLabel={`Imagen de ${recipe.recipeName}`}
-          />
-          <View className="p-3">
-            <Text className="text-lg font-bold text-white">{recipe.recipeName}</Text>
-            <Text className="text-gray-300 text-sm mb-2" numberOfLines={2}>
-              Descripción breve de la receta que se muestra aquí para dar una idea del contenido.
-            </Text>
-            <View className="flex-row justify-between items-center">
-              <View className="flex-row items-center">
-                <AntDesign name="star" size={16} color="#F59E0B" />
-                <Text className="ml-1 text-amber-400 font-medium">{recipe.averageRating}</Text>
-              </View>
-              <View className="flex-row items-center">
-                <AntDesign name="clockcircleo" size={14} color="#D1D5DB" />
-                <Text className="text-xs text-gray-300 ml-1">15 min</Text>
-              </View>
-            </View>
-          </View>
-        </TouchableOpacity>
-      )
-    } else {
-      return (
-        <TouchableOpacity
-          key={recipe.idReceta}
-          className="flex-row mb-4 p-2 rounded-xl  bg-white w-full"
-          onPress={() => navigation.navigate("DetailsRecipes", { recipeId: recipe.idReceta, rating:recipe.averageRating })}
-        >
-          <View className="w-28 h-28 relative">
-            <Image
-            source={{ uri: `https://picsum.photos/seed/${recipe.idReceta}/200/200` }}
-            className="w-full h-full rounded-lg "
-            accessibilityLabel={`Imagen de ${recipe.recipeName}`}
-          />
-            <Text className="absolute top-1 left-1 font-bold text-amber-500 text-sm bg-amber-100 px-2 py-1 rounded-lg">{recipe.tipoRecetaDescripcion}</Text>
-          </View>
-          <View className="flex-1 p-3">
-            <View className="flex-row justify-between items-center mb-1">
-              <Text className="text-lg font-bold">{recipe.nombreReceta}</Text>
-              <View className="flex-row items-center">
-                <AntDesign name="star" size={16} color="#F59E0B" />
-                <Text className="ml-1 text-amber-500 font-medium">{recipe.averageRating}</Text>
-              </View>
-            </View>
-            <Text className="text-gray-600 text-sm" numberOfLines={2}>
-              Descripción breve de la receta que se muestra aquí para dar una idea del contenido.
-            </Text>
-            <View className="flex-row items-center">
-              <View className="flex-row items-center mr-4">
-                <FontAwesome name="user" size={14} color="#9CA3AF" />
-                <Text className="text-xs text-gray-500 ml-1">Por {recipe.userNickname}</Text>
-              </View>
-              <View className="flex-row items-center">
-                <AntDesign name="clockcircleo" size={14} color="#9CA3AF" />
-                <Text className="text-xs text-gray-500 ml-1">15 min</Text>
-              </View>
-              {/*<View className="flex-row items-center">
-                <AntDesign name="piechart" size={14} color="#9CA3AF" />
-                <Text className="text-xs text-gray-500 ml-1">{recipe.porciones}</Text>
-              </View>
-              <View className="flex-row items-center">
-                <AntDesign name="team" size={14} color="#9CA3AF" />
-                <Text className="text-xs text-gray-500 ml-1">{recipe.cantidadPersonas}</Text>
-              </View>*/}
-            </View>
-          </View>
-        </TouchableOpacity>
-      )
-    }
-  }
-
   return (
     <View style={{ flex: 1, backgroundColor: "#F5F3E4", paddingTop: insets.top }}>
       <StatusBar barStyle="dark-content" backgroundColor="#F5F3E4" />
@@ -281,7 +202,7 @@ const HomeRecipes = () => {
             keyExtractor={(item) => item.idReceta}
             renderItem={({ item }) => (
               <View style={{ width: 300, marginRight: 16 }}>
-                {renderRecipeCard(item, true)}
+                <RecipeCardCarrousel recipe={item}></RecipeCardCarrousel>
               </View>
             )}
             className="mb-4"
@@ -361,7 +282,7 @@ const HomeRecipes = () => {
             {recipeList.content && recipeList.content.length > 0 ? (
               recipeList.content.map((recipe) => (
                 <View key={recipe.id} className="w-full">
-                  {renderRecipeCard(recipe)}
+                  <RecipeCardHome recipe={recipe}></RecipeCardHome>
                 </View>
               ))
             ) : (
