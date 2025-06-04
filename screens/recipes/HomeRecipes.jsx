@@ -9,7 +9,7 @@ import RecipeCardHome from "components/recipes/RecipeCardHome"
 
 const HomeRecipes = () => {
   const navigation = useNavigation()
-  const [activeFilter, setActiveFilter] = useState("Todo")
+  const [activeFilter, setActiveFilter] = useState("")
   const insets = useSafeAreaInsets()
   const [recipeList, setRecipeList] = useState({})
   const [currentPage, setCurrentPage] = useState(0)
@@ -24,16 +24,6 @@ const HomeRecipes = () => {
   const [typeRecipe, setTypeRecipe] = useState("")
   const [searchRating, setSearchRating] = useState("")
   const pageSize = 2
-
-  const categories = ["Todo", "Pollo", "Hamburguesa", "Ensalada", "Pizza"]
-
-  const categoryIcons = {
-    Todo: "🍽️",
-    Pollo: "🍗",
-    Hamburguesa: "🍔",
-    Ensalada: "🥗",
-    Pizza: "🍕",
-  }
 
   const getPaginationNumbers = () => {
     const totalPages = recipeList.totalPages || 1
@@ -153,6 +143,11 @@ const HomeRecipes = () => {
     return () => clearTimeout(timeoutId)
   }, [nameReceta])
 
+  useEffect(() => {
+    setCurrentPage(0)
+    fetchRecipes(0, true)
+  }, [activeFilter])
+
   // useEffect para userName
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -224,7 +219,7 @@ const HomeRecipes = () => {
           />
 
           {/* Pagination Dots */}
-          <View className="flex-row justify-center mb-4">
+          <View className="flex-row justify-center">
             {[0, 1, 2].map((index) => (
               <View
                 key={index}
@@ -275,13 +270,13 @@ const HomeRecipes = () => {
               <TouchableOpacity
                 key={"Todo"}
                 className={`mr-2 px-3 py-2 rounded-full flex-row items-center ${
-                  activeFilter === "Todo" ? "bg-amber-400" : "bg-white border border-gray-200"
+                  activeFilter === "" ? "bg-amber-400" : "bg-white border border-gray-200"
                 }`}
-                onPress={() => setActiveFilter("Todo")}
+                onPress={() => setActiveFilter("")}
                 accessibilityLabel={`Filtrar por todo`}
-                accessibilityState={{ selected: activeFilter === "Todo" }}
+                accessibilityState={{ selected: activeFilter === "" }}
               >
-                <Text className={`${activeFilter === "Todo" ? "text-white font-medium" : "text-gray-700"}`}>
+                <Text className={`${activeFilter === "" ? "text-white font-medium" : "text-gray-700"}`}>
                   Todo
                 </Text>
               </TouchableOpacity>
@@ -289,13 +284,13 @@ const HomeRecipes = () => {
               <TouchableOpacity
                 key={index}
                 className={`mr-2 px-3 py-2 rounded-full flex-row items-center ${
-                  activeFilter === types ? "bg-amber-400" : "bg-white border border-gray-200"
+                  activeFilter === types.id ? "bg-amber-400" : "bg-white border border-gray-200"
                 }`}
-                onPress={() => setActiveFilter(types)}
+                onPress={() => (setActiveFilter(types.id), setTypeRecipe(types.id))}
                 accessibilityLabel={`Filtrar por ${types}`}
-                accessibilityState={{ selected: activeFilter === types }}
+                accessibilityState={{ selected: activeFilter === types.id }}
               >
-                <Text className={`${activeFilter === types ? "text-white font-medium" : "text-gray-700"}`}>
+                <Text className={`${activeFilter === types.id ? "text-white font-medium" : "text-gray-700"}`}>
                   {types.name}
                 </Text>
               </TouchableOpacity>
