@@ -20,18 +20,20 @@ import VerifyCode from "screens/auth/VerifyCode"
 import ForgotPassword from "screens/auth/ForgotPassword"
 import ResetPassword from "screens/auth/ResetPassword"
 import SuccessScreen from "screens/auth/SuccessScreen"
-import ProfileScreen from "screens/profile/Profile"
+import Profile from "screens/profile/Profile"
 import EditProfile from "screens/profile/EditProfile"
 import SaveRecipe from "screens/profile/SaveRecipe"
+import MyCourses from "screens/profile/MyCourses"
+import ScanQR from "screens/profile/ScanQR"
 
 const Tab = createBottomTabNavigator()
 const RecipesStack = createNativeStackNavigator()
 const CoursesStack = createNativeStackNavigator()
 const AuthStack = createNativeStackNavigator()
-const RootStack = createNativeStackNavigator()
 const ProfileStack = createNativeStackNavigator()
+const RootStack = createNativeStackNavigator()
 
-// Stack de prfile
+// Stack de perfil
 function ProfileStackScreen() {
   return (
     <ProfileStack.Navigator
@@ -41,15 +43,18 @@ function ProfileStackScreen() {
         contentStyle: { backgroundColor: "#FEF3E2" },
       }}
     >
-      <ProfileStack.Screen name="ProfileScreen" component={ProfileScreen} />
+      <ProfileStack.Screen name="Profile" component={Profile} />
       <ProfileStack.Screen name="EditProfile" component={EditProfile} />
       <ProfileStack.Screen name="SaveRecipe" component={SaveRecipe} />
-      <ProfileStack.Screen name="VerifyCode" component={VerifyCode} />
+      <ProfileStack.Screen name="MyCourses" component={MyCourses} />
+      <ProfileStack.Screen name="ScanQR" component={ScanQR} />
+      <ProfileStack.Screen name="DetailsRecipes" component={DetailsRecipes} />
+      <ProfileStack.Screen name="DetailsCourses" component={DetailsCourses} />
     </ProfileStack.Navigator>
   )
 }
 
-// Stack de autenticación
+// Stack de autenticación completo
 function AuthStackScreen() {
   return (
     <AuthStack.Navigator
@@ -126,7 +131,7 @@ function MyTabs() {
         tabBarActiveTintColor: "#F59E0B",
         tabBarInactiveTintColor: "#9CA3AF",
       }}
-    >         
+    >
       <Tab.Screen
         name="Recetas"
         component={RecipesStackScreen}
@@ -138,9 +143,7 @@ function MyTabs() {
         name="Cursos"
         component={CoursesStackScreen}
         options={{
-          tabBarIcon: ({ color, size }) => (
-            <MaterialCommunityIcons name="school" color={color} size={size} />
-          ),
+          tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name="school" color={color} size={size} />,
         }}
       />
     </Tab.Navigator>
@@ -176,7 +179,8 @@ export default function Navigation() {
               gestureEnabled: true,
             }}
           />
-          
+
+          {/* Stack de perfil */}
           <RootStack.Screen
             name="ProfileStack"
             component={ProfileStackScreen}

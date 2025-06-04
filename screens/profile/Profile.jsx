@@ -1,3 +1,5 @@
+"use client"
+
 import { useState } from "react"
 import { ScrollView, Text, View, TouchableOpacity, Image, StatusBar } from "react-native"
 import { useNavigation } from "@react-navigation/native"
@@ -99,9 +101,12 @@ const Profile = () => {
           <TouchableOpacity
             key={category.id}
             className="w-[48%] bg-white rounded-xl p-4 mb-4 border border-gray-100 shadow-sm"
-            onPress={() => {
-              // Navegar a la pantalla de recetas guardadas de esa categoría
-            }}
+            onPress={() =>
+              navigation.navigate("SaveRecipe", {
+                categoryId: category.id,
+                categoryName: category.name,
+              })
+            }
           >
             <View className="items-center">
               <View className="w-16 h-16 bg-amber-100 rounded-full items-center justify-center mb-3">
@@ -159,7 +164,14 @@ const Profile = () => {
       <Text className="text-lg font-bold text-gray-800 mb-4">Cursos en progreso</Text>
       {myCourses.active.map((course) => (
         <View key={course.id} className="bg-white rounded-xl mb-4 p-4 border border-gray-100 shadow-sm">
-          <TouchableOpacity onPress={() => navigation.navigate("DetailsCourses", { courseId: course.id })}>
+          <TouchableOpacity
+            onPress={() =>
+              navigation.navigate("MyCourses", {
+                courseId: course.id,
+                isActive: true,
+              })
+            }
+          >
             <Text className="text-lg font-bold text-gray-800 mb-1">{course.name}</Text>
             <Text className="text-gray-600 text-sm mb-3">Instructor: {course.instructor}</Text>
 
@@ -187,7 +199,12 @@ const Profile = () => {
         <TouchableOpacity
           key={course.id}
           className="bg-green-50 rounded-xl mb-4 p-4 border border-green-100"
-          onPress={() => navigation.navigate("DetailsCourses", { courseId: course.id })}
+          onPress={() =>
+            navigation.navigate("MyCourses", {
+              courseId: course.id,
+              isActive: false,
+            })
+          }
         >
           <Text className="text-lg font-bold text-gray-800 mb-1">{course.name}</Text>
           <Text className="text-gray-600 text-sm mb-1">Instructor: {course.instructor}</Text>
@@ -250,11 +267,12 @@ const Profile = () => {
           </TouchableOpacity>
 
           <View className="flex-row items-center flex-1 ml-4">
-          <Image source={{ uri: "https://randomuser.me/api/portraits/men/1.jpg" }} className="w-16 h-16 rounded-full mr-4" />
-
+            <View className="w-12 h-12 bg-black rounded-full items-center justify-center mr-3">
+              <AntDesign name="user" size={24} color="white" />
+            </View>
             <View className="flex-1">
               <Text className="text-lg font-bold text-gray-800">Julian Bonavota</Text>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={() => navigation.navigate("EditProfile")}>
                 <Text className="text-amber-600 text-sm">Editar perfil</Text>
               </TouchableOpacity>
             </View>
