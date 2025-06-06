@@ -1,21 +1,27 @@
 import { API_CONFIG } from './config';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // Importa AsyncStorage
 
 // Headers 
-const getHeaders = () => ({
-  'Content-Type': 'application/json'
-});
+const getHeaders = async () => { // Hacer la función asíncrona
+    const token = await AsyncStorage.getItem('token'); // Obtener token de AsyncStorage
+    return {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+    };
+};
 
-// Manejador de respuestas
+// Manejador de respuestas (sin cambios significativos)
 const handleResponse = async (response, errorMessage) => {
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorMessage || errorData.message || 'Error desconocido');
   }
   const text = await response.text();
-  if (!text) return [];
+  if (!text) return {}; // Devuelve un objeto vacío si no hay texto para evitar errores de parseo
   try {
     return JSON.parse(text);
   } catch (error) {
+    // Si no es un JSON, devuelve el texto directamente
     return text;
   }
 };
@@ -24,7 +30,7 @@ const handleResponse = async (response, errorMessage) => {
 export const getDatos = async (endpoint, errorMessage = 'Error al obtener datos') => {
   try {
     const response = await fetch(`${API_CONFIG.BASE_URL}${endpoint}`, {
-      headers: getHeaders()
+      headers: await getHeaders() // Espera a que getHeaders resuelva
     });
     return handleResponse(response, errorMessage);
   } catch (error) {
@@ -52,7 +58,22 @@ export const getRecipesPaginated = async (params = {}, errorMessage = 'Error al 
     const url = `${API_CONFIG.BASE_URL}recipe/page${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
     
     const response = await fetch(url, {
-      headers: getHeaders()
+      headers: await getHeaders()
+    });
+    return handleResponse(response, errorMessage);
+  } catch (error) {
+    throw new Error(`${errorMessage}: ${error.message}`);
+  }
+};
+
+// Nueva función GET con query parameters (para la verificación del código)
+export const getDatosConQueryParams = async (endpoint, params = {}, errorMessage = 'Error al obtener datos') => {
+  try {
+    const queryParams = new URLSearchParams(params);
+    const url = `${API_CONFIG.BASE_URL}${endpoint}?${queryParams.toString()}`;
+    
+    const response = await fetch(url, {
+      headers: await getHeaders()
     });
     return handleResponse(response, errorMessage);
   } catch (error) {
@@ -65,7 +86,7 @@ export const postDatos = async (endpoint, data, errorMessage = 'Error al crear r
   try {
     const response = await fetch(`${API_CONFIG.BASE_URL}${endpoint}`, {
       method: 'POST',
-      headers: getHeaders(),
+      headers: await getHeaders(), // Espera a que getHeaders resuelva
       body: JSON.stringify(data)
     });
     return handleResponse(response, errorMessage);
@@ -79,7 +100,7 @@ export const putDatos = async (endpoint, data, errorMessage = 'Error al actualiz
   try {
     const response = await fetch(`${API_CONFIG.BASE_URL}${endpoint}`, {
       method: 'PUT',
-      headers: getHeaders(),
+      headers: await getHeaders(), // Espera a que getHeaders resuelva
       body: JSON.stringify(data)
     });
     return handleResponse(response, errorMessage);
@@ -93,7 +114,7 @@ export const deleteDatos = async (endpoint, errorMessage = 'Error al eliminar re
   try {
     const response = await fetch(`${API_CONFIG.BASE_URL}${endpoint}`, {
       method: 'DELETE',
-      headers: getHeaders()
+      headers: await getHeaders() // Espera a que getHeaders resuelva
     });
     return handleResponse(response, errorMessage);
   } catch (error) {
