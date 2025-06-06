@@ -1,13 +1,17 @@
-import { useEffect, useState } from "react"
-import { ScrollView, Text, View, TouchableOpacity, Image, TextInput, FlatList, StatusBar } from "react-native"
+import { useContext, useEffect, useState } from "react"
+import { ScrollView, Text, View, TouchableOpacity, Image, TextInput, FlatList, StatusBar, Alert } from "react-native" // Importa Alert
 import { useNavigation } from "@react-navigation/native"
-import { AntDesign, FontAwesome, Ionicons, Entypo  } from "@expo/vector-icons"
+import { AntDesign, FontAwesome, Ionicons, Entypo } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { getDatos, getRecipesPaginated } from "api/crud"
+import { getDatos, getRecipesPaginated, postDatos } from "api/crud"
 import RecipeCardCarrousel from "components/recipes/RecipeCardCarrousel"
 import RecipeCardHome from "components/recipes/RecipeCardHome"
+import { Contexto } from "contexto/Provider" // Importa el Contexto
 
 const HomeRecipes = () => {
+  // Obtén logeado, userId y la función logout del contexto
+  const { logeado, userId, logout } = useContext(Contexto); 
+
   const navigation = useNavigation()
   const [activeFilter, setActiveFilter] = useState("")
   const insets = useSafeAreaInsets()
@@ -19,7 +23,7 @@ const HomeRecipes = () => {
   const [userNameReceta, setUserNameReceta] = useState("")
   const [allIngredients, setAllIngredients] = useState([])
   const [allTypes, setAllTypes] = useState([])
-  const [ingredientRecipe, setIngredientRecipe] = useState(2)
+  const [ingredientRecipe, setIngredientRecipe] = useState("") // Cambiado a "" para "Todos"
   const [excludedIngredients, setExcludedIngredients] = useState("")
   const [typeRecipe, setTypeRecipe] = useState("")
   const [searchRating, setSearchRating] = useState("")
@@ -71,7 +75,8 @@ const HomeRecipes = () => {
         name: nameReceta,
         userName:userNameReceta,
         rating:searchRating,
-        includeIngredientId:ingredientRecipe,
+        // Envía el ingredientRecipe solo si no es ""
+        includeIngredientId: ingredientRecipe !== "" ? ingredientRecipe : undefined, 
         excludeIngredientId:excludedIngredients,
         tipoRecetaId:typeRecipe
       }
@@ -123,6 +128,9 @@ const HomeRecipes = () => {
     setExcludedIngredients("")
     setNameReceta("")
     setUserNameReceta("")
+    setSearchRating("")
+    setTypeRecipe("")
+    setActiveFilter("") // Limpiar el filtro de categoría también
   }
 
   const handleSearchUserName = (text) => {
@@ -143,10 +151,11 @@ const HomeRecipes = () => {
     return () => clearTimeout(timeoutId)
   }, [nameReceta])
 
+  // Ajuste en este useEffect para que use typeRecipe
   useEffect(() => {
     setCurrentPage(0)
     fetchRecipes(0, true)
-  }, [activeFilter])
+  }, [typeRecipe]) // Usar typeRecipe aquí en lugar de activeFilter
 
   // useEffect para userName
   useEffect(() => {
@@ -159,7 +168,8 @@ const HomeRecipes = () => {
 
   // Nuevo useEffect para detectar cambios en los filtros de ingredientes
   useEffect(() => {
-    if (ingredientRecipe !== undefined) {
+    // Solo dispara la búsqueda si ingredientRecipe o excludedIngredients no son undefined
+    if (ingredientRecipe !== undefined && excludedIngredients !== undefined) {
       const timeoutId = setTimeout(() => {
         setCurrentPage(0)
         fetchRecipes(0, true)
@@ -184,19 +194,33 @@ const HomeRecipes = () => {
             </View>
             <Text className="text-xl font-bold text-gray-800">YOURI</Text>
           </View>
-          <TouchableOpacity
-            onPress={() => navigation.navigate("AuthStack", { screen: "Login" })}
-          >
-            <Image
-              source={{ uri: "https://randomuser.me/api/portraits/men/1.jpg" }}
-              className="w-10 h-10 rounded-full"
-              accessibilityLabel="Perfil de usuario"
-            />
-          </TouchableOpacity>
+          {logeado ? ( // Usa logeado del contexto para mostrar el mensaje
+            <TouchableOpacity
+              onPress={() => navigation.navigate("ProfileStack", { screen: "ProfileScreen" })}
+            >
+              {/* Aquí podrías mostrar el avatar del usuario logueado o un icono de login */}
+              <Image
+                source={{ uri: "https://randomuser.me/api/portraits/men/1.jpg" }}
+                className="w-10 h-10 rounded-full"
+                accessibilityLabel="Perfil de usuario"
+              />
+            </TouchableOpacity>
+          ) : (
+              <TouchableOpacity 
+                onPress={() => navigation.navigate("AuthStack", { screen: "Login" })} 
+                className="px-3 py-1 bg-blue-500 rounded-md"
+              >
+                <Text className="text-white font-medium">Iniciar Sesión</Text>
+              </TouchableOpacity>
+          )}
+
         </View>
 
-        {/* Latest Recipes */}
+        {/* Mensaje de bienvenida y botón de cerrar sesión */}
         <View className="p-4">
+
+
+          {/* Latest Recipes */}
           <View className="flex-row justify-between items-center mb-4">
             <Text className="text-xl font-bold text-gray-800">Ultimas Recetas</Text>
             <View className="bg-amber-100 px-2 py-1 rounded-md">
@@ -272,7 +296,7 @@ const HomeRecipes = () => {
                 className={`mr-2 px-3 py-2 rounded-full flex-row items-center ${
                   activeFilter === "" ? "bg-amber-400" : "bg-white border border-gray-200"
                 }`}
-                onPress={() => setActiveFilter("")}
+                onPress={() => (setActiveFilter(""), setTypeRecipe(""))} // También limpiar typeRecipe
                 accessibilityLabel={`Filtrar por todo`}
                 accessibilityState={{ selected: activeFilter === "" }}
               >
@@ -383,14 +407,16 @@ const HomeRecipes = () => {
       </ScrollView>
 
       {/* Create recipe */}
-      <TouchableOpacity
-        className="absolute bottom-20 right-6 bg-amber-400 w-14 h-14 rounded-full items-center justify-center shadow-lg"
-        onPress={() => navigation.navigate("CreateRecipe")}
-        accessibilityLabel="Añadir nueva receta"
-        style={{ bottom: insets.bottom + 70 }}
-      >
-        <AntDesign name="plus" size={24} color="white" />
-      </TouchableOpacity>
+      {logeado &&
+        <TouchableOpacity
+          className="absolute bottom-20 right-6 bg-amber-400 w-14 h-14 rounded-full items-center justify-center shadow-lg"
+          onPress={() => navigation.navigate("CreateRecipe")}
+          accessibilityLabel="Añadir nueva receta"
+          style={{ bottom: insets.bottom + 70 }}
+        >
+          <AntDesign name="plus" size={24} color="white" />
+        </TouchableOpacity>
+      }
 
       
       {showFilter &&
@@ -489,6 +515,22 @@ const HomeRecipes = () => {
               <Text className="text-sm text-gray-600 mb-3">Selecciona ingredientes que NO quieres en la receta:</Text>
               
               <View className="flex-row flex-wrap">
+                <TouchableOpacity
+                  onPress={() => setExcludedIngredients("")}
+                  className={`mr-2 mb-2 px-3 py-2 rounded-full border ${
+                    excludedIngredients === "" 
+                      ? "bg-blue-400 border-blue-400"
+                      : "bg-white border-gray-300"
+                  }`}
+                >
+                  <Text className={`text-sm ${
+                    excludedIngredients === "" 
+                      ? "text-white font-medium" 
+                      : "text-gray-700"
+                  }`}>
+                    Ninguno
+                  </Text>
+                </TouchableOpacity>
                 {allIngredients.map(ingredient => (
                   <TouchableOpacity
                     key={`exclude-${ingredient.idIngrediente}`}

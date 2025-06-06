@@ -1,12 +1,15 @@
-import { useEffect, useState } from "react"
+import { useContext, useEffect, useState } from "react"
 import { ScrollView, Text, View, TouchableOpacity, Image, StatusBar, TextInput } from "react-native"
 import { useNavigation, useRoute } from "@react-navigation/native"
 import { AntDesign, FontAwesome } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { getDatos } from "api/crud"
 import { Picker } from "@react-native-picker/picker"
+import { Contexto } from "contexto/Provider"
 
 const DetailsRecipes = () => {
+  const { logeado} = useContext(Contexto); 
+  
   const navigation = useNavigation()
   const route = useRoute()
   const { recipeId, rating } = route.params || {}
@@ -201,54 +204,56 @@ const DetailsRecipes = () => {
               )}
 
               {/* Formulario funcional para nueva calificación */}
-              <View className="mt-6 p-4 bg-white rounded-2xl shadow-sm border border-gray-100">
-                <Text className="text-gray-700 font-bold text-lg mb-2">Deja tu comentario</Text>
-                {/* Calificación */}
-                <View className="mb-4">
-                  <Text className="text-sm text-gray-600 mb-1">Calificación (estrellas)</Text>
-                  <View className="bg-gray-100 rounded-lg px-3 py-1">
-                    <Picker
-                      selectedValue={puntuacion}
-                      onValueChange={(itemValue) => setPuntuacion(itemValue)}
-                      dropdownIconColor="#F59E0B"
-                    >
-                      <Picker.Item label="⭐ 1" value="1" />
-                      <Picker.Item label="⭐⭐ 2" value="2" />
-                      <Picker.Item label="⭐⭐⭐ 3" value="3" />
-                      <Picker.Item label="⭐⭐⭐⭐ 4" value="4" />
-                      <Picker.Item label="⭐⭐⭐⭐⭐ 5" value="5" />
-                    </Picker>
+              {logeado &&
+                <View className="mt-6 p-4 bg-white rounded-2xl shadow-sm border border-gray-100">
+                  <Text className="text-gray-700 font-bold text-lg mb-2">Deja tu comentario</Text>
+                  {/* Calificación */}
+                  <View className="mb-4">
+                    <Text className="text-sm text-gray-600 mb-1">Calificación (estrellas)</Text>
+                    <View className="bg-gray-100 rounded-lg px-3 py-1">
+                      <Picker
+                        selectedValue={puntuacion}
+                        onValueChange={(itemValue) => setPuntuacion(itemValue)}
+                        dropdownIconColor="#F59E0B"
+                      >
+                        <Picker.Item label="⭐ 1" value="1" />
+                        <Picker.Item label="⭐⭐ 2" value="2" />
+                        <Picker.Item label="⭐⭐⭐ 3" value="3" />
+                        <Picker.Item label="⭐⭐⭐⭐ 4" value="4" />
+                        <Picker.Item label="⭐⭐⭐⭐⭐ 5" value="5" />
+                      </Picker>
+                    </View>
                   </View>
-                </View>
 
-                {/* Comentario */}
-                <View className="mb-4">
-                  <Text className="text-sm text-gray-600 mb-1">Comentario</Text>
-                  <TextInput
-                    value={comentario}
-                    onChangeText={setComentario}
-                    placeholder="Escribe aquí tu opinión..."
-                    multiline
-                    className="bg-gray-100 rounded-lg px-2 py-4 text-gray-800"
-                  />
-                </View>
+                  {/* Comentario */}
+                  <View className="mb-4">
+                    <Text className="text-sm text-gray-600 mb-1">Comentario</Text>
+                    <TextInput
+                      value={comentario}
+                      onChangeText={setComentario}
+                      placeholder="Escribe aquí tu opinión..."
+                      multiline
+                      className="bg-gray-100 rounded-lg px-2 py-4 text-gray-800"
+                    />
+                  </View>
 
-                {/* Botón Enviar */}
-                <TouchableOpacity
-                  className="bg-amber-400 py-3 rounded-full items-center shadow-sm"
-                  onPress={() => {
-                    const nuevoComentario = {
-                      comentario,
-                      puntuacion: parseInt(puntuacion),
-                      idReceta: recipe.idReceta,
-                      fecha: new Date().toISOString(),
-                    }
-                    console.log("Comentario enviado:", JSON.stringify(nuevoComentario, null, 2))
-                  }}
-                >
-                  <Text className="text-white font-semibold">Enviar Comentario</Text>
-                </TouchableOpacity>
-              </View>
+                  {/* Botón Enviar */}
+                  <TouchableOpacity
+                    className="bg-amber-400 py-3 rounded-full items-center shadow-sm"
+                    onPress={() => {
+                      const nuevoComentario = {
+                        comentario,
+                        puntuacion: parseInt(puntuacion),
+                        idReceta: recipe.idReceta,
+                        fecha: new Date().toISOString(),
+                      }
+                      console.log("Comentario enviado:", JSON.stringify(nuevoComentario, null, 2))
+                    }}
+                  >
+                    <Text className="text-white font-semibold">Enviar Comentario</Text>
+                  </TouchableOpacity>
+                </View>
+              }
 
             </View>
           )}

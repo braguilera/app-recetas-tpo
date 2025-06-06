@@ -1,13 +1,17 @@
 "use client"
 
-import { useState } from "react"
+import { useContext, useState } from "react"
 import { ScrollView, Text, View, TouchableOpacity, Image, TextInput, StatusBar } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { AntDesign, Ionicons, MaterialIcons, FontAwesome5 } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import courses from "../../test/courses"
+import { Contexto } from "contexto/Provider"
+import LogVerificator from "components/common/LogVerificator"
 
 const HomeCourses = () => {
+  const { logeado } = useContext(Contexto); 
+  
   const navigation = useNavigation()
   const [activeFilter, setActiveFilter] = useState("Todo")
   const insets = useSafeAreaInsets()
@@ -66,15 +70,25 @@ const HomeCourses = () => {
             </View>
             <Text className="text-xl font-bold text-gray-800">YOURI</Text>
           </View>
-          <TouchableOpacity
-            onPress={() => navigation.navigate("ProfileStack", { screen: "ProfileScreen" })}
-          >
-            <Image
-              source={{ uri: "https://randomuser.me/api/portraits/men/1.jpg" }}
-              className="w-10 h-10 rounded-full"
-              accessibilityLabel="Perfil de usuario"
-            />
-          </TouchableOpacity>
+          {logeado ? ( // Usa logeado del contexto para mostrar el mensaje
+            <TouchableOpacity
+              onPress={() => navigation.navigate("ProfileStack", { screen: "ProfileScreen" })}
+            >
+              {/* Aquí podrías mostrar el avatar del usuario logueado o un icono de login */}
+              <Image
+                source={{ uri: "https://randomuser.me/api/portraits/men/1.jpg" }}
+                className="w-10 h-10 rounded-full"
+                accessibilityLabel="Perfil de usuario"
+              />
+            </TouchableOpacity>
+          ) : (
+              <TouchableOpacity 
+                onPress={() => navigation.navigate("AuthStack", { screen: "Login" })} 
+                className="px-3 py-1 bg-blue-500 rounded-md"
+              >
+                <Text className="text-white font-medium">Iniciar Sesión</Text>
+              </TouchableOpacity>
+          )}
         </View>
 
         {/* User */}
@@ -177,12 +191,14 @@ const HomeCourses = () => {
                     */}
 
                       <View className="flex-1"> 
-                        <TouchableOpacity
-                          className="bg-amber-400 w-full px-4 py-2 rounded-md mr-2"
-                          onPress={() => navigation.navigate("DetailsCourses", { courseId: course.idCurso })}
+                        {/* Envuelve el TouchableOpacity existente con LogVerificator */}
+                        <LogVerificator // ¡Aquí el cambio!
+                            onPress={() => navigation.navigate("DetailsCourses", { courseId: course.idCurso })}
+                            className="bg-amber-400 w-full px-4 py-2 rounded-md mr-2"
+                            loginRequiredMessage="Para inscribirte en un curso, necesitas iniciar sesión." // Mensaje específico
                         >
-                          <Text className="text-white text-center font-bold">Inscribirse</Text>
-                        </TouchableOpacity>
+                            <Text className="text-white text-center font-bold">Inscribirse</Text>
+                        </LogVerificator>
                       </View>
                     </View>
                   </View>

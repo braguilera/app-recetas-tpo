@@ -7,7 +7,7 @@ import { useNavigation, useRoute } from "@react-navigation/native"
 import { AntDesign } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 // Importa la nueva función para GET con query params
-import { getDatosConQueryParams, postDatos } from "../../api/crud"; // Ajusta la ruta
+import { getDatosConQueryParams, getDatosConQueryParamsWithAuth, postDatos } from "../../api/crud"; // Ajusta la ruta
 
 const VerifyCode = () => {
   const navigation = useNavigation()
@@ -91,7 +91,7 @@ const VerifyCode = () => {
     try {
       // *** MODIFICACIÓN AQUÍ: Endpoint de verificación (GET con un solo parámetro 'code') ***
       // Endpoint de verificación según tu Postman: GET http://localhost:8081/register/verify?code=P4KPS
-      const response = await getDatosConQueryParams('register/verify', { code: codeString }, 'Error al verificar el código');
+      const response = await getDatosConQueryParamsWithAuth('register/verify', { code: codeString }, 'Error al verificar el código');
       console.log("Respuesta de verificación:", response);
 
       // La respuesta puede ser un objeto o un mensaje directo, ajusta esto si es necesario

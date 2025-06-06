@@ -3,14 +3,12 @@ import { useContext, useState } from "react"
 import { Text, View, TextInput, TouchableOpacity, StatusBar, Alert } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-// ¡IMPORTANTE! Cambiado a importación con desestructuración
-import { Contexto } from "../../contexto/Provider"; // Ajusta la ruta si es necesario (ej. `../../contexto/Provider`)
+import { Contexto } from "../../contexto/Provider"; // Asegúrate de que la ruta sea correcta
 
 import { postDatos } from "../../api/crud"; // Ajusta la ruta a tu crud.js
 
 const Login = () => {
-  // Aquí es crucial que setLogeado, setToken y setUserId se destructuren correctamente
-  const { setLogeado, setToken, setUserId } = useContext(Contexto);
+  const { login } = useContext(Contexto); // Desestructura solo 'login'
 
   const navigation = useNavigation()
   const insets = useSafeAreaInsets()
@@ -21,32 +19,41 @@ const Login = () => {
     });
 
   const handleLogin = async () => {
+    // Vuelve a añadir esta validación, es importante.
+    // Si te retornaba siempre, significa que uno de los campos estaba vacío.
+    // Revisa cómo los TextInput actualizan el estado 'userDates'.
     if (!userDates.mail || !userDates.password) {
       Alert.alert("Error", "Por favor ingresa tu correo y contraseña.");
-      return;
+      return; // Detiene la ejecución si los campos están vacíos
     }
 
     try {
-      const data = await postDatos('auth/login', userDates, 'Error al iniciar sesión');
+      const responseData = await postDatos('auth/login', userDates, 'Error al iniciar sesión');
+      console.log("Respuesta de inicio de sesión:", responseData); // Para depuración
 
-      if (data.token) {
-        setToken(data.token);
+      if (responseData && responseData.token) {
+        login(
+          responseData.token,
+          responseData.userId,
+          responseData.username, // Este es el mail según tu API
+          responseData.firstname,
+          responseData.lastname || "" // Si lastname puede ser null, pásalo como cadena vacía
+        );
         
-        if (data.userId !== undefined) {
-          setUserId(data.userId);
-        } else {
-            console.warn("userId no encontrado directamente en la respuesta del login. Se espera que el Provider lo obtenga del token.");
-        }
-        
-        setLogeado(true); // Esto debería funcionar ahora sin problemas
         Alert.alert("Éxito", "¡Inicio de sesión exitoso!");
-        navigation.replace('MainTabs'); // Navega a tus tabs principales
+        // Aquí es donde navegas. Si tu Navigation.js no tiene la lógica condicional
+        // para cambiar el stack raíz basado en 'logeado', esta navegación puede parecer
+        // que no hace nada porque 'MainTabs' ya es el stack raíz.
+        // Si tu idea es que siempre se navegue a MainTabs DESDE el Login, entonces `Maps` está bien.
+        // Pero si quieres que la app "cambie" de la pantalla de login a MainTabs al iniciar,
+        // la lógica condicional en Navigation.js es la clave.
+        navigation.navigate('MainTabs'); 
 
       } else {
-        Alert.alert("Error de autenticación", "No se recibió un token válido.");
+        Alert.alert("Error de autenticación", responseData?.message || "Credenciales inválidas.");
       }
     } catch (error) {
-      console.error("Error en handleLogin:", error);
+      console.error("Error en handleLogin:", error); // Esto te dará más detalles del error de la API
       const errorMessage = error.message || 'Ocurrió un error inesperado al iniciar sesión.';
       Alert.alert("Error", errorMessage);
     }
@@ -104,4 +111,4 @@ const Login = () => {
   )
 }
 
-export default Login
+export default Login;

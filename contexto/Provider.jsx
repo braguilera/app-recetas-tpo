@@ -1,110 +1,96 @@
 // contexto/Provider.js
-import { useState, useEffect, createContext } from "react";
-import { jwtDecode } from "jwt-decode";
+import React, { createContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// Exporta Contexto como una exportación nombrada
 export const Contexto = createContext();
 
 const Provider = ({ children }) => {
-    const [token, setToken] = useState("");
-    const [logeado, setLogeado] = useState(false);
-    const [userId, setUserId] = useState(null);
+  const [logeado, setLogeado] = useState(false);
+  const [userId, setUserId] = useState(null);
+  const [username, setUsername] = useState(null); // Corregido: 'username' que es el mail
+  const [firstName, setFirstName] = useState(null); // Nuevo: para el nombre
+  const [lastName, setLastName] = useState(null);   // Nuevo: para el apellido
+  const [token, setToken] = useState(null);       // Nuevo: para el token
+  const [userRole, setUserRole] = useState(null); // Dejarlo como null o cadena vacía si no hay roles
 
-    // const [rol, setRol] = useState(""); // Estado del rol (comentado por ahora)
+  // Función para guardar los datos del usuario después de un login exitoso
+  // Recibe los datos directamente de la respuesta del backend
+  const login = async (tokenData, userIdData, usernameData, firstNameData, lastNameData) => {
+    setLogeado(true);
+    setToken(tokenData);
+    setUserId(userIdData);
+    setUsername(usernameData);
+    setFirstName(firstNameData);
+    setLastName(lastNameData);
+    setUserRole(null); // Como no hay roles, lo dejamos en null o un valor predeterminado
 
-    // Función para cargar el token y el userId al inicio
-    const loadAppState = async () => {
-        try {
-            const storedToken = await AsyncStorage.getItem("token");
-            if (storedToken) {
-                setToken(storedToken);
-                setLogeado(true);
-                try {
-                    const decoded = jwtDecode(storedToken);
-                    if (decoded?.userId) {
-                        setUserId(decoded.userId);
-                    }
-                    // if (decoded?.authorities) {
-                    //     setRol(decoded.authorities);
-                    // }
-                } catch (decodeError) {
-                    console.error("Error decodificando token al inicio:", decodeError);
-                    await AsyncStorage.removeItem("token");
-                    setToken("");
-                    setLogeado(false);
-                    setUserId(null);
-                    // setRol("");
-                }
-            }
-        } catch (error) {
-            console.error("Error al cargar el estado de la app desde AsyncStorage:", error);
+    try {
+      await AsyncStorage.setItem('isLoggedIn', 'true');
+      await AsyncStorage.setItem('token', tokenData); // Guardar el token
+      await AsyncStorage.setItem('userId', String(userIdData)); // Asegúrate de guardar como string
+      await AsyncStorage.setItem('username', usernameData);
+      await AsyncStorage.setItem('firstName', firstNameData);
+      // await AsyncStorage.setItem('lastName', lastNameData); // lastName puede ser null, considerar si guardarlo o no
+    } catch (e) {
+      console.error("Error al guardar en AsyncStorage:", e);
+    }
+  };
+
+  // Función para cerrar sesión y limpiar los datos
+  const logout = async () => {
+    setLogeado(false);
+    setUserId(null);
+    setUsername(null);
+    setFirstName(null);
+    setLastName(null);
+    setToken(null);
+    setUserRole(null);
+
+    try {
+      await AsyncStorage.removeItem('isLoggedIn');
+      await AsyncStorage.removeItem('token');
+      await AsyncStorage.removeItem('userId');
+      await AsyncStorage.removeItem('username');
+      await AsyncStorage.removeItem('firstName');
+      await AsyncStorage.removeItem('lastName'); // Si lo guardaste, también quítalo
+    } catch (e) {
+      console.error("Error al eliminar de AsyncStorage:", e);
+    }
+  };
+
+  // Efecto para cargar el estado del login desde AsyncStorage al iniciar la app
+  useEffect(() => {
+    const loadLoginState = async () => {
+      try {
+        const loggedIn = await AsyncStorage.getItem('isLoggedIn');
+        const storedToken = await AsyncStorage.getItem('token');
+        const storedUserId = await AsyncStorage.getItem('userId');
+        const storedUsername = await AsyncStorage.getItem('username');
+        const storedFirstName = await AsyncStorage.getItem('firstName');
+        const storedLastName = await AsyncStorage.getItem('lastName');
+
+        if (loggedIn === 'true' && storedToken && storedUserId && storedUsername) {
+          setLogeado(true);
+          setToken(storedToken);
+          setUserId(storedUserId);
+          setUsername(storedUsername);
+          setFirstName(storedFirstName);
+          setLastName(storedLastName);
+          // setUserRole(storedUserRole); // Si decides manejar roles más adelante
         }
+      } catch (e) {
+        console.error("Error al cargar estado de login desde AsyncStorage:", e);
+      }
     };
 
-    // Cargar el estado al montar el componente
-    useEffect(() => {
-        loadAppState();
-    }, []);
+    loadLoginState();
+  }, []);
 
-    // Decodificar Token y Setear userId cuando el token cambia
-    useEffect(() => {
-        if (token) {
-            try {
-                const decoded = jwtDecode(token);
-                
-                if (decoded?.userId) {
-                    setUserId(decoded.userId);
-                } else {
-                    setUserId(null);
-                }
-
-                // if (decoded?.authorities) {
-                //     setRol(decoded.authorities);
-                // } else {
-                //     setRol("");
-                // }
-            } catch (error) {
-                console.error("Error decodificando token:", error);
-                setUserId(null);
-                // setRol("");
-            }
-        } else {
-            setUserId(null);
-            // setRol("");
-        }
-    }, [token]);
-
-    // Manage Token (almacenamiento en AsyncStorage)
-    useEffect(() => {
-        const manageTokenInStorage = async () => {
-            try {
-                if (token) {
-                    await AsyncStorage.setItem("token", token);
-                    setLogeado(true);
-                } else {
-                    await AsyncStorage.removeItem("token");
-                    setLogeado(false);
-                }
-            } catch (error) {
-                console.error("Error al manejar el token en AsyncStorage:", error);
-            }
-        };
-        manageTokenInStorage();
-    }, [token]);
-
-    return (
-        <Contexto.Provider value={{ 
-            logeado,
-            setLogeado,
-            token,
-            setToken,
-            userId,
-            setUserId
-        }}>
-            {children}
-        </Contexto.Provider>
-    );
+  return (
+    <Contexto.Provider value={{ logeado, userId, username, firstName, lastName, token, userRole, login, logout }}>
+      {children}
+    </Contexto.Provider>
+  );
 };
 
 export default Provider;
