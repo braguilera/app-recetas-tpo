@@ -1,17 +1,22 @@
-import { useEffect, useState } from "react"
+// components/CreateRecipe.js
+import { useEffect, useState, useRef } from "react"
 import { ScrollView, Text, View, TouchableOpacity, Image, TextInput, StatusBar, Alert } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { AntDesign } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { getDatos, postDatos } from "api/crud"
 import { Picker } from '@react-native-picker/picker'
-import UploadMediaFile from "components/utils/UploadMediaFIle"
+import UploadMediaFile from "components/utils/UploadMediaFIle" // Asegúrate de que esta ruta sea correcta
 
 const CreateRecipe = () => {
   const navigation = useNavigation()
   const insets = useSafeAreaInsets()
-  
-  const [recipeImage, setRecipeImage] = useState(null)
+
+  const mainImageUploadRef = useRef(null);
+
+  // recipeImage ahora puede almacenar el path si lo necesitas para algo,
+  // pero el que se envía a la DB será el uniqueFilename.
+  const [recipeImage, setRecipeImage] = useState(null) 
   const [recipeName, setRecipeName] = useState("")
   const [recipeDescription, setRecipeDescription] = useState("")
   const [portions, setPortions] = useState("")
@@ -70,12 +75,20 @@ const CreateRecipe = () => {
   const simulateImageUpload = (type, id, source) => {
     const imageUrl = `https://picsum.photos/seed/${Date.now()}/400/300`
 
-    if (type === "recipe") {
-      setRecipeImage(imageUrl)
-    } else if (type === "step") {
+    if (type === "step") {
       updateStep(id, "image", imageUrl)
     }
   }
+
+  // Esta función ahora solo es para propósitos de logging si la necesitas,
+  // el valor principal para la DB se gestiona en handleSubmitRecipe
+  const handleMainRecipeImageUploadComplete = (downloadURL, uniqueFilename) => {
+    console.log("UploadMediaFile reportó URL de descarga (opcional para display):", downloadURL);
+    console.log("UploadMediaFile reportó Nombre Único (para guardar en DB):", uniqueFilename);
+    // Puedes actualizar un estado aquí si necesitas mostrar la imagen en tiempo real
+    // sin esperar al submit completo.
+    // setRecipeImage(downloadURL); // Si quieres que se muestre en el mismo UploadMediaFile
+  };
 
   const fetchTypesRecipe = async () => {
     try {
@@ -99,24 +112,40 @@ const CreateRecipe = () => {
       Alert.alert("Error", "Por favor ingresa la descripción de la receta")
       return
     }
-    //if (ingredients.some((ing) => !ing.name.trim())) {
-    //  Alert.alert("Error", "Por favor completa todos los ingredientes")
-    //  return
-    //}
-//
-    //if (steps.some((step) => !step.description.trim())) {
-    //  Alert.alert("Error", "Por favor completa todos los pasos")
-    //  return
-    //}
+
+    let finalRecipeImagePath = null; // Variable para almacenar el uniqueFilename
+    let finalRecipeImageDownloadURL = null; // Variable para almacenar la downloadURL para setRecipeImage
+
+    if (mainImageUploadRef.current) {
+        const currentImageUri = mainImageUploadRef.current.getImageUri();
+        if (!currentImageUri) {
+            Alert.alert("Error", "Por favor selecciona una imagen principal para la receta.");
+            return;
+        }
+
+        const uploadResult = await mainImageUploadRef.current.upload(); // Esto ahora devuelve { url, path } o null
+
+        if (uploadResult && uploadResult.url && uploadResult.path) {
+            finalRecipeImagePath = uploadResult.path;
+            finalRecipeImageDownloadURL = uploadResult.url; // Guarda la URL para mostrar en el componente
+            setRecipeImage(finalRecipeImageDownloadURL); // Actualiza el estado para que se vea la imagen en el componente
+        } else {
+            Alert.alert("Error", "No se pudo subir la imagen principal o obtener su path.");
+            return;
+        }
+    } else {
+        Alert.alert("Error", "El componente de subida de imagen no está listo.");
+        return;
+    }
 
     const recipeData = {
       nombreReceta: recipeName,
       descripcionReceta: recipeDescription,
-      fotoPrincipal: "https://example.com/fotos/curry_garbanzos.jpg",
+      fotoPrincipal: finalRecipeImagePath, // ¡Aquí se usa el uniqueFilename/path!
       porciones: Number.parseInt(portions) || 1,
       cantidadPersonas: Number.parseInt(peopleCount) || 1,
       idUsuario: 2,
-      idTipoReceta: selectedTypeRecipe
+      idTipoReceta: Number.parseInt(selectedTypeRecipe)
     }
 
     try {
@@ -128,34 +157,9 @@ const CreateRecipe = () => {
         { text: "OK", onPress: () => navigation.goBack() },
       ])
     } catch (error) {
-      console.error("Error fetching recipes:", error.message)
+      console.error("Error creating recipe:", error.message)
+      Alert.alert("Error", `No se pudo crear la receta: ${error.message}`)
     }
-
-    //const recipeData = {
-    //  titulo: recipeName,
-    //  descripcion: recipeDescription,
-    //  imagen: recipeImage,
-    //  porciones: Number.parseInt(portions) || 1,
-    //  cantidadPersonas: Number.parseInt(peopleCount) || 1,
-    //  tipoReceta: "Principal", 
-    //  fechaCreacion: new Date().toISOString(),
-    //  usuario: {
-    //    alias: "Julian Bonavota", 
-    //  },
-    //  ingredientes: ingredients.map((ingredient, index) => ({
-    //    idIngredienteReceta: index + 1,
-    //    nombre: ingredient.name,
-    //    cantidad: Number.parseFloat(ingredient.quantity) || 0,
-    //    unidadMedida: ingredient.unit || "unidades",
-    //  })),
-    //  pasos: steps.map((step, index) => ({
-    //    orden: index + 1,
-    //    descripcionPaso: step.description,
-    //    imagenPaso: step.image,
-    //  })),
-    //  calificaciones: [],
-    //  comentarios: [],
-    //}
   }
 
   return (
@@ -173,7 +177,11 @@ const CreateRecipe = () => {
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Imagen de la receta */}
         <View className="p-4">
-          <UploadMediaFile></UploadMediaFile>
+          <UploadMediaFile
+            ref={mainImageUploadRef}
+            onUploadComplete={handleMainRecipeImageUploadComplete}
+            initialImageUri={recipeImage} // Pasamos la downloadURL para que se muestre correctamente
+          />
         </View>
 
         {/* Información básica */}
@@ -216,7 +224,6 @@ const CreateRecipe = () => {
               </Picker>
             </View>
           </View>
-
         </View>
 
         <View className="h-px bg-gray-300 mx-4 mb-6" />
@@ -248,6 +255,7 @@ const CreateRecipe = () => {
             </View>
           </View>
 
+          {/* Se mantiene comentado como en el original */}
           {/*ingredients.map((ingredient, index) => (
             <View key={ingredient.id} className="mb-3">
               <View className="flex-row items-center justify-between mb-2">
@@ -293,6 +301,7 @@ const CreateRecipe = () => {
         <View className="px-4 mb-6">
           <Text className="text-lg font-bold text-gray-800 mb-4">Pasos</Text>
 
+          {/* Se mantiene comentado como en el original */}
           {/*steps.map((step, index) => (
             <View key={step.id} className="mb-4">
               <View className="flex-row items-center justify-between mb-2">

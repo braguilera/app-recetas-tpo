@@ -7,6 +7,7 @@ import { getDatos, getRecipesPaginated, postDatos } from "api/crud"
 import RecipeCardCarrousel from "components/recipes/RecipeCardCarrousel"
 import RecipeCardHome from "components/recipes/RecipeCardHome"
 import { Contexto } from "contexto/Provider" // Importa el Contexto
+import RetrieveMediaFile from "components/utils/RetrieveMediaFile"
 
 const HomeRecipes = () => {
   // Obtén logeado, userId y la función logout del contexto
@@ -226,6 +227,7 @@ const HomeRecipes = () => {
             <View className="bg-amber-100 px-2 py-1 rounded-md">
               <Text className="text-xs font-medium text-amber-800">Nuevas</Text>
             </View>
+            <RetrieveMediaFile></RetrieveMediaFile>
           </View>
 
           {/* Recipe Carousel */}

@@ -165,6 +165,19 @@ export const putDatosWithAuth = async (endpoint, data, errorMessage = 'Error al 
     }
 };
 
+// PUT 
+export const putDatos = async (endpoint, errorMessage = 'Error al actualizar recurso (auth)') => {
+    try {
+        const response = await fetch(`${API_CONFIG.BASE_URL}${endpoint}`, {
+            method: 'PUT',
+            headers: await getHeaders() 
+        });
+        return handleResponse(response, errorMessage);
+    } catch (error) {
+        throw new Error(`${errorMessage}: ${error.message}`);
+    }
+};
+
 // DELETE con Autorización
 export const deleteDatosWithAuth = async (endpoint, errorMessage = 'Error al eliminar recurso (auth)') => {
     try {

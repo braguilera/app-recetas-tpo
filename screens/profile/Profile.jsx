@@ -4,7 +4,7 @@ import { useNavigation } from "@react-navigation/native"
 import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 // Importa las nuevas funciones con autenticación
-import { deleteDatosWithAuth, getRecipesPaginated, getDatosWithAuth, postDatos } from "api/crud" 
+import { deleteDatosWithAuth, getRecipesPaginated, getDatosWithAuth, postDatos } from "api/crud"
 import ConfirmModal from "../../components/common/ConfirmModal"
 import { Contexto } from "../../contexto/Provider" // Importa tu contexto de autenticación
 
@@ -71,29 +71,25 @@ const Profile = () => {
         { id: "cursos", name: "Cursos" },
         { id: "calificaciones", name: "Calificaciones" },
     ]
-      
-  const handleLogout = async () => {
-    try {
-      // Llama a la función de logout del contexto
-      await logout(); 
-      // Opcional: Llama a tu endpoint de backend para invalidar la sesión
-      await postDatos('auth/logout', {}, 'Error al cerrar sesión en el backend'); 
-      Alert.alert("Cierre de Sesión", "Has cerrado sesión correctamente.");
-      navigation.replace("AuthStack", { screen: "Login" }); // Redirige a la pantalla de Login y limpia el stack
-    } catch (error) {
-      console.error("Error al cerrar sesión:", error);
-      const errorMessage = error.message || 'Ocurrió un error al cerrar sesión.';
-      Alert.alert("Error al Cerrar Sesión", errorMessage);
-    }
-  }
 
+    const handleLogout = async () => {
+        try {
+            await logout();
+            await postDatos('auth/logout', {}, 'Error al cerrar sesión en el backend');
+            Alert.alert("Cierre de Sesión", "Has cerrado sesión correctamente.");
+            navigation.replace("AuthStack", { screen: "Login" });
+        } catch (error) {
+            console.error("Error al cerrar sesión:", error);
+            const errorMessage = error.message || 'Ocurrió un error al cerrar sesión.';
+            Alert.alert("Error al Cerrar Sesión", errorMessage);
+        }
+    }
 
     const confirmDeleteRecipe = async () => {
         if (!recipeToDelete) return
         try {
-            // Usamos deleteDatosWithAuth ya que borrar una receta requiere token
             await deleteDatosWithAuth(`recipe/delete/${recipeToDelete.idReceta}`, "Error al borrar la receta")
-            await fetchRecipes(0) // Recarga las recetas después de borrar
+            await fetchRecipes(0)
         } catch (error) {
             console.error("Error al borrar receta:", error.message)
         } finally {
@@ -103,7 +99,6 @@ const Profile = () => {
     }
 
     const fetchRecipes = async (page = 0) => {
-        // Asegúrate de que el username esté disponible antes de intentar la llamada
         if (!username) {
             console.warn("Username no disponible para cargar recetas.");
             return;
@@ -111,40 +106,32 @@ const Profile = () => {
 
         try {
             const params = {
-                page: page.toString(), // Asegúrate de que 'page' sea string si tu API lo espera así
-                size: "10", // Puedes ajustar el tamaño de la página
-                sort: ["nombreReceta,asc"], // Formato de sort puede variar, "campo,direccion" es común
+                page: page.toString(),
+                size: "10",
+                sort: ["nombreReceta,asc"],
                 name: "",
-                userName: username, // <-- ¡Aquí usamos el username del contexto!
+                userName: username,
                 rating: "",
                 includeIngredientId: "",
                 excludeIngredientId: "",
                 tipoRecetaId: "",
             }
-            
-            // getRecipesPaginated es una función GET, asumo que las recetas pueden ser públicas o no siempre requieren el token del usuario.
-            // Si la API de 'recipe/page' SOLO devuelve las recetas del usuario logueado usando el token,
-            // entonces deberías usar getDatosWithAuth o una versión paginada de getDatosWithAuth.
-            // Si es una API pública que acepta un 'userName' como filtro, entonces getRecipesPaginated está bien.
-            // Por simplicidad, asumo que getRecipesPaginated NO necesita el token de autorización por cómo la definiste previamente.
-            // Si tu endpoint de paginación de recetas por username requiere autorización, cámbialo a getDatosWithAuth o crea getRecipesPaginatedWithAuth.
+
             const data = await getRecipesPaginated(params, 'Error al cargar recetas')
-            setMyRecipes(data || { content: [] }) // Asegura que myRecipes.content siempre sea un array
+            setMyRecipes(data || { content: [] })
             console.log("Mis Recetas:", data)
-            
+
         } catch (error) {
             console.error("Error fetching recipes:", error.message)
         }
     }
-    
-    // Nueva función para obtener los datos del perfil del usuario logueado
+
     const fetchUserProfileData = async () => {
         if (!userId) {
             console.warn("User ID no disponible para cargar perfil.");
             return;
         }
         try {
-            // Usamos getDatosWithAuth porque obtener el perfil del usuario es una operación protegida
             const data = await getDatosWithAuth(`user/${userId}`, 'Error al cargar el perfil del usuario');
             console.log(data)
             setUserProfile(data);
@@ -155,20 +142,38 @@ const Profile = () => {
     };
 
     useEffect(() => {
-        fetchUserProfileData(); // Carga el perfil del usuario al montar el componente
-        // Solo intentamos cargar las recetas si el username ya está disponible del contexto
+        fetchUserProfileData();
         if (username) {
-            fetchRecipes(0); 
+            fetchRecipes(0);
         }
-    }, [userId, username]); // Dependencias: recargar si el userId o username cambian (ej. al login/logout)
+    }, [userId, username]);
 
-    // Si el username no está disponible al inicio, y se carga después, podemos volver a llamar fetchRecipes
     useEffect(() => {
-        if (username && myRecipes.content.length === 0) { // Solo si aún no se cargaron recetas y el username está listo
+        if (username && myRecipes.content.length === 0) {
             fetchRecipes(0);
         }
     }, [username]);
 
+    // **Nueva función para renderizar el avatar del usuario**
+    const renderUserAvatar = () => {
+        const defaultAvatar = "https://picsum.photos/id/64/200/300"; // Una imagen por defecto si userProfile.avatar es nulo o vacío
+        const userNameInitial = userProfile?.nombre ? userProfile.nombre.charAt(0).toUpperCase() : '';
+        const hasAvatar = userProfile?.avatar && userProfile.avatar.trim() !== '';
+
+        return (
+            <View className="w-20 h-20 rounded-full overflow-hidden items-center justify-center bg-gray-300"> {/* Fondo gris por si no hay imagen */}
+                {hasAvatar ? (
+                    <Image source={{ uri: userProfile.avatar }} className="w-full h-full object-cover" />
+                ) : (
+                    <View className="w-full h-full rounded-full items-center justify-center bg-amber-500">
+                        <Text className="text-white text-4xl font-bold">
+                            {userNameInitial}
+                        </Text>
+                    </View>
+                )}
+            </View>
+        );
+    };
 
     const renderStars = (rating) => {
         return Array.from({ length: 5 }, (_, index) => (
@@ -212,13 +217,13 @@ const Profile = () => {
                             onPress={() => navigation.navigate("DetailsRecipes", { recipeId: recipe.idReceta })}
                             className="flex-row"
                         >
-                            <Image source={{uri: `https://picsum.photos/seed/${recipe.idReceta}/200/200`}} className="w-24 h-24" />
+                            <Image source={{ uri: `https://picsum.photos/seed/${recipe.idReceta}/200/200` }} className="w-24 h-24" />
                             <View className="flex-1 p-4">
                                 <View className="flex-row justify-between items-center mb-1">
                                     <Text className="text-lg font-bold">{recipe.nombreReceta}</Text>
                                     <View className="flex-row items-center">
-                                    <AntDesign name="star" size={16} color="#F59E0B" />
-                                    <Text className="ml-1 text-amber-500 font-medium">{recipe.averageRating}</Text>
+                                        <AntDesign name="star" size={16} color="#F59E0B" />
+                                        <Text className="ml-1 text-amber-500 font-medium">{recipe.averageRating}</Text>
                                     </View>
                                 </View>
                                 <Text className="text-gray-600 text-sm" numberOfLines={2}>
@@ -246,7 +251,7 @@ const Profile = () => {
                                     <Text className="text-red-500 ml-2 font-medium">Eliminar</Text>
                                 </View>
                             </TouchableOpacity>
-                            
+
                             <ConfirmModal
                                 visible={confirmVisible}
                                 title="¿Eliminar receta?"
@@ -294,11 +299,11 @@ const Profile = () => {
                             </View>
                         </View>
                     </TouchableOpacity>
-                      
-                    {logeado && 
-                      <TouchableOpacity className="bg-red-50 py-2 px-4 rounded-lg">
-                          <Text className="text-red-600 font-medium text-center">Darse de baja</Text>
-                      </TouchableOpacity>
+
+                    {logeado &&
+                        <TouchableOpacity className="bg-red-50 py-2 px-4 rounded-lg">
+                            <Text className="text-red-600 font-medium text-center">Darse de baja</Text>
+                        </TouchableOpacity>
                     }
                 </View>
             ))}
@@ -369,35 +374,37 @@ const Profile = () => {
         <View style={{ flex: 1, backgroundColor: "#F5F3E4", paddingTop: insets.top }}>
             <StatusBar barStyle="dark-content" backgroundColor="#F5F3E4" />
 
-            {/* Header */}
-            <View className="bg-amber-100 p-4">
-                <View className="flex-row items-center justify-between">
-                    <TouchableOpacity onPress={() => navigation.goBack()}>
+            {/* Header del Perfil - Sección de datos del usuario */}
+            <View className="bg-amber-100 p-4 pb-8 rounded-b-3xl shadow-md"> {/* Añadido padding bottom y rounded corners */}
+                <View className="flex-row items-center justify-between mb-6"> {/* Espacio inferior */}
+                    <TouchableOpacity onPress={() => navigation.goBack()} className="p-2">
                         <AntDesign name="arrowleft" size={24} color="#333" />
                     </TouchableOpacity>
 
-                    <View className="flex-row items-center flex-1 ml-4">
-                        <View className="w-12 h-12 bg-black rounded-full items-center justify-center mr-3">
-                            <AntDesign name="user" size={24} color="white" />
-                        </View>
-                        <View className="flex-1">
-                            {/* Muestra el nombre y apellido del usuario, o el username si el nombre no está disponible */}
-                            <Text className="text-lg font-bold text-gray-800">
-                                {userProfile ? `${userProfile.nombre}` : 'Cargando...'}
-                            </Text>
-                            <Text className="text-gray-600 text-sm">@{userProfile ? userProfile.nickname : 'Cargando...'}</Text>
-                            <TouchableOpacity onPress={() => navigation.navigate("EditProfile")}>
-                                <Text className="text-amber-600 text-sm">Editar perfil</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                    <TouchableOpacity onPress={handleLogout} className="px-3 py-1 bg-red-500 rounded-md">
-                      <Text className="text-white font-medium">Cerrar sesión</Text>
+                    {/* Botón de cerrar sesión a la derecha del todo */}
+                    <TouchableOpacity onPress={handleLogout} className="px-4 py-2 bg-red-500 rounded-full shadow-sm">
+                        <Text className="text-white font-semibold text-sm">Cerrar sesión</Text>
                     </TouchableOpacity>
                 </View>
 
-                {/* Tabs Navigation */}
-                <View className="flex-row justify-center mt-4">
+                {/* Avatar y Datos del Usuario */}
+                <View className="flex-row items-center px-2"> {/* Alineación y padding */}
+                    {renderUserAvatar()} {/* Llama a la función para renderizar el avatar */}
+
+                    <View className="flex-1 ml-4 justify-center">
+                        <Text className="text-2xl font-extrabold text-gray-800 mb-1">
+                            {userProfile ? `${userProfile.nombre} ${userProfile.apellido}` : 'Cargando...'}
+                        </Text>
+                        <Text className="text-gray-700 text-base mb-2">@{userProfile ? userProfile.nickname : 'Cargando...'}</Text>
+                        <TouchableOpacity onPress={() => navigation.navigate("EditProfile")} className="flex-row items-center">
+                            <MaterialCommunityIcons name="pencil-outline" size={16} color="#F59E0B" />
+                            <Text className="text-amber-600 text-sm ml-1">Editar perfil</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+
+                {/* Tabs Navigation (dots) - Cambiado de posición para estar debajo de los datos del usuario */}
+                <View className="flex-row justify-center mt-6"> {/* Margen superior para separarlo */}
                     {tabs.map((tab, index) => (
                         <TouchableOpacity
                             key={tab.id}
@@ -429,6 +436,7 @@ const Profile = () => {
             <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
                 {renderTabContent()}
             </ScrollView>
+
         </View>
     )
 }
