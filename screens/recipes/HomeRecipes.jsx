@@ -3,7 +3,7 @@ import { ScrollView, Text, View, TouchableOpacity, Image, TextInput, FlatList, S
 import { useNavigation } from "@react-navigation/native"
 import { AntDesign, FontAwesome, Ionicons, Entypo } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { getDatos, getRecipesPaginated, postDatos } from "api/crud"
+import { getDatos, getDatosWithAuth, getRecipesPaginated, getRecipesPaginatedWithAuth, postDatos } from "api/crud"
 import RecipeCardCarrousel from "components/recipes/RecipeCardCarrousel"
 import RecipeCardHome from "components/recipes/RecipeCardHome"
 import { Contexto } from "contexto/Provider" // Importa el Contexto
@@ -23,8 +23,9 @@ const HomeRecipes = () => {
   const [nameReceta, setNameReceta] = useState("")
   const [userNameReceta, setUserNameReceta] = useState("")
   const [allIngredients, setAllIngredients] = useState([])
+  const [lastThreeIngredients, setLastThreeIngredients] = useState([])
   const [allTypes, setAllTypes] = useState([])
-  const [ingredientRecipe, setIngredientRecipe] = useState("") // Cambiado a "" para "Todos"
+  const [ingredientRecipe, setIngredientRecipe] = useState("")
   const [excludedIngredients, setExcludedIngredients] = useState("")
   const [typeRecipe, setTypeRecipe] = useState("")
   const [searchRating, setSearchRating] = useState("")
@@ -82,7 +83,7 @@ const HomeRecipes = () => {
         tipoRecetaId:typeRecipe
       }
       
-      const data = await getRecipesPaginated(params, 'Error al cargar recetas')
+      const data = await getRecipesPaginatedWithAuth(params, 'Error al cargar recetas')
       if (reset) {
         setRecipeList(data)
       } else {
@@ -102,16 +103,25 @@ const HomeRecipes = () => {
 
   const getAllTypes = async () => {
     try{
-      const data = await getDatos("recipe/types", "Error al obtener todos los ingredientes")
+      const data = await getDatosWithAuth("recipe/types", "Error al obtener todos los ingredientes")
       setAllTypes(data)
     } catch (error) {
       console.error("Error fetching ingredients:", error.message)
     }
   }
   
+  const getLastThreeRecipes = async () => {
+    try{
+      const data = await getDatosWithAuth("recipe/last-three", "Error al obtener las ultimas 3 recetas")
+      setLastThreeIngredients(data)
+    } catch (error) {
+      console.error("Error fetching ultimas 3 recetas:", error.message)
+    }
+  }
+  
   const getAllIngredients = async () => {
     try{
-      const data = await getDatos("ingridient/find-all", "Error al obtener todos los ingredientes")
+      const data = await getDatosWithAuth("ingridient/find-all", "Error al obtener todos los ingredientes")
       setAllIngredients(data)
     } catch (error) {
       console.error("Error fetching ingredients:", error.message)
@@ -141,6 +151,7 @@ const HomeRecipes = () => {
   useEffect(() => {
     fetchRecipes(0, true);
     getAllIngredients();
+    getLastThreeRecipes();
     getAllTypes();
   }, [])
 
@@ -227,12 +238,12 @@ const HomeRecipes = () => {
             <View className="bg-amber-100 px-2 py-1 rounded-md">
               <Text className="text-xs font-medium text-amber-800">Nuevas</Text>
             </View>
-            <RetrieveMediaFile></RetrieveMediaFile>
+            <RetrieveMediaFile ></RetrieveMediaFile>
           </View>
 
           {/* Recipe Carousel */}
           <FlatList
-            data={recipeList.content ? recipeList.content.slice(0, 3) : []}
+            data={lastThreeIngredients}
             horizontal
             showsHorizontalScrollIndicator={false}
             keyExtractor={(item) => item.idReceta}

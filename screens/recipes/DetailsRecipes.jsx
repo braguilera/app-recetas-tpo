@@ -3,7 +3,7 @@ import { ScrollView, Text, View, TouchableOpacity, Image, StatusBar, TextInput }
 import { useNavigation, useRoute } from "@react-navigation/native"
 import { AntDesign, FontAwesome } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { getDatos } from "api/crud"
+import { getDatos, getDatosWithAuth } from "api/crud"
 import { Picker } from "@react-native-picker/picker"
 import { Contexto } from "contexto/Provider"
 
@@ -23,7 +23,7 @@ const DetailsRecipes = () => {
 
   const fetchRecipe = async () => {
     try {
-      const data = await getDatos(`recipe/${recipeId}`)
+      const data = await getDatosWithAuth(`recipe/${recipeId}`)
       setRecipe(data)
     } catch (error) {
       console.error("Error fetching recipes:", error.message)

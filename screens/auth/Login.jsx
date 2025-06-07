@@ -14,15 +14,12 @@ const Login = () => {
   const insets = useSafeAreaInsets()
   const [userDates, setUserDates] = useState(
     {
-      mail: "",
+      email: "",
       password: ""
     });
 
   const handleLogin = async () => {
-    // Vuelve a añadir esta validación, es importante.
-    // Si te retornaba siempre, significa que uno de los campos estaba vacío.
-    // Revisa cómo los TextInput actualizan el estado 'userDates'.
-    if (!userDates.mail || !userDates.password) {
+    if (!userDates.email || !userDates.password) {
       Alert.alert("Error", "Por favor ingresa tu correo y contraseña.");
       return; // Detiene la ejecución si los campos están vacíos
     }
@@ -35,18 +32,12 @@ const Login = () => {
         login(
           responseData.token,
           responseData.userId,
-          responseData.username, // Este es el mail según tu API
+          responseData.username,
           responseData.firstname,
-          responseData.lastname || "" // Si lastname puede ser null, pásalo como cadena vacía
+          responseData.lastname || ""
         );
         
         Alert.alert("Éxito", "¡Inicio de sesión exitoso!");
-        // Aquí es donde navegas. Si tu Navigation.js no tiene la lógica condicional
-        // para cambiar el stack raíz basado en 'logeado', esta navegación puede parecer
-        // que no hace nada porque 'MainTabs' ya es el stack raíz.
-        // Si tu idea es que siempre se navegue a MainTabs DESDE el Login, entonces `Maps` está bien.
-        // Pero si quieres que la app "cambie" de la pantalla de login a MainTabs al iniciar,
-        // la lógica condicional en Navigation.js es la clave.
         navigation.navigate('MainTabs'); 
 
       } else {
@@ -78,8 +69,8 @@ const Login = () => {
             className="border border-gray-300 rounded-xl px-4 py-2 mb-4 text-gray-800 bg-gray-50"
             placeholder="ejemplo@email.com"
             placeholderTextColor="#9CA3AF"
-            value={userDates.mail}
-            onChangeText={(text) => setUserDates(prev => ({ ...prev, mail: text }))}
+            value={userDates.email}
+            onChangeText={(text) => setUserDates(prev => ({ ...prev, email: text }))}
             keyboardType="email-address"
             autoCapitalize="none"
           />

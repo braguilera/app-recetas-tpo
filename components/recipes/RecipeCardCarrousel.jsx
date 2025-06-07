@@ -23,7 +23,7 @@ const RecipeCardCarrousel = ({recipe}) => {
             <View className="flex-row justify-between items-center">
                 <View className="flex-row items-center mr-4">
                     <FontAwesome name="user" size={14} color="#9CA3AF" />
-                    <Text className="text-xs text-gray-500 ml-1">Por {recipe.userNickname}</Text>
+                    <Text className="text-xs text-gray-500 ml-1">Por {recipe.nombreUsuario}</Text>
                 </View>
                 <View className="flex-row items-center">
                     <AntDesign name="star" size={16} color="#F59E0B" />

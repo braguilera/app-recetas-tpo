@@ -1,73 +1,56 @@
-import { View, Text, TouchableOpacity, Alert, Image, ActivityIndicator, TextInput } from "react-native";
+import { View, Image, ActivityIndicator } from "react-native";
 import { firebase } from '../../config'; // Asegúrate que esta ruta sea correcta
-import React, { useState } from "react";
-import { AntDesign } from "@expo/vector-icons"; // Importamos AntDesign para el icono
+import React, { useState, useEffect } from "react";
+import { MaterialIcons } from "@expo/vector-icons"; // Importamos MaterialIcons para el icono
 
-const RetrieveMediaFile = () => {
-    const [searchFilename, setSearchFilename] = useState("");
+const RetrieveMediaFile = ({ imageUrl }) => {
     const [retrievedImageUri, setRetrievedImageUri] = useState(null);
     const [searching, setSearching] = useState(false);
 
-    const fetchImageByName = async () => {
-        if (!searchFilename.trim()) {
-            Alert.alert("Nombre vacío", "Por favor, ingresa el nombre del archivo a buscar.");
-            return;
-        }
-
-        setSearching(true);
-        setRetrievedImageUri(null);
-
-        try {
-            const filePathInStorage = searchFilename.trim();
-            const storageRef = firebase.storage().ref().child(filePathInStorage);
-            const downloadURL = await storageRef.getDownloadURL();
-
-            console.log("Imagen encontrada. URL de descarga:", downloadURL);
-            setRetrievedImageUri(downloadURL);
-            Alert.alert('¡Imagen Encontrada!', 'La imagen se ha cargado.');
-        } catch (error) {
-            console.error("Error al buscar la imagen:", error);
-            if (error.code === 'storage/object-not-found') {
-                Alert.alert('Error de Búsqueda', 'No se encontró un archivo con ese nombre.');
-            } else {
-                Alert.alert('Error de Búsqueda', `Hubo un problema: ${error.message}`);
+    useEffect(() => {
+        const fetchImage = async () => {
+            if (!imageUrl) {
+                setRetrievedImageUri(null); // Clear previous image if URL is empty
+                return;
             }
-            setRetrievedImageUri(null);
-        } finally {
-            setSearching(false);
-        }
-    };
+
+            setSearching(true);
+            setRetrievedImageUri(null); // Reset before new search
+
+            try {
+                // Si la URL ya es una URL completa (http/https), la usamos directamente
+                if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+                    setRetrievedImageUri(imageUrl);
+                    console.log("URL directa proporcionada:", imageUrl);
+                } else {
+                    // Si es un path de Firebase Storage, obtenemos la URL de descarga
+                    const storageRef = firebase.storage().ref().child(imageUrl);
+                    const downloadURL = await storageRef.getDownloadURL();
+                    console.log("Imagen encontrada. URL de descarga:", downloadURL);
+                    setRetrievedImageUri(downloadURL);
+                }
+            } catch (error) {
+                console.error("Error al buscar la imagen:", error);
+                setRetrievedImageUri('not-found'); // Special value to indicate image not found
+            } finally {
+                setSearching(false);
+            }
+        };
+
+        fetchImage();
+    }, [imageUrl]); // Dependencia del efecto en la prop imageUrl
 
     return (
-        <View className="w-full items-center mb-10 p-4 border border-gray-200 rounded-lg shadow-sm bg-white">
-            <Text className="text-xl font-bold text-gray-800 mb-4">Buscar Archivo por Nombre</Text>
-            <TextInput
-                className="w-[90%] h-12 border border-gray-300 rounded-lg px-4 mb-4 text-gray-800 bg-gray-50"
-                placeholder="Ruta completa (ej: media/nombre.jpg)"
-                value={searchFilename}
-                onChangeText={setSearchFilename}
-                autoCapitalize="none"
-            />
-            <TouchableOpacity
-                className="bg-blue-500 rounded-xl py-3 px-8 items-center w-full shadow-md active:bg-blue-600"
-                onPress={fetchImageByName}
-                disabled={searching}
-            >
-                <Text className="text-white font-bold text-lg">Buscar Imagen</Text>
-            </TouchableOpacity>
-
-            {searching && (
-                <View className="mt-4 items-center">
-                    <ActivityIndicator size="large" color="#3B82F6" />
-                    <Text className="mt-2 text-gray-600 text-base">Buscando...</Text>
-                </View>
-            )}
-
-            {retrievedImageUri && (
-                <View className="mt-4 items-center">
-                    <Text className="text-gray-700 text-base mb-2 font-medium">Imagen Recuperada:</Text>
-                    <Image source={{ uri: retrievedImageUri }} className="w-48 h-48 resize-contain border border-gray-300 rounded-lg" />
-                </View>
+        <View className="w-full items-center justify-center rounded-lg">
+            {searching ? (
+                <ActivityIndicator size="large" color="#3B82F6" />
+            ) : retrievedImageUri === 'not-found' ? (
+                <MaterialIcons name="image-not-supported" size={48} color="black" />
+            ) : retrievedImageUri ? (
+                <Image source={{ uri: retrievedImageUri }} className="w-full h-full resize-contain rounded-lg" style={{ aspectRatio: 4/3 }} />
+            ) : (
+                // Opcional: mostrar un placeholder inicial si no hay URL y no se está buscando
+                <MaterialIcons name="image-not-supported" size={48} color="lightgray" />
             )}
         </View>
     );

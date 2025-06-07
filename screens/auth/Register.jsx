@@ -11,6 +11,7 @@ const Register = () => {
   const insets = useSafeAreaInsets()
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [email, setEmail] = useState("");
   const [username, setUsername] = useState(""); 
   const [password, setPassword] = useState("");
   const [rePassword, setRePassword] = useState("");
@@ -36,6 +37,7 @@ const Register = () => {
       const registerData = {
         firstname: firstName,
         lastname: lastName,
+        email: lastName,
         username: username, 
         password: password,
         rePassword: rePassword,
@@ -105,14 +107,26 @@ const Register = () => {
             editable={!loading} 
           />
 
-          <Text className="text-gray-700 font-medium mb-2">Correo Electrónico (Alias)</Text>
+          <Text className="text-gray-700 font-medium mb-2">Correo Electrónico</Text>
+          <TextInput
+            className="border border-gray-300 rounded-xl px-4 py-2 mb-4 text-gray-800 bg-gray-50"
+            placeholder="ejemplo@email.com"
+            placeholderTextColor="#9CA3AF"
+            value={email} 
+            onChangeText={setEmail} 
+            keyboardType="email-address"
+            autoCapitalize="none"
+            editable={!loading} 
+          />
+
+          <Text className="text-gray-700 font-medium mb-2">Alias</Text>
           <TextInput
             className="border border-gray-300 rounded-xl px-4 py-2 mb-4 text-gray-800 bg-gray-50"
             placeholder="ejemplo@email.com"
             placeholderTextColor="#9CA3AF"
             value={username} 
             onChangeText={setUsername} 
-            keyboardType="email-address"
+            onBlur={()=> alert("si")}
             autoCapitalize="none"
             editable={!loading} 
           />

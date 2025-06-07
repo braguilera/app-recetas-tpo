@@ -79,6 +79,33 @@ export const getRecipesPaginated = async (params = {}, errorMessage = 'Error al 
     }
 };
 
+// GET con parámetros para recetas (Pública - si 'recipe/page' es pública)
+export const getRecipesPaginatedWithAuth = async (params = {}, errorMessage = 'Error al obtener recetas') => {
+    try {
+        const queryParams = new URLSearchParams();
+        
+        if (params.page !== undefined) queryParams.append('page', params.page);
+        if (params.size !== undefined) queryParams.append('size', params.size);
+        if (params.sort && params.sort.length > 0) {
+            params.sort.forEach(sortParam => queryParams.append('sort', sortParam));
+        }
+        if (params.name) queryParams.append('name', params.name);
+        if (params.userName) queryParams.append('userName', params.userName);
+        if (params.rating !== undefined) queryParams.append('rating', params.rating);
+        if (params.includeIngredientId !== undefined) queryParams.append('includeIngredientId', params.includeIngredientId);
+        if (params.excludeIngredientId !== undefined) queryParams.append('excludeIngredientId', params.excludeIngredientId);
+        if (params.tipoRecetaId !== undefined) queryParams.append('tipoRecetaId', params.tipoRecetaId);
+
+        const url = `${API_CONFIG.BASE_URL}recipe/page${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+        
+        const response = await fetch(url, {
+            headers: await getHeadersWithAuth() 
+        });
+        return handleResponse(response, errorMessage);
+    } catch (error) {
+        throw new Error(`${errorMessage}: ${error.message}`);
+    }
+};
 // GET verificación del código (Pública)
 export const getDatosConQueryParams = async (endpoint, params = {}, errorMessage = 'Error al obtener datos') => {
     try {
