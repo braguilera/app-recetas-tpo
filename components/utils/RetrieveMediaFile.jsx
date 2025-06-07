@@ -19,10 +19,7 @@ const RetrieveMediaFile = ({ imageUrl }) => {
 
             try {
                 // Si la URL ya es una URL completa (http/https), la usamos directamente
-                if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-                    setRetrievedImageUri(imageUrl);
-                    console.log("URL directa proporcionada:", imageUrl);
-                } else {
+                if (imageUrl.startsWith('media')){
                     // Si es un path de Firebase Storage, obtenemos la URL de descarga
                     const storageRef = firebase.storage().ref().child(imageUrl);
                     const downloadURL = await storageRef.getDownloadURL();
@@ -31,7 +28,7 @@ const RetrieveMediaFile = ({ imageUrl }) => {
                 }
             } catch (error) {
                 console.error("Error al buscar la imagen:", error);
-                setRetrievedImageUri('not-found'); // Special value to indicate image not found
+                setRetrievedImageUri('not-found'); 
             } finally {
                 setSearching(false);
             }
@@ -41,16 +38,16 @@ const RetrieveMediaFile = ({ imageUrl }) => {
     }, [imageUrl]); // Dependencia del efecto en la prop imageUrl
 
     return (
-        <View className="w-full items-center justify-center rounded-lg">
+        <View className="w-full h-full items-center justify-center overflow-hidden">
             {searching ? (
                 <ActivityIndicator size="large" color="#3B82F6" />
             ) : retrievedImageUri === 'not-found' ? (
-                <MaterialIcons name="image-not-supported" size={48} color="black" />
+                <MaterialIcons name="image-not-supported" size={80} color="black" />
             ) : retrievedImageUri ? (
-                <Image source={{ uri: retrievedImageUri }} className="w-full h-full resize-contain rounded-lg" style={{ aspectRatio: 4/3 }} />
+                <Image source={{ uri: retrievedImageUri }} className="w-full  rounded-lg" style={{ aspectRatio: 4/4 }} />
             ) : (
                 // Opcional: mostrar un placeholder inicial si no hay URL y no se está buscando
-                <MaterialIcons name="image-not-supported" size={48} color="lightgray" />
+                <MaterialIcons name="image-not-supported" size={80} color="lightgray" />
             )}
         </View>
     );

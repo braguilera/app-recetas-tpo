@@ -2,6 +2,7 @@ import React from 'react'
 import { AntDesign, FontAwesome } from "@expo/vector-icons"
 import { Image, Text, TouchableOpacity, View } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
+import RetrieveMediaFile from 'components/utils/RetrieveMediaFile'
 
 const RecipeCardCarrousel = ({recipe}) => {
     const navigation = useNavigation()
@@ -9,14 +10,10 @@ const RecipeCardCarrousel = ({recipe}) => {
     return (
         <TouchableOpacity
             key={recipe.idReceta}
-            className="mb-4 w-full rounded-xl relative overflow-hidden bg-slate-100"
+            className="mb-4 w-full h-60 rounded-xl relative overflow-hidden bg-slate-100"
             onPress={() => navigation.navigate("DetailsRecipes", { recipeId: recipe.idReceta })}
         >
-            <Image
-            source={{ uri: `https://picsum.photos/seed/${recipe.idReceta}/400/300` }}
-            className="w-full h-60"
-            accessibilityLabel={`Imagen de ${recipe.nombreReceta}`}
-            />
+            <RetrieveMediaFile imageUrl={recipe.fotoPrincipal}></RetrieveMediaFile>
             <View className="p-3 absolute w-[95%] left-2 bottom-2 rounded-lg bg-gray-50">
                 <Text className="text-lg font-bold text-gray-700">{recipe.nombreReceta}</Text>
                 <Text className="text-gray-400 text-sm mb-2" numberOfLines={2}>Descripción breve de la receta que se muestra aquí para dar una idea del contenido.</Text>

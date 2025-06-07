@@ -238,7 +238,6 @@ const HomeRecipes = () => {
             <View className="bg-amber-100 px-2 py-1 rounded-md">
               <Text className="text-xs font-medium text-amber-800">Nuevas</Text>
             </View>
-            <RetrieveMediaFile ></RetrieveMediaFile>
           </View>
 
           {/* Recipe Carousel */}

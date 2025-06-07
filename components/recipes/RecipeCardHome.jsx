@@ -2,6 +2,7 @@ import React from 'react'
 import { AntDesign, FontAwesome } from "@expo/vector-icons"
 import { Image, Text, TouchableOpacity, View } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
+import RetrieveMediaFile from 'components/utils/RetrieveMediaFile'
 
 const RecipeCardHome = ({recipe}) => {
 const navigation = useNavigation()
@@ -13,11 +14,7 @@ const navigation = useNavigation()
         onPress={() => navigation.navigate("DetailsRecipes", { recipeId: recipe.idReceta, rating:recipe.averageRating })}
     >
         <View className="w-28 h-28 relative">
-        <Image
-        source={{ uri: `https://picsum.photos/seed/${recipe.idReceta}/200/200` }}
-        className="w-full h-full rounded-lg "
-        accessibilityLabel={`Imagen de ${recipe.recipeName}`}
-        />
+        <RetrieveMediaFile imageUrl={recipe.fotoPrincipal}></RetrieveMediaFile>
         <Text className="absolute top-1 left-1 font-bold text-amber-500 text-sm bg-amber-100 px-2 py-1 rounded-lg">{recipe.tipoRecetaDescripcion}</Text>
         </View>
         <View className="flex-1 p-3">

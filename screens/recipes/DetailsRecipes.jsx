@@ -1,15 +1,16 @@
 import { useContext, useEffect, useState } from "react"
-import { ScrollView, Text, View, TouchableOpacity, Image, StatusBar, TextInput } from "react-native"
+import { ScrollView, Text, View, TouchableOpacity, Image, StatusBar, TextInput, Alert } from "react-native"
 import { useNavigation, useRoute } from "@react-navigation/native"
 import { AntDesign, FontAwesome } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { getDatos, getDatosWithAuth } from "api/crud"
+import { getDatos, getDatosWithAuth, postDatosWithAuth } from "api/crud"
 import { Picker } from "@react-native-picker/picker"
 import { Contexto } from "contexto/Provider"
+import RetrieveMediaFile from "components/utils/RetrieveMediaFile"
 
 const DetailsRecipes = () => {
-  const { logeado} = useContext(Contexto); 
-  
+  const { logeado, userId } = useContext(Contexto);
+
   const navigation = useNavigation()
   const route = useRoute()
   const { recipeId, rating } = route.params || {}
@@ -18,8 +19,13 @@ const DetailsRecipes = () => {
   const [recipe, setRecipe] = useState({})
   const [activeTab, setActiveTab] = useState("ingredientes")
   const [peopleCount, setPeopleCount] = useState(2)
-  const [comentario, setComentario] = useState("")
-  const [puntuacion, setPuntuacion] = useState("5")
+  // Estado para el nuevo comentario a enviar
+  const [newComment, setNewComment] = useState({
+    usuario: userId,
+    receta: recipeId,
+    calificacion: "",
+    comentarios: "",
+  });
 
   const fetchRecipe = async () => {
     try {
@@ -30,9 +36,53 @@ const DetailsRecipes = () => {
     }
   }
 
+  const handleComment = async () => {
+    // Validar que la calificación y el comentario no estén vacíos
+    if (!newComment.calificacion) {
+      Alert.alert("Error", "Por favor, selecciona una calificación (estrellas).");
+      return;
+    }
+    if (!newComment.comentarios.trim()) {
+      Alert.alert("Error", "Por favor, escribe un comentario.");
+      return;
+    }
+
+    try {
+      // Asegurarse de que calificacion sea un número
+      const commentToSend = {
+        ...newComment,
+        calificacion: Number.parseInt(newComment.calificacion),
+      };
+
+      await postDatosWithAuth("califications/crear", commentToSend, "Error al comentar la receta")
+
+      Alert.alert("Éxito", "¡Tu comentario ha sido enviado exitosamente!");
+      // Actualizar la receta para mostrar el nuevo comentario
+      await fetchRecipe();
+      // Resetear el formulario de comentario
+      setNewComment({
+        usuario: userId,
+        receta: recipeId,
+        calificacion: "",
+        comentarios: "",
+      });
+    } catch (error) {
+      console.error("Error al enviar el comentario:", error.message);
+      Alert.alert("Error", `No se pudo enviar tu comentario: ${error.message}`);
+    }
+  }
+
   useEffect(() => {
     fetchRecipe()
-  }, [])
+    // Inicializar newComment con userId y recipeId una vez que estén disponibles
+    if (userId && recipeId) {
+        setNewComment(prev => ({
+            ...prev,
+            usuario: userId,
+            receta: recipeId,
+        }));
+    }
+  }, [userId, recipeId]); // Añadir userId y recipeId como dependencias para asegurar que el estado se actualice
 
   const ratings = recipe.calificaciones || []
   const avgRating = ratings.length > 0
@@ -52,12 +102,8 @@ const DetailsRecipes = () => {
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
       <ScrollView className="flex-1 pb-40">
         {/* Imagen Header */}
-        <View className="relative">
-          <Image
-            source={{ uri: `https://picsum.photos/seed/${recipe.idReceta}/800/500` }}
-            className="w-full h-64"
-            accessibilityLabel={`Imagen de ${recipe.nombreReceta}`}
-          />
+        <View className="relative h-60">
+            <RetrieveMediaFile imageUrl={recipe.fotoPrincipal}></RetrieveMediaFile>
           <View className="absolute top-0 left-0 right-0 p-4 flex-row justify-between">
             <TouchableOpacity
               className="bg-amber-400 w-10 h-10 rounded-full items-center justify-center"
@@ -169,7 +215,16 @@ const DetailsRecipes = () => {
                     </View>
                     <Text className="text-lg font-medium text-gray-800">Paso {paso.stepNumber}</Text>
                   </View>
-                  <Text className="text-gray-700 ml-11">{paso.description}</Text>
+                  <Text className="text-gray-500 ml-11 mb-2">{paso.description}</Text>
+                  <View className="flex gap-4 rounded-lg overflow-hidden">
+                    {paso.multimediaList &&
+                      paso.multimediaList.map(url => (
+                        <View key={url.urlContenido} className="w-full h-40">
+                          <RetrieveMediaFile imageUrl={url.urlContenido}></RetrieveMediaFile>
+                        </View>
+                      ))
+                    }
+                  </View>
                 </View>
               ))}
             </View>
@@ -183,7 +238,9 @@ const DetailsRecipes = () => {
                 <View className="items-center justify-center p-10">
                   <Text className="text-gray-400 text-base italic text-center">
                     🍽️ Aún no hay calificaciones para esta receta.
-                    <Text className="text-amber-500"> ¡Sé el primero en dejar tu opinión!</Text>
+                    {logeado &&
+                      <Text className="text-amber-500"> ¡Sé el primero en dejar tu opinión!</Text>
+                    }
                   </Text>
                 </View>
               ) : (
@@ -210,12 +267,13 @@ const DetailsRecipes = () => {
                   {/* Calificación */}
                   <View className="mb-4">
                     <Text className="text-sm text-gray-600 mb-1">Calificación (estrellas)</Text>
-                    <View className="bg-gray-100 rounded-lg px-3 py-1">
+                    <View className="bg-gray-100 rounded-lg px-3">
                       <Picker
-                        selectedValue={puntuacion}
-                        onValueChange={(itemValue) => setPuntuacion(itemValue)}
+                        selectedValue={newComment.calificacion}
+                        onValueChange={(itemValue) => setNewComment(prev => ({ ...prev, calificacion: itemValue }))}
                         dropdownIconColor="#F59E0B"
                       >
+                        <Picker.Item label="Selecciona una puntuación" value="" />
                         <Picker.Item label="⭐ 1" value="1" />
                         <Picker.Item label="⭐⭐ 2" value="2" />
                         <Picker.Item label="⭐⭐⭐ 3" value="3" />
@@ -229,8 +287,8 @@ const DetailsRecipes = () => {
                   <View className="mb-4">
                     <Text className="text-sm text-gray-600 mb-1">Comentario</Text>
                     <TextInput
-                      value={comentario}
-                      onChangeText={setComentario}
+                      value={newComment.comentarios}
+                      onChangeText={(text) => setNewComment(prev => ({ ...prev, comentarios: text }))}
                       placeholder="Escribe aquí tu opinión..."
                       multiline
                       className="bg-gray-100 rounded-lg px-2 py-4 text-gray-800"
@@ -240,15 +298,7 @@ const DetailsRecipes = () => {
                   {/* Botón Enviar */}
                   <TouchableOpacity
                     className="bg-amber-400 py-3 rounded-full items-center shadow-sm"
-                    onPress={() => {
-                      const nuevoComentario = {
-                        comentario,
-                        puntuacion: parseInt(puntuacion),
-                        idReceta: recipe.idReceta,
-                        fecha: new Date().toISOString(),
-                      }
-                      console.log("Comentario enviado:", JSON.stringify(nuevoComentario, null, 2))
-                    }}
+                    onPress={handleComment} // Corregido para llamar a la función
                   >
                     <Text className="text-white font-semibold">Enviar Comentario</Text>
                   </TouchableOpacity>
@@ -265,4 +315,4 @@ const DetailsRecipes = () => {
   )
 }
 
-export default DetailsRecipes
+export default DetailsRecipes;
