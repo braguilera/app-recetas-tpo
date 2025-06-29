@@ -1,37 +1,56 @@
+// screens/DetailsRecipes.js (o donde tengas tu componente principal)
+// Este es un fragmento, asume que el resto del código del componente es el mismo que el proporcionado anteriormente.
+
 import { useContext, useEffect, useState, useCallback } from "react";
 import {
   ScrollView,
   Text,
   View,
   TouchableOpacity,
-  Image,
   StatusBar,
-  TextInput,
   Alert,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { AntDesign, FontAwesome } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { deleteDatosWithAuth, getDatos, getDatosWithAuth, postDatosWithAuth } from "api/crud";
-import { Picker } from "@react-native-picker/picker";
-import { Contexto } from "contexto/Provider";
-import RetrieveMediaFile from "components/utils/RetrieveMediaFile";
+import { deleteDatosWithAuth, getDatosWithAuth, postDatosWithAuth } from "api/crud";
+import { Contexto } from "../../contexto/Provider";
+import RetrieveMediaFile from "../../components/utils/RetrieveMediaFile"; // Asegúrate de que la ruta sea correcta
+
+// Importa los nuevos componentes reutilizables
+import RecipeHeader from "../../components/recipes/details/RecipeHeader";
+import RecipeInfoOverview from "../../components/recipes/details/RecipeInfoOverview";
+import TabNavigation from "../../components/recipes/details/TabNavigation";
+import IngredientAdjuster from "../../components/recipes/details/IngredientAdjuster";
+import CommentForm from "../../components/recipes/details/CommentForm";
+import CommentList from "../../components/recipes/details/CommentList";
+
 
 const DetailsRecipes = () => {
-  const { logeado, userId } = useContext(Contexto);
+  // Destructurar las propiedades del contexto
+  const { logeado, userId, saveModifiedRecipe, removeModifiedRecipe, modifiedRecipes, MAX_MODIFIED_RECIPES } = useContext(Contexto);
 
   const navigation = useNavigation();
   const route = useRoute();
-  const { recipeId, rating } = route.params || {};
+  // recipeId es el ID de la receta original
+  // modifiedData se pasará desde el perfil si se navega a una receta modificada guardada
+  const { recipeId, modifiedData } = route.params || {};
   const insets = useSafeAreaInsets();
 
   const [recipe, setRecipe] = useState({});
-  const [isFavorite, setIsFavorite] = useState(false); 
+  const [isFavorite, setIsFavorite] = useState(false);
   const [activeTab, setActiveTab] = useState("ingredientes");
 
-  const [peopleCount, setPeopleCount] = useState(1); 
-  const [originalPeopleCount, setOriginalPeopleCount] = useState(1); 
+  const [peopleCount, setPeopleCount] = useState(1); // CANTIDAD DE PERSONAS ACTUAL
+  const [originalPeopleCount, setOriginalPeopleCount] = useState(1); // CANTIDAD DE PERSONAS ORIGINAL DE LA RECETA
   const [adjustedIngredients, setAdjustedIngredients] = useState([]);
+
+  // Estado para saber si la receta actualmente mostrada (con sus ajustes) ya está guardada localmente
+  const [isCurrentModifiedVersionSaved, setIsCurrentModifiedVersionSaved] = useState(false);
+  // Almacena el modifiedId único de la versión actualmente guardada, si existe
+  const [currentModifiedId, setCurrentModifiedId] = useState(null);
+
+  // Determina si la receta ha sido modificada respecto a su cantidad de personas original
+  const isRecipeModified = peopleCount !== originalPeopleCount;
 
   const [newComment, setNewComment] = useState({
     usuario: userId,
@@ -42,7 +61,7 @@ const DetailsRecipes = () => {
 
   const verifyFavorite = useCallback(async () => {
     if (!userId || !recipeId) {
-      setIsFavorite(false); 
+      setIsFavorite(false);
       return false;
     }
     try {
@@ -51,36 +70,41 @@ const DetailsRecipes = () => {
       );
       const favoriteStatus = response || false;
       setIsFavorite(favoriteStatus);
-      return favoriteStatus; 
+      return favoriteStatus;
     } catch (error) {
-      console.error(
-        "Error al verificar si la receta es favorita:",
-        error.message
-      );
+      console.log("Error verificando estado de favorito:", error);
       setIsFavorite(false);
       return false;
     }
-  }, [userId, recipeId]); 
+  }, [userId, recipeId]);
 
   const fetchRecipe = async () => {
     try {
       const data = await getDatosWithAuth(`recipe/${recipeId}`);
       setRecipe(data);
-      const initialPeople = data.cantidadPersonas || 1;
-      setPeopleCount(initialPeople);
-      setOriginalPeopleCount(initialPeople);
 
-      setAdjustedIngredients(data.usedIngredients || []);
+      let initialPeople = data.cantidadPersonas || 1;
+      let initialIngredients = data.usedIngredients || [];
+
+      // Si la navegación proviene de una receta modificada, usa esos datos
+      if (modifiedData) {
+        initialPeople = modifiedData.cantidadPersonas;
+        initialIngredients = modifiedData.usedIngredients;
+        // La "cantidadPersonas" de la receta original sigue siendo la del backend,
+        // pero peopleCount e adjustedIngredients se inician con los datos modificados.
+        // originalPeopleCount debe seguir siendo la del backend para la comparación `isRecipeModified`
+      }
+
+      setPeopleCount(initialPeople);
+      setOriginalPeopleCount(data.cantidadPersonas || 1); // SIEMPRE la cantidad original del backend
+      setAdjustedIngredients(initialIngredients);
+
     } catch (error) {
-      console.error("Error fetching recipes:", error.message);
-      Alert.alert(
-        "Error",
-        "No se pudo cargar la receta. Por favor, inténtalo de nuevo más tarde."
-      );
+      console.log("Error fetching recipes:", error.message);
     }
   };
 
-  const calculateAdjustedQuantities = (newCount) => {
+  const calculateAdjustedQuantities = useCallback((newCount) => {
     if (!recipe.usedIngredients || originalPeopleCount === 0) return [];
 
     return recipe.usedIngredients.map((ing) => {
@@ -103,11 +127,11 @@ const DetailsRecipes = () => {
         cantidad: formattedQuantity,
       };
     });
-  };
+  }, [recipe.usedIngredients, originalPeopleCount]);
 
   const handleComment = async () => {
     if (!newComment.calificacion) {
-      Alert.alert("Error", "Por favor, selecciona una calificación (estrellas).");
+      Alert.alert("Error", "Por favor, selecciona una calificación.");
       return;
     }
     if (!newComment.comentarios.trim()) {
@@ -127,7 +151,6 @@ const DetailsRecipes = () => {
         "Error al comentar la receta"
       );
 
-      Alert.alert("Éxito", "¡Tu comentario ha sido enviado exitosamente!");
       await fetchRecipe();
       setNewComment({
         usuario: userId,
@@ -136,45 +159,60 @@ const DetailsRecipes = () => {
         comentarios: "",
       });
     } catch (error) {
-      console.error("Error al enviar el comentario:", error.message);
-      Alert.alert("Error", `No se pudo enviar tu comentario: ${error.message}`);
+      console.log("Error al enviar el comentario:", error.message);
     }
   };
 
   useEffect(() => {
-    fetchRecipe();
+    fetchRecipe(); // Carga la receta y aplica modifiedData si viene
     if (logeado && userId && recipeId) {
       setNewComment((prev) => ({
         ...prev,
         usuario: userId,
         receta: recipeId,
       }));
-      verifyFavorite(); 
+      verifyFavorite();
     } else {
-        setIsFavorite(false); 
+      setIsFavorite(false);
     }
-  }, [logeado, userId, recipeId, verifyFavorite]);
+  }, [logeado, userId, recipeId, verifyFavorite, modifiedData]); // added modifiedData as a dependency
 
+  // Este useEffect recalcula los ingredientes ajustados cuando cambia peopleCount
   useEffect(() => {
     if (recipe.usedIngredients && originalPeopleCount > 0) {
       const newAdjustedIngredients = calculateAdjustedQuantities(peopleCount);
       setAdjustedIngredients(newAdjustedIngredients);
     }
-  }, [peopleCount, originalPeopleCount, recipe.usedIngredients]);
+  }, [peopleCount, originalPeopleCount, recipe.usedIngredients, calculateAdjustedQuantities]);
 
-  const increasePeople = () => {
+  // NUEVO: useEffect para verificar si la versión actual (por peopleCount) está guardada
+  useEffect(() => {
+    if (!recipeId) return; // Asegurarse de que tenemos un recipeId
+
+    // Busca si existe una receta modificada con el mismo ID original y la CANTIDAD ACTUAL DE PERSONAS
+    const found = modifiedRecipes.find(
+      (r) =>
+        String(r.originalRecipeId) === String(recipeId) &&
+        r.cantidadPersonas === peopleCount
+    );
+
+    setIsCurrentModifiedVersionSaved(!!found);
+    setCurrentModifiedId(found ? found.modifiedId : null);
+  }, [modifiedRecipes, recipeId, peopleCount]); // Depende de modifiedRecipes y peopleCount
+
+  const increasePeople = useCallback(() => {
     if (peopleCount < 10) {
-      setPeopleCount(peopleCount + 1);
+      setPeopleCount(prevCount => prevCount + 1);
     }
-  };
+  }, [peopleCount]);
 
-  const decreasePeople = () => {
+  const decreasePeople = useCallback(() => {
     if (peopleCount > 1) {
-      setPeopleCount(peopleCount - 1);
+      setPeopleCount(prevCount => prevCount - 1);
     }
-  };
+  }, [peopleCount]);
 
-  const resetPeopleAndIngredients = () => {
+  const resetPeopleAndIngredients = useCallback(() => {
     if (recipe.cantidadPersonas) {
       setPeopleCount(recipe.cantidadPersonas);
       setAdjustedIngredients(recipe.usedIngredients || []);
@@ -182,73 +220,77 @@ const DetailsRecipes = () => {
       setPeopleCount(1);
       setAdjustedIngredients(recipe.usedIngredients || []);
     }
-  };
+  }, [recipe.cantidadPersonas, recipe.usedIngredients]);
 
   const addToFavorite = async () => {
     try {
       await postDatosWithAuth(`favorites/add/${userId}/${recipeId}`);
       setIsFavorite(true);
-      Alert.alert("Éxito", "Receta agregada a favoritos.");
     } catch (error) {
-      console.error("Error al guardar la receta en favoritos:", error.message);
-      Alert.alert("Error", "No se pudo agregar a favoritos. Intenta de nuevo.");
+      console.log("Error al guardar la receta en favoritos:", error.message);
     }
   };
 
   const removeFromFavorite = async () => {
     try {
-      await deleteDatosWithAuth(`favorites/remove/${userId}/${recipeId}`); 
+      await deleteDatosWithAuth(`favorites/remove/${userId}/${recipeId}`);
       setIsFavorite(false);
     } catch (error) {
-      console.error("Error al eliminar la receta de favoritos:", error.message);
-      Alert.alert("Error", "No se pudo eliminar de favoritos. Intenta de nuevo.");
+      console.log("Error al eliminar la receta de favoritos:", error.message);
     }
   };
 
-  const handleFavoritePress = () => {
+  const handleFavoritePress = useCallback(() => {
     if (isFavorite) {
       removeFromFavorite();
     } else {
       addToFavorite();
     }
+  }, [isFavorite, addToFavorite, removeFromFavorite]);
+
+  // NUEVO: Manejador para guardar/eliminar la receta modificada localmente
+  const handleSaveRemoveModifiedRecipe = async () => {
+    if (!logeado) {
+      Alert.alert("Información", "Debes iniciar sesión para guardar o eliminar recetas modificadas.");
+      return;
+    }
+
+    // Si la versión actual ya está guardada, se quiere eliminar
+    if (isCurrentModifiedVersionSaved && currentModifiedId) {
+      await removeModifiedRecipe(currentModifiedId);
+    } else {
+      // Si no está guardada, se quiere guardar
+      const modifiedRecipeToSave = {
+        originalRecipeId: recipeId,
+        nombreReceta: recipe.nombreReceta,
+        fotoPrincipal: recipe.fotoPrincipal,
+        descripcionReceta: recipe.descripcionReceta,
+        cantidadPersonas: peopleCount, // La cantidad de personas modificada
+        usedIngredients: adjustedIngredients, // Los ingredientes ajustados
+        steps: recipe.steps, // También podrías guardar los pasos si fueran afectados por la modificación
+        tipoRecetaDescripcion: recipe.tipoRecetaDescripcion,
+        nombreUsuario: recipe.nombreUsuario,
+        porciones: recipe.porciones, // Mantener la original si no se ajusta
+        averageRating: recipe.averageRating, // Mantener la original
+      };
+
+      await saveModifiedRecipe(modifiedRecipeToSave);
+    }
   };
+
 
   return (
     <View style={{ paddingTop: insets.top }} className="pb-20 flex-1 bg-slate-50">
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
       <ScrollView className="flex-1 pb-40">
-        <View className="relative h-60">
-          <RetrieveMediaFile imageUrl={recipe.fotoPrincipal}></RetrieveMediaFile>
-          <View className="absolute top-0 left-0 right-0 p-4 flex-row justify-between">
-            <TouchableOpacity
-              className="bg-amber-400 w-10 h-10 rounded-full items-center justify-center"
-              onPress={() => navigation.goBack()}
-              accessibilityLabel="Volver atrás"
-            >
-              <AntDesign name="arrowleft" size={20} color="white" />
-            </TouchableOpacity>
-            {logeado && ( 
-              <TouchableOpacity
-                className="bg-white w-10 h-10 rounded-full items-center justify-center"
-                onPress={handleFavoritePress}
-                accessibilityLabel={
-                  isFavorite ? "Eliminar de favoritos" : "Guardar receta"
-                }
-              >
-                {isFavorite ? (
-                  <AntDesign name="heart" size={20} color="#F59E0B" />
-                ) : (
-                  <AntDesign name="hearto" size={20} color="#F59E0B" />
-                )}
-              </TouchableOpacity>
-            )}
-          </View>
-          <View className="absolute bottom-4 right-4 bg-amber-400 rounded-full">
-            <Text className="text-white px-3 py-1 font-medium">
-              {recipe.tipoRecetaDescripcion}
-            </Text>
-          </View>
-        </View>
+        <RecipeHeader
+          imageUrl={recipe.fotoPrincipal}
+          recipeType={recipe.tipoRecetaDescripcion}
+          isFavorite={isFavorite}
+          // El botón de favorito normal se oculta si la receta está siendo modificada O si ya es una versión modificada cargada
+          logeado={logeado && !isRecipeModified && !modifiedData}
+          onToggleFavorite={handleFavoritePress}
+        />
 
         {/* Info Receta */}
         <View className="p-4">
@@ -259,116 +301,54 @@ const DetailsRecipes = () => {
             {recipe.descripcionReceta}
           </Text>
 
-          <View className="flex-row items-center justify-around mb-4">
-            <View className="flex-row items-center">
-              <FontAwesome name="user" size={14} color="#9CA3AF" />
-              <Text className="text-sm text-gray-500 ml-1">
-                Por {recipe.nombreUsuario}
-              </Text>
-            </View>
-            <View className="w-1 h-1 bg-gray-300 rounded-full mx-2" />
-            <View className="flex-row items-center">
-              <AntDesign name="piechart" size={14} color="#9CA3AF" />
-              <Text className="text-sm text-gray-500 ml-1">
-                {peopleCount} porciones
-              </Text>
-            </View>
-            <View className="w-1 h-1 bg-gray-300 rounded-full mx-2" />
-            <View className="flex-row items-center">
-              <AntDesign name="star" size={14} color="#F59E0B" />
-              <Text className="text-sm text-amber-500 ml-1">{rating}</Text>
-            </View>
-          </View>
+          <RecipeInfoOverview
+            author={recipe.nombreUsuario}
+            portions={recipe.porciones}
+            peopleCount={peopleCount} // Muestra la cantidad actual de personas
+            averageRating={recipe.averageRating}
+          />
 
           {/* Tabs */}
-          <View className="flex-row justify-center border-b border-gray-200 mb-4">
-            {["ingredientes", "instrucciones", "calificaciones"].map((tab) => (
-              <TouchableOpacity
-                key={tab}
-                className={`py-2 px-4 ${
-                  activeTab === tab ? "border-b-2 border-amber-400" : ""
-                }`}
-                onPress={() => setActiveTab(tab)}
-              >
-                <Text
-                  className={`font-medium ${
-                    activeTab === tab ? "text-amber-500" : "text-gray-500"
-                  }`}
-                >
-                  {tab.charAt(0).toUpperCase() + tab.slice(1)}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+          <TabNavigation
+            activeTab={activeTab}
+            onSelectTab={setActiveTab}
+          />
 
           {/* Ingredients */}
           {activeTab === "ingredientes" && (
-            <View>
-              {(adjustedIngredients || []).map((ing, index) => (
-                <View
-                  key={ing.idUtilizado}
-                  className={`flex-row justify-between py-3 px-2 border-b border-gray-100 ${
-                    index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                  }`}
-                >
-                  <View>
-                    <Text className="text-gray-700">
-                      {ing.ingrediente?.nombre || "Ingrediente desconocido"}
+            <>
+              <IngredientAdjuster
+                adjustedIngredients={adjustedIngredients}
+                peopleCount={peopleCount}
+                originalPeopleCount={originalPeopleCount}
+                increasePeople={increasePeople}
+                decreasePeople={decreasePeople}
+                resetPeopleAndIngredients={resetPeopleAndIngredients}
+              />
+              {/* Botón para guardar/eliminar receta modificada */}
+              {logeado && isRecipeModified && (
+                <View className="mt-6 p-4 items-center">
+                  <TouchableOpacity
+                    className={`py-3 px-6 rounded-full items-center shadow-sm ${
+                      isCurrentModifiedVersionSaved ? 'bg-red-500' : 'bg-green-500'
+                    }`}
+                    onPress={handleSaveRemoveModifiedRecipe}
+                    // Deshabilitar el botón de guardar si se ha alcanzado el límite Y NO es una versión ya guardada para eliminar
+                    disabled={!isCurrentModifiedVersionSaved && modifiedRecipes.length >= MAX_MODIFIED_RECIPES}
+                  >
+                    <Text className="text-white font-semibold text-lg">
+                      {isCurrentModifiedVersionSaved ? 'Eliminar Modificación' : 'Guardar Receta Modificada'}
+                      {!isCurrentModifiedVersionSaved && ` (${modifiedRecipes.length}/${MAX_MODIFIED_RECIPES})`}
                     </Text>
-                    {ing.observaciones && (
-                      <Text className="text-gray-400 text-xs">
-                        {ing.observaciones}
-                      </Text>
-                    )}
-                  </View>
-                  <Text className="text-gray-700 font-medium text-right">
-                    {ing.cantidad} {ing.unidad?.name || ""}
-                  </Text>
+                  </TouchableOpacity>
+                  {!isCurrentModifiedVersionSaved && modifiedRecipes.length >= MAX_MODIFIED_RECIPES && (
+                    <Text className="text-red-500 text-sm mt-2 text-center">
+                      Has alcanzado el límite de recetas modificadas guardadas.
+                    </Text>
+                  )}
                 </View>
-              ))}
-              {/* Persons*/}
-              <View className="flex-col gap-4 justify-center items-center mt-6">
-                <View className="flex-row items-center bg-gray-100 rounded-full py-2 px-4">
-                  <TouchableOpacity
-                    onPress={decreasePeople}
-                    disabled={peopleCount <= 1}
-                  >
-                    <AntDesign
-                      name="minus"
-                      size={20}
-                      color={peopleCount <= 1 ? "#D1D5DB" : "#F59E0B"}
-                    />
-                  </TouchableOpacity>
-                  <View className="flex-row items-center mx-4">
-                    <FontAwesome name="users" size={16} color="#4B5563" />
-                    <Text className="text-gray-700 font-bold mx-1">×</Text>
-                    <Text className="text-gray-700 font-bold">
-                      {peopleCount}
-                    </Text>
-                  </View>
-                  <TouchableOpacity
-                    onPress={increasePeople}
-                    disabled={peopleCount >= 10}
-                  >
-                    <AntDesign
-                      name="plus"
-                      size={20}
-                      color={peopleCount >= 10 ? "#D1D5DB" : "#F59E0B"}
-                    />
-                  </TouchableOpacity>
-                </View>
-                {peopleCount !== originalPeopleCount && (
-                  <TouchableOpacity
-                    onPress={resetPeopleAndIngredients}
-                    className="ml-4 bg-amber-200 rounded-full py-2 px-4"
-                  >
-                    <Text className="text-amber-700 font-semibold text-sm">
-                      Restablecer
-                    </Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            </View>
+              )}
+            </>
           )}
 
           {/* Instruccions */}
@@ -402,7 +382,7 @@ const DetailsRecipes = () => {
                         <View key={url.urlContenido} className="w-full h-40">
                           <RetrieveMediaFile
                             imageUrl={url.urlContenido}
-                          ></RetrieveMediaFile>
+                          />
                         </View>
                       ))}
                   </View>
@@ -413,101 +393,17 @@ const DetailsRecipes = () => {
 
           {/* Califications */}
           {activeTab === "calificaciones" && (
-            <View className="mb-8">
-              {recipe.calification?.length === 0 ? (
-                <View className="items-center justify-center p-10">
-                  <Text className="text-gray-400 text-base italic text-center">
-                    🍽️ Aún no hay calificaciones para esta receta.
-                    {logeado && (
-                      <Text className="text-amber-500">
-                        {" "}
-                        ¡Sé el primero en dejar tu opinión!
-                      </Text>
-                    )}
-                  </Text>
-                </View>
-              ) : (
-                (recipe.calification || []).map((r, i) => (
-                  <View
-                    key={i}
-                    className={`mb-4 p-4 rounded-xl shadow-sm ${
-                      i % 2 === 0 ? "bg-white" : "bg-gray-50"
-                    }`}
-                  >
-                    <Text className="text-gray-400 text-sm mb-1">
-                      “{r.nombreUsuario}”
-                    </Text>
-                    <Text className="text-gray-700 font-semibold mb-1">
-                      “{r.comentarios}”
-                    </Text>
-                    <Text className="text-sm text-gray-400">
-                      Puntaje:{" "}
-                      <Text className="text-amber-500 font-bold">
-                        {r.calificacion}
-                      </Text>
-                    </Text>
-                  </View>
-                ))
-              )}
-
-              {/* New commet */}
+            <View>
+              <CommentList
+                comments={recipe.calification}
+                logeado={logeado}
+              />
               {logeado && (
-                <View className="mt-6 p-4 bg-white rounded-2xl shadow-sm border border-gray-100">
-                  <Text className="text-gray-700 font-bold text-lg mb-2">
-                    Deja tu comentario
-                  </Text>
-                  <View className="mb-4">
-                    <Text className="text-sm text-gray-600 mb-1">
-                      Calificación (estrellas)
-                    </Text>
-                    <View className="bg-gray-100 rounded-lg px-3">
-                      <Picker
-                        selectedValue={newComment.calificacion}
-                        onValueChange={(itemValue) =>
-                          setNewComment((prev) => ({
-                            ...prev,
-                            calificacion: itemValue,
-                          }))
-                        }
-                        dropdownIconColor="#F59E0B"
-                      >
-                        <Picker.Item
-                          label="Selecciona una puntuación"
-                          value=""
-                        />
-                        <Picker.Item label="⭐ 1" value="1" />
-                        <Picker.Item label="⭐⭐ 2" value="2" />
-                        <Picker.Item label="⭐⭐⭐ 3" value="3" />
-                        <Picker.Item label="⭐⭐⭐⭐ 4" value="4" />
-                        <Picker.Item label="⭐⭐⭐⭐⭐ 5" value="5" />
-                      </Picker>
-                    </View>
-                  </View>
-
-                  <View className="mb-4">
-                    <Text className="text-sm text-gray-600 mb-1">
-                      Comentario
-                    </Text>
-                    <TextInput
-                      value={newComment.comentarios}
-                      onChangeText={(text) =>
-                        setNewComment((prev) => ({ ...prev, comentarios: text }))
-                      }
-                      placeholder="Escribe aquí tu opinión..."
-                      multiline
-                      className="bg-gray-100 rounded-lg px-2 py-4 text-gray-800"
-                    />
-                  </View>
-
-                  <TouchableOpacity
-                    className="bg-amber-400 py-3 rounded-full items-center shadow-sm"
-                    onPress={handleComment}
-                  >
-                    <Text className="text-white font-semibold">
-                      Enviar Comentario
-                    </Text>
-                  </TouchableOpacity>
-                </View>
+                <CommentForm
+                  newComment={newComment}
+                  setNewComment={setNewComment}
+                  onHandleComment={handleComment}
+                />
               )}
             </View>
           )}

@@ -543,7 +543,7 @@ const EditProfile = () => {
           onPress={(event) => event.target == event.currentTarget && setShowUpgradeModal(false)}
         >
           <View className="m-5 w-[90%] max-h-[90%] bg-white rounded-2xl p-6 shadow-xl items-center">
-            <Text className="text-2xl font-bold text-amber-800 mb-5 text-center">
+            <Text className="text-2xl font-bold text-amber-500 mb-5 text-center">
               Mejorar a Estudiante
             </Text>
             <Text className="text-gray-700 text-base mb-6 text-center">
@@ -557,7 +557,7 @@ const EditProfile = () => {
                     Número de Tarjeta
                   </Text>
                   <TextInput
-                    className={`bg-gray-50 border rounded-xl px-4 py-3 text-gray-800 ${fieldErrors.cardNumber ? 'border-red-500' : 'border-gray-200'}`}
+                    className={`bg-gray-50 border rounded-xl px-4 py-3 mb-4 text-gray-800 ${fieldErrors.cardNumber ? 'border-red-500' : 'border-gray-200'}`}
                     value={upgradeCardNumber}
                     onChangeText={(text) => {setUpgradeCardNumber(text); clearErrors();}}
                     placeholder="Ej: 1234-5678-9012-3456"
@@ -569,7 +569,7 @@ const EditProfile = () => {
                 </View>
 
                 <View>
-                  <Text className="text-gray-700 font-medium mb-2">DNI Frente</Text>
+                  <Text className="text-gray-700 font-medium">DNI Frente</Text>
                   <UploadMediaFile
                     ref={dniFrontUploadRef}
                     initialImageUri={upgradeDniFrontImageUri}
@@ -581,7 +581,7 @@ const EditProfile = () => {
                 </View>
 
                 <View>
-                  <Text className="text-gray-700 font-medium mb-2 mt-4">DNI Dorso</Text>
+                  <Text className="text-gray-700 font-medium">DNI Dorso</Text>
                   <UploadMediaFile
                     ref={dniBackUploadRef}
                     initialImageUri={upgradeDniBackImageUri}
@@ -593,7 +593,7 @@ const EditProfile = () => {
                 </View>
 
                 <View>
-                  <Text className="text-gray-700 font-medium mb-2 mt-4">Número de Trámite del DNI</Text>
+                  <Text className="text-gray-700 font-medium">Número de Trámite del DNI</Text>
                   <TextInput
                     className={`bg-gray-50 border rounded-xl px-4 py-3 text-gray-800 ${fieldErrors.dni ? 'border-red-500' : 'border-gray-200'}`}
                     value={upgradeDni}
@@ -609,7 +609,7 @@ const EditProfile = () => {
             </ScrollView>
 
             <TouchableOpacity
-              className="bg-amber-600 rounded-xl py-4 items-center mt-8 shadow-lg w-full"
+              className="bg-amber-500 rounded-xl py-4 items-center mt-8 shadow-lg w-full"
               onPress={handleUpgradeToStudent}
               disabled={loading}
             >

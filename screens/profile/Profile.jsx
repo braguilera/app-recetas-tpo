@@ -1,25 +1,31 @@
-import { useContext, useEffect, useState } from "react"
+import { useContext, useEffect, useState, useCallback } from "react"
 import { ScrollView, Text, View, TouchableOpacity, Image, StatusBar, Alert } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { AntDesign, FontAwesome, MaterialCommunityIcons } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { deleteDatosWithAuth, getRecipesPaginated, getDatosWithAuth, postDatos, getRecipesPaginatedWithAuth } from "api/crud"
-import ConfirmModal from "../../components/common/ConfirmModal"
-import { Contexto } from "../../contexto/Provider" 
+import ConfirmModal from "../../components/common/ConfirmModal" // Asegúrate de que esta ruta sea correcta
+import { Contexto } from "../../contexto/Provider"
 import RetrieveMediaFile from "components/utils/RetrieveMediaFile"
 
 const Profile = () => {
     const navigation = useNavigation()
     const insets = useSafeAreaInsets()
-    const { userId, username, firstName, lastName, email, logeado, logout } = useContext(Contexto); 
+    // Destructure modifiedRecipes and removeModifiedRecipe from context
+    const { userId, username, firstName, lastName, email, logeado, logout, modifiedRecipes, removeModifiedRecipe } = useContext(Contexto);
 
     const [activeTab, setActiveTab] = useState("favoritos")
     const [myRecipes, setMyRecipes] = useState({ content: [] })
-    const [confirmVisible, setConfirmVisible] = useState(false)
-    const [recipeToDelete, setRecipeToDelete] = useState(null)
+    const [confirmVisible, setConfirmVisible] = useState(false) // Para borrar recetas publicadas
+    const [recipeToDelete, setRecipeToDelete] = useState(null) // Para borrar recetas publicadas
     const [userProfile, setUserProfile] = useState(null);
     const [myRecipesInactives, setMyRecipesInactives] = useState([]);
     const [favoritesRecipes, setFavoritesRecipes] = useState([]);
+
+    // NUEVOS estados para el modal de confirmación de recetas modificadas
+    const [confirmModifiedVisible, setConfirmModifiedVisible] = useState(false);
+    const [modifiedRecipeToDelete, setModifiedRecipeToDelete] = useState(null);
+
 
     const myCourses = {
         active: [
@@ -73,8 +79,7 @@ const Profile = () => {
             navigation.replace("MainTabs");
         } catch (error) {
             console.log("Error al cerrar sesión:", error);
-            const errorMessage = error.message || 'Ocurrió un error al cerrar sesión.';
-            Alert.alert("Error al Cerrar Sesión", errorMessage);
+            Alert.alert("Error", error.message || 'Ocurrió un error al cerrar sesión.');
         }
     }
 
@@ -85,6 +90,7 @@ const Profile = () => {
             await fetchRecipes(0)
         } catch (error) {
             console.log("Error al borrar receta:", error.message)
+            Alert.alert("Error", error.message || "Ocurrió un error al eliminar la receta.");
         } finally {
             setConfirmVisible(false)
             setRecipeToDelete(null)
@@ -96,16 +102,13 @@ const Profile = () => {
             console.warn("Username no disponible para cargar recetas.");
             return;
         }
-
         try {
             const params = {
                 userName: username,
             }
-
             const data = await getRecipesPaginatedWithAuth(params, 'Error al cargar recetas')
             setMyRecipes(data || { content: [] })
             console.log("Mis Recetas:", data)
-
         } catch (error) {
             console.log("Error fetching recipes:", error.message)
         }
@@ -113,23 +116,20 @@ const Profile = () => {
 
     const fetchRecipesInactives = async () => {
         try {
-
             const data = await getDatosWithAuth(`recipe/${userId}/inactivas`, 'Error al cargar recetas inactivas')
-            setMyRecipesInactives(data || { content: [] })
-            console.log("Mis Recetas:", data)
-
+            setMyRecipesInactives(data || [])
+            console.log("Mis Recetas Inactivas:", data)
         } catch (error) {
-            console.log("Error fetching recipes:", error.message)
+            console.log("Error fetching inactive recipes:", error.message)
         }
     }
 
     const fetchFavorites = async () => {
         try {
-
             const data = await getDatosWithAuth(`favorites/${userId}`, 'Error al cargar recetas favoritas')
-            setFavoritesRecipes(data)
+            setFavoritesRecipes(data || [])
         } catch (error) {
-            console.log("Error fetching recipes:", error.message)
+            console.log("Error fetching favorites:", error.message)
         }
     }
 
@@ -140,13 +140,33 @@ const Profile = () => {
         }
         try {
             const data = await getDatosWithAuth(`user/${userId}`, 'Error al cargar el perfil del usuario');
-            console.log(data)
             setUserProfile(data);
             console.log("Datos del perfil del usuario:", data);
         } catch (error) {
             console.log("Error al obtener el perfil del usuario:", error.message);
         }
     };
+
+    // Modificado para usar ConfirmModal
+    const handleRemoveModifiedRecipe = useCallback((modifiedId, recipeName) => {
+        setModifiedRecipeToDelete({ modifiedId, recipeName });
+        setConfirmModifiedVisible(true);
+    }, []);
+
+    // Nueva función para confirmar la eliminación de receta modificada
+    const confirmRemoveModifiedRecipe = useCallback(async () => {
+        if (!modifiedRecipeToDelete) return;
+
+        try {
+            await removeModifiedRecipe(modifiedRecipeToDelete.modifiedId);
+        } catch (error) {
+            console.log("Error al eliminar receta modificada:", error);
+        } finally {
+            setConfirmModifiedVisible(false);
+            setModifiedRecipeToDelete(null);
+        }
+    }, [modifiedRecipeToDelete, removeModifiedRecipe]);
+
 
     useEffect(() => {
         fetchUserProfileData();
@@ -162,6 +182,7 @@ const Profile = () => {
             fetchRecipes(0);
         }
     }, [username]);
+
 
     const renderUserAvatar = () => {
         const userNameInitial = userProfile?.nombre ? userProfile.nombre.charAt(0).toUpperCase() : '';
@@ -188,9 +209,75 @@ const Profile = () => {
         ))
     }
 
+    const renderModifiedRecipesList = () => {
+        if (modifiedRecipes.length === 0) {
+            return null;
+        }
+        return (
+            <View className="p-4 pt-0">
+                <Text className="text-lg font-bold text-gray-700 mb-4">Mis Recetas Modificadas</Text>
+                {modifiedRecipes.map((recipe) => (
+                    <View key={recipe.modifiedId} className="bg-white rounded-xl mb-4 overflow-hidden border border-gray-100 shadow-sm">
+                        <TouchableOpacity
+                            onPress={() => navigation.navigate("DetailsRecipes", {
+                                recipeId: recipe.originalRecipeId,
+                                modifiedData: recipe // Pass the full modified object
+                            })}
+                            className="flex-row"
+                        >
+                            <View className="w-28 h-28 p-2 relative">
+                                <RetrieveMediaFile imageUrl={recipe.fotoPrincipal}></RetrieveMediaFile>
+                            </View>
+                            <View className="flex-1 p-4">
+                                <View className="flex-row justify-between items-center mb-1">
+                                    <Text className="text-lg font-bold">{recipe.nombreReceta}</Text>
+                                    {/* Display modified persons if relevant */}
+                                    {recipe.cantidadPersonas && (
+                                        <View className="flex-row items-center">
+                                            <AntDesign name="team" size={14} color="#9CA3AF" />
+                                            <Text className="text-xs text-gray-500 ml-1">Para {recipe.cantidadPersonas} pers.</Text>
+                                        </View>
+                                    )}
+                                </View>
+                                <Text className="text-gray-600 text-sm" numberOfLines={2}>
+                                    {recipe.descripcionReceta}
+                                </Text>
+                            </View>
+                        </TouchableOpacity>
+                        <View className="flex-row border-t border-gray-100">
+                            <TouchableOpacity
+                                className="flex-1 py-3 items-center"
+                                onPress={() => handleRemoveModifiedRecipe(recipe.modifiedId, recipe.nombreReceta)}
+                            >
+                                <View className="flex-row items-center">
+                                    <AntDesign name="delete" size={16} color="#EF4444" />
+                                    <Text className="text-red-500 ml-2 font-medium">Eliminar Modificación</Text>
+                                </View>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                ))}
+                {modifiedRecipes.length > 0 && favoritesRecipes.length > 0 && <View className="border-b border-gray-300 my-4" />}
+            </View>
+        );
+    };
+
+
     const renderFavoritos = () => (
-        <View className="p-4">
-                {favoritesRecipes.map((recipe) => (
+        <View className="p-4 pt-0">
+            {renderModifiedRecipesList()}
+
+            {favoritesRecipes.length > 0 && (
+                modifiedRecipes.length > 0 ? (
+                    <Text className="text-lg font-bold text-gray-700 mb-4">Mis Recetas Favoritas</Text>
+                ) : (
+                    <Text className="text-lg font-bold text-gray-700 mb-4">Mis Recetas Favoritas</Text>
+                )
+            )}
+
+
+            {favoritesRecipes.length > 0 ? (
+                favoritesRecipes.map((recipe) => (
                     <View key={recipe.idReceta} className="bg-white rounded-xl mb-4 overflow-hidden border border-gray-100 shadow-sm">
                         <TouchableOpacity
                             onPress={() => navigation.navigate("DetailsRecipes", { recipeId: recipe.idReceta })}
@@ -212,8 +299,8 @@ const Profile = () => {
                                 </Text>
                                 <View className="flex-row items-center justify-between">
                                     <View className="flex-row items-center mr-4">
-                                    <FontAwesome name="user" size={14} color="#9CA3AF" />
-                                    <Text className="text-xs text-gray-500 ml-1">Por {recipe.nombreUsuario}</Text>
+                                        <FontAwesome name="user" size={14} color="#9CA3AF" />
+                                        <Text className="text-xs text-gray-500 ml-1">Por {recipe.nombreUsuario}</Text>
                                     </View>
                                     <View className="flex-row items-center">
                                         <AntDesign name="piechart" size={14} color="#9CA3AF" />
@@ -227,22 +314,51 @@ const Profile = () => {
                             </View>
                         </TouchableOpacity>
                     </View>
-                ))}
-                {favoritesRecipes.length === 0 &&                 
-                    <Text className="text-gray-500 text-center mt-8">No tienes recetas guardadas aún.</Text>
-                }
+                ))
+            ) : (
+                modifiedRecipes.length === 0 &&
+                <Text className="text-gray-500 text-center mt-8">No tienes recetas guardadas aún.</Text>
+            )}
         </View>
     )
 
     const renderMisRecetas = () => (
-        <View className="p-4">
-            {myRecipesInactives.length !== 0 &&
-                <Text className="text-lg font-bold text-gray-700 mb-2">Recetas en etapa de validación</Text>
-            }
-            
-            {myRecipesInactives && myRecipesInactives.length > 0 && (
+        <View className="p-4 pt-0">
+            {myRecipesInactives.length > 0 && (
+                <Text className="text-lg font-bold text-gray-700 mb-4">Recetas en Etapa de Validación</Text>
+            )}
+
+            {myRecipesInactives && myRecipesInactives.length > 0 ? (
                 myRecipesInactives.map((recipe) => (
-                    <View key={recipe.idReceta} className="bg-white rounded-xl mb-4 overflow-hidden border border-gray-100 shadow-sm">
+                    <View key={`inactive-${recipe.idReceta}`} className="bg-white rounded-xl mb-4 overflow-hidden border border-gray-100 shadow-sm opacity-70">
+                        <View className="flex-row">
+                            <View className="w-28 h-28 p-2 relative">
+                                <RetrieveMediaFile imageUrl={recipe.fotoPrincipal}></RetrieveMediaFile>
+                            </View>
+                            <View className="flex-1 p-4">
+                                <View className="flex-row justify-between items-center mb-1">
+                                    <Text className="text-lg font-bold">{recipe.nombreReceta}</Text>
+                                    <View className="flex-row items-center">
+                                        <AntDesign name="star" size={16} color="#F59E0B" />
+                                        <Text className="ml-1 text-amber-500 font-medium">{recipe.averageRating}</Text>
+                                    </View>
+                                </View>
+                                <Text className="text-gray-600 text-sm" numberOfLines={2}>
+                                    {recipe.descripcionReceta}
+                                </Text>
+                                <Text className="text-sm text-yellow-600 mt-2">Pendiente de validación</Text>
+                            </View>
+                        </View>
+                    </View>
+                ))
+            ) : null}
+
+            {myRecipes.content && myRecipes.content.length > 0 && (
+                <Text className="text-lg font-bold text-gray-700 mb-4">Mis Recetas Publicadas</Text>
+            )}
+            {myRecipes.content && myRecipes.content.length > 0 ? (
+                myRecipes.content.map((recipe) => (
+                    <View key={`active-${recipe.idReceta}`} className="bg-white rounded-xl mb-4 overflow-hidden border border-gray-100 shadow-sm">
                         <TouchableOpacity
                             onPress={() => navigation.navigate("DetailsRecipes", { recipeId: recipe.idReceta })}
                             className="flex-row"
@@ -260,38 +376,6 @@ const Profile = () => {
                                 </View>
                                 <Text className="text-gray-600 text-sm" numberOfLines={2}>
                                     {recipe.descripcionReceta}
-                                </Text>
-
-                            </View>
-                        </TouchableOpacity>
-                    </View>
-                ))
-            )}
-
-            {myRecipesInactives.length !== 0 &&
-                <Text className="text-lg font-bold text-gray-700 mb-2">Recetas validadas</Text>
-            }
-
-            {myRecipes.content && myRecipes.content.length > 0 ? (
-                myRecipes.content.map((recipe) => (
-                    <View key={recipe.idReceta} className="bg-white rounded-xl mb-4 overflow-hidden border border-gray-100 shadow-sm">
-                        <TouchableOpacity
-                            onPress={() => navigation.navigate("DetailsRecipes", { recipeId: recipe.idReceta })}
-                            className="flex-row"
-                        >
-                            <View className="w-28 h-28 p-2 relative">
-                                <RetrieveMediaFile imageUrl={recipe.fotoPrincipal}></RetrieveMediaFile>
-                            </View>
-                            <View className="flex-1 p-4">
-                                <View className="flex-row justify-between items-center mb-1">
-                                    <Text className="text-lg font-bold">{recipe.nombreReceta}</Text>
-                                    <View className="flex-row items-center">
-                                        <AntDesign name="star" size={16} color="#F59E0B" />
-                                        <Text className="ml-1 text-amber-500 font-medium">{recipe.averageRating}</Text>
-                                    </View>
-                                </View>
-                                <Text className="text-gray-600 text-sm" numberOfLines={2}>
-                                    {recipe.description}
                                 </Text>
                             </View>
                         </TouchableOpacity>
@@ -330,6 +414,7 @@ const Profile = () => {
                     </View>
                 ))
             ) : (
+                myRecipesInactives.length === 0 &&
                 <Text className="text-gray-500 text-center mt-8">No tienes recetas publicadas aún.</Text>
             )}
         </View>
@@ -338,81 +423,93 @@ const Profile = () => {
     const renderCursos = () => (
         <View className="p-4">
             <Text className="text-lg font-bold text-gray-800 mb-4">Cursos en progreso</Text>
-            {myCourses.active.map((course) => (
-                <View key={course.id} className="bg-white rounded-xl mb-4 p-4 border border-gray-100 shadow-sm">
+            {myCourses.active.length > 0 ? (
+                myCourses.active.map((course) => (
+                    <View key={course.id} className="bg-white rounded-xl mb-4 p-4 border border-gray-100 shadow-sm">
+                        <TouchableOpacity
+                            onPress={() =>
+                                navigation.navigate("MyCourses", {
+                                    courseId: course.id,
+                                    isActive: true,
+                                })
+                            }
+                        >
+                            <Text className="text-lg font-bold text-gray-800 mb-1">{course.name}</Text>
+                            <Text className="text-gray-600 text-sm mb-3">Instructor: {course.instructor}</Text>
+
+                            <View className="mb-3">
+                                <View className="flex-row justify-between mb-1">
+                                    <Text className="text-gray-500 text-sm">Progreso</Text>
+                                    <Text className="text-amber-500 text-sm font-medium">{course.progress}%</Text>
+                                </View>
+                                <View className="w-full bg-gray-200 rounded-full h-2">
+                                    <View className="bg-amber-400 h-2 rounded-full" style={{ width: `${course.progress}%` }} />
+                                </View>
+                            </View>
+                        </TouchableOpacity>
+
+                        {logeado &&
+                            <TouchableOpacity className="bg-red-50 py-2 px-4 rounded-lg">
+                                <Text className="text-red-600 font-medium text-center">Darse de baja</Text>
+                            </TouchableOpacity>
+                        }
+                    </View>
+                ))
+            ) : (
+                <Text className="text-gray-500 text-center mt-8">No tienes cursos en progreso.</Text>
+            )}
+
+            <Text className="text-lg font-bold text-gray-800 mb-4 mt-6">Cursos finalizados</Text>
+            {myCourses.completed.length > 0 ? (
+                myCourses.completed.map((course) => (
                     <TouchableOpacity
+                        key={course.id}
+                        className="bg-green-50 rounded-xl mb-4 p-4 border border-green-100"
                         onPress={() =>
                             navigation.navigate("MyCourses", {
                                 courseId: course.id,
-                                isActive: true,
+                                isActive: false,
                             })
                         }
                     >
                         <Text className="text-lg font-bold text-gray-800 mb-1">{course.name}</Text>
-                        <Text className="text-gray-600 text-sm mb-3">Instructor: {course.instructor}</Text>
-
-                        <View className="mb-3">
-                            <View className="flex-row justify-between mb-1">
-                                <Text className="text-gray-500 text-sm">Progreso</Text>
-                                <Text className="text-amber-500 text-sm font-medium">{course.progress}%</Text>
-                            </View>
-                            <View className="w-full bg-gray-200 rounded-full h-2">
-                                <View className="bg-amber-400 h-2 rounded-full" style={{ width: `${course.progress}%` }} />
-                            </View>
+                        <Text className="text-gray-600 text-sm mb-1">Instructor: {course.instructor}</Text>
+                        <View className="flex-row items-center">
+                            <AntDesign name="checkcircle" size={16} color="#10B981" />
+                            <Text className="text-green-600 text-sm ml-2">Completado el {course.completedAt}</Text>
                         </View>
                     </TouchableOpacity>
-
-                    {logeado &&
-                        <TouchableOpacity className="bg-red-50 py-2 px-4 rounded-lg">
-                            <Text className="text-red-600 font-medium text-center">Darse de baja</Text>
-                        </TouchableOpacity>
-                    }
-                </View>
-            ))}
-
-            <Text className="text-lg font-bold text-gray-800 mb-4 mt-6">Cursos finalizados</Text>
-            {myCourses.completed.map((course) => (
-                <TouchableOpacity
-                    key={course.id}
-                    className="bg-green-50 rounded-xl mb-4 p-4 border border-green-100"
-                    onPress={() =>
-                        navigation.navigate("MyCourses", {
-                            courseId: course.id,
-                            isActive: false,
-                        })
-                    }
-                >
-                    <Text className="text-lg font-bold text-gray-800 mb-1">{course.name}</Text>
-                    <Text className="text-gray-600 text-sm mb-1">Instructor: {course.instructor}</Text>
-                    <View className="flex-row items-center">
-                        <AntDesign name="checkcircle" size={16} color="#10B981" />
-                        <Text className="text-green-600 text-sm ml-2">Completado el {course.completedAt}</Text>
-                    </View>
-                </TouchableOpacity>
-            ))}
+                ))
+            ) : (
+                <Text className="text-gray-500 text-center mt-8">No tienes cursos finalizados.</Text>
+            )}
         </View>
     )
 
     const renderCalificaciones = () => (
         <View className="p-4">
-            {myReviews.map((review) => (
-                <TouchableOpacity
-                    key={review.id}
-                    className="bg-white rounded-xl mb-4 p-4 border border-gray-100 shadow-sm"
-                    onPress={() => navigation.navigate("DetailsRecipes", { recipeId: review.recipeId })}
-                >
-                    <View className="flex-row justify-between items-start mb-2">
-                        <Text className="text-lg font-bold text-gray-800 flex-1">{review.recipeTitle}</Text>
-                        <Text className="text-amber-500 font-bold text-lg ml-2">{review.rating}</Text>
-                    </View>
+            {myReviews.length > 0 ? (
+                myReviews.map((review) => (
+                    <TouchableOpacity
+                        key={review.id}
+                        className="bg-white rounded-xl mb-4 p-4 border border-gray-100 shadow-sm"
+                        onPress={() => navigation.navigate("DetailsRecipes", { recipeId: review.recipeId })}
+                    >
+                        <View className="flex-row justify-between items-start mb-2">
+                            <Text className="text-lg font-bold text-gray-800 flex-1">{review.recipeTitle}</Text>
+                            <Text className="text-amber-500 font-bold text-lg ml-2">{review.rating}</Text>
+                        </View>
 
-                    <View className="flex-row mb-3">{renderStars(review.rating)}</View>
+                        <View className="flex-row mb-3">{renderStars(review.rating)}</View>
 
-                    <Text className="text-gray-700 mb-3">{review.comment}</Text>
+                        <Text className="text-gray-700 mb-3">{review.comment}</Text>
 
-                    <Text className="text-gray-400 text-sm">{review.date}</Text>
-                </TouchableOpacity>
-            ))}
+                        <Text className="text-gray-400 text-sm">{review.date}</Text>
+                    </TouchableOpacity>
+                ))
+            ) : (
+                <Text className="text-gray-500 text-center mt-8">No tienes calificaciones aún.</Text>
+            )}
         </View>
     )
 
@@ -435,8 +532,8 @@ const Profile = () => {
         <View style={{ flex: 1, backgroundColor: "#F5F3E4", paddingTop: insets.top }}>
             <StatusBar barStyle="dark-content" backgroundColor="#F5F3E4" />
 
-            <View className="bg-amber-100 p-4 pb-8 rounded-b-3xl shadow-md"> 
-                <View className="flex-row items-center justify-between mb-6"> 
+            <View className="bg-amber-100 p-4 pb-8 rounded-b-3xl shadow-md">
+                <View className="flex-row items-center justify-between mb-6">
                     <TouchableOpacity onPress={() => navigation.goBack()} className="p-2">
                         <AntDesign name="arrowleft" size={24} color="#333" />
                     </TouchableOpacity>
@@ -447,7 +544,7 @@ const Profile = () => {
                 </View>
 
                 {/* User dates */}
-                <View className="flex-row items-center px-2"> 
+                <View className="flex-row items-center px-2">
                     {renderUserAvatar()}
 
                     <View className="flex-1 ml-4 justify-center">
@@ -456,7 +553,7 @@ const Profile = () => {
                         </Text>
                         <Text className="text-gray-700 text-base mb-2">@{username}</Text>
                         <Text className="text-gray-700 text-base mb-2">{email}</Text>
-                        <TouchableOpacity onPress={() => navigation.navigate("EditProfile")} className="flex-row self-start rounded-full  bg-amber-400 px-4 py-2">
+                        <TouchableOpacity onPress={() => navigation.navigate("EditProfile")} className="flex-row self-start rounded-full bg-amber-400 px-4 py-2">
                             <MaterialCommunityIcons name="pencil-outline" size={16} color="#fff" />
                             <Text className="text-white text-sm ml-1">Editar perfil</Text>
                         </TouchableOpacity>
@@ -494,6 +591,19 @@ const Profile = () => {
             <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
                 {renderTabContent()}
             </ScrollView>
+
+            {/* ConfirmModal para eliminar receta modificada */}
+            <ConfirmModal
+                visible={confirmModifiedVisible}
+                title="¿Eliminar Receta Modificada?"
+                message={`¿Estás seguro de que quieres eliminar la receta modificada "${modifiedRecipeToDelete?.recipeName || 'esta receta'}"? Esta acción no se puede deshacer localmente.`}
+                onCancel={() => {
+                    setConfirmModifiedVisible(false);
+                    setModifiedRecipeToDelete(null);
+                }}
+                onConfirm={confirmRemoveModifiedRecipe}
+                confirmText="Sí, eliminar"
+            />
 
         </View>
     )

@@ -79,8 +79,10 @@ const HomeCourses = () => {
       let modalidadParam = undefined;
       if (activeFilterModalidad === "Presencial") {
         modalidadParam = "presencial";
-      } else if (activeFilterModalidad === "Remoto" || activeFilterModalidad === "Virtual") {
-        modalidadParam = "virtual"; // Asumo que "Remoto" y "Virtual" se mapean a "virtual" en tu backend
+      } else if ( activeFilterModalidad === "Virtual") {
+        modalidadParam = "virtual"; 
+      } else if ( activeFilterModalidad === "Remoto") {
+        modalidadParam = "remoto"; 
       }
 
       const params = {

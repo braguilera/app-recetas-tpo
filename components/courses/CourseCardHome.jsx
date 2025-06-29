@@ -27,7 +27,7 @@ const CourseCardHome = ({ course, logeado, isStudent }) => {
 
   const goToProfile = () => {
     setModalVisible(false); // Cierra el modal
-    navigation.navigate("ProfileScreen"); // Navega a la pantalla de perfil (ajusta el nombre de tu ruta de perfil)
+    navigation.navigate("ProfileStack", { screen: "EditProfile" }); // Navega a la pantalla de perfil (ajusta el nombre de tu ruta de perfil)
   };
 
   return (
@@ -60,7 +60,7 @@ const CourseCardHome = ({ course, logeado, isStudent }) => {
         <View className="w-full">
           <View className="bg-gray-100 w-full rounded-md px-3 py-2 mr-2 mb-2 flex-row items-center">
             <Text className="text-xs text-gray-600 ml-2">
-              {course.descripcionCompleta || 'No hay descripción disponible.'}
+              {course.descripcion || 'No hay descripción disponible.'}
             </Text>
           </View>
         </View>

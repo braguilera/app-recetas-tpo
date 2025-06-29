@@ -30,15 +30,17 @@ const navigation = useNavigation()
             </Text>
             <View className="flex-row items-center justify-between">
                 <View className="flex-row items-center mr-4">
-                <FontAwesome name="user" size={14} color="#9CA3AF" />
-                <Text className="text-xs text-gray-500 ml-1">Por {recipe.userNickname}</Text>
+                    <FontAwesome name="user" size={14} color="#9CA3AF" />
+                    <Text className="text-xs text-gray-500 ml-1">Por {recipe.userNickname}</Text>
                 </View>
+                <View className="w-1 h-1 bg-gray-300 rounded-full" />
                 <View className="flex-row items-center">
                     <AntDesign name="piechart" size={14} color="#9CA3AF" />
                     <Text className="text-xs text-gray-500 ml-1">{recipe.porciones}</Text>
                 </View>
+                <View className="w-1 h-1 bg-gray-300 rounded-full" />
                 <View className="flex-row items-center">
-                    <AntDesign name="team" size={14} color="#9CA3AF" />
+                    <FontAwesome name="users" size={14} color="#9CA3AF" />
                     <Text className="text-xs text-gray-500 ml-1">{recipe.cantidadPersonas}</Text>
                 </View>
             </View>
