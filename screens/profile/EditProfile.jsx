@@ -97,7 +97,7 @@ const EditProfile = () => {
             resetStudentData();
           }
         } catch (error) {
-          console.error("Error al cargar datos específicos de estudiante en EditProfile:", error);
+          console.log("Error al cargar datos específicos de estudiante en EditProfile:", error);
           setGeneralError("No se pudieron cargar los datos adicionales de estudiante. Intenta de nuevo.");
           resetStudentData();
         } finally {
@@ -171,7 +171,7 @@ const EditProfile = () => {
         { text: "OK", onPress: () => navigation.goBack() },
       ]);
     } catch (error) {
-      console.error("Error al actualizar el perfil:", error);
+      console.log("Error al actualizar el perfil:", error);
       setGeneralError(
         error.message || "Ocurrió un error al actualizar el perfil."
       );
@@ -204,7 +204,7 @@ const EditProfile = () => {
       let finalDniBackPath = null;
 
       if (dniFrontUploadRef.current && dniFrontUploadRef.current.hasChanges()) {
-        setLoadingMessage("Subiendo DNI Frente...");
+        setLoadingMessage("Cargando...");
         const uploadResult = await dniFrontUploadRef.current.upload();
         if (uploadResult && uploadResult.path) {
           finalDniFrontPath = uploadResult.path;
@@ -217,7 +217,6 @@ const EditProfile = () => {
 
 
       if (dniBackUploadRef.current && dniBackUploadRef.current.hasChanges()) {
-        setLoadingMessage("Subiendo DNI Dorso...");
         const uploadResult = await dniBackUploadRef.current.upload();
         if (uploadResult && uploadResult.path) {
           finalDniBackPath = uploadResult.path;
@@ -246,13 +245,8 @@ const EditProfile = () => {
       await setIsStudentStatus(true);
 
       setShowUpgradeModal(false);
-      Alert.alert(
-        "Éxito",
-        "¡Tu perfil ha sido mejorado a estudiante con éxito!",
-        [{ text: "OK", onPress: () => navigation.goBack() }]
-      );
     } catch (error) {
-      console.error("Error al mejorar a estudiante:", error);
+      console.log("Error al mejorar a estudiante:", error);
       setGeneralError(
         error.message || "Ocurrió un error al intentar mejorar a estudiante."
       );
@@ -290,7 +284,7 @@ const EditProfile = () => {
         setTempAvatarUri(null);
       }}]);
     } catch (error) {
-      console.error("Error al actualizar el avatar:", error);
+      console.log("Error al actualizar el avatar:", error);
       setGeneralError(error.message || "Error al actualizar el avatar.");
     } finally {
       setLoading(false);
@@ -482,6 +476,7 @@ const EditProfile = () => {
                   value={studentCardNumber}
                   editable={false}
                   placeholder="N/A"
+                  maxLength={12}
                   placeholderTextColor="#9CA3AF"
                 />
               </View>
@@ -492,6 +487,7 @@ const EditProfile = () => {
                   className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-gray-800"
                   value={studentTramite}
                   editable={false}
+                  maxLength={11}
                   placeholder="N/A"
                   placeholderTextColor="#9CA3AF"
                 />
@@ -560,7 +556,8 @@ const EditProfile = () => {
                     className={`bg-gray-50 border rounded-xl px-4 py-3 mb-4 text-gray-800 ${fieldErrors.cardNumber ? 'border-red-500' : 'border-gray-200'}`}
                     value={upgradeCardNumber}
                     onChangeText={(text) => {setUpgradeCardNumber(text); clearErrors();}}
-                    placeholder="Ej: 1234-5678-9012-3456"
+                    placeholder="Ej: 1234-5678-9012"
+                    maxLength={12}
                     placeholderTextColor="#9CA3AF"
                     keyboardType="numeric"
                     editable={!loading}
@@ -599,6 +596,7 @@ const EditProfile = () => {
                     value={upgradeDni}
                     onChangeText={(text) => {setUpgradeDni(text); clearErrors();}}
                     placeholder="Ingresa los 11 dígitos del trámite"
+                    maxLength={11}
                     placeholderTextColor="#9CA3AF"
                     keyboardType="numeric"
                     editable={!loading}
@@ -712,7 +710,7 @@ const EditProfile = () => {
                             [{ text: "No", style: "cancel" }, { text: "Sí", onPress: () => {
                                 setTempAvatarUri(null);
                                 tempAvatarUploadRef.current?.clearChanges();
-                                handleConfirmAvatarChange(); // Esto también dará el mensaje temporal
+                                handleConfirmAvatarChange();
                             }}
                         ]
                         );

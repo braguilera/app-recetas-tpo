@@ -70,7 +70,7 @@ const CourseCardHome = ({ course, logeado, isStudent }) => {
           <View className="flex-1">
             {logeado && isStudent ? ( // <-- Condición para mostrar el botón de Inscribirse
               <LogVerificator
-                onPress={() => navigation.navigate("EnrollmentScreen", { courseId: course.idCurso, courseName: course.nombreCurso })} // Asegúrate de usar la ruta correcta para la inscripción
+                onPress={() => navigation.navigate("DetailsCourses", { courseId: course.idCurso })} // Asegúrate de usar la ruta correcta para la inscripción
                 className="bg-amber-400 w-full px-4 py-2 rounded-md mr-2"
                 loginRequiredMessage="Para inscribirte en un curso, necesitas iniciar sesión."
               >
