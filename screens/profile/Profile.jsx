@@ -1,31 +1,25 @@
 import { useContext, useEffect, useState } from "react"
 import { ScrollView, Text, View, TouchableOpacity, Image, StatusBar, Alert } from "react-native"
 import { useNavigation } from "@react-navigation/native"
-import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons"
+import { AntDesign, FontAwesome, MaterialCommunityIcons } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-// Importa las nuevas funciones con autenticación
-import { deleteDatosWithAuth, getRecipesPaginated, getDatosWithAuth, postDatos } from "api/crud"
+import { deleteDatosWithAuth, getRecipesPaginated, getDatosWithAuth, postDatos, getRecipesPaginatedWithAuth } from "api/crud"
 import ConfirmModal from "../../components/common/ConfirmModal"
-import { Contexto } from "../../contexto/Provider" // Importa tu contexto de autenticación
+import { Contexto } from "../../contexto/Provider" 
+import RetrieveMediaFile from "components/utils/RetrieveMediaFile"
 
 const Profile = () => {
     const navigation = useNavigation()
     const insets = useSafeAreaInsets()
-    const { userId, username, firstname, logeado, logout } = useContext(Contexto); // Obtén el userId y username del contexto
+    const { userId, username, firstName, lastName, email, logeado, logout } = useContext(Contexto); 
 
     const [activeTab, setActiveTab] = useState("favoritos")
-    const [myRecipes, setMyRecipes] = useState({ content: [] }) // Inicializa con un objeto que contenga 'content'
+    const [myRecipes, setMyRecipes] = useState({ content: [] })
     const [confirmVisible, setConfirmVisible] = useState(false)
     const [recipeToDelete, setRecipeToDelete] = useState(null)
-    const [userProfile, setUserProfile] = useState(null); // Estado para guardar los datos del perfil del usuario
-
-    // Datos simulados (mantener por ahora o reemplazar con datos reales de la API si los tienes)
-    const favoriteCategories = [
-        { id: 1, name: "Favoritos", icon: "heart", count: 12 },
-        { id: 2, name: "Equivalencias", icon: "swap-horizontal", count: 8 },
-        { id: 3, name: "Postres", icon: "cupcake", count: 15 },
-        { id: 4, name: "Saludables", icon: "leaf", count: 6 },
-    ]
+    const [userProfile, setUserProfile] = useState(null);
+    const [myRecipesInactives, setMyRecipesInactives] = useState([]);
+    const [favoritesRecipes, setFavoritesRecipes] = useState([]);
 
     const myCourses = {
         active: [
@@ -76,10 +70,9 @@ const Profile = () => {
         try {
             await logout();
             await postDatos('auth/logout', {}, 'Error al cerrar sesión en el backend');
-            Alert.alert("Cierre de Sesión", "Has cerrado sesión correctamente.");
-            navigation.replace("AuthStack", { screen: "Login" });
+            navigation.replace("MainTabs");
         } catch (error) {
-            console.error("Error al cerrar sesión:", error);
+            console.log("Error al cerrar sesión:", error);
             const errorMessage = error.message || 'Ocurrió un error al cerrar sesión.';
             Alert.alert("Error al Cerrar Sesión", errorMessage);
         }
@@ -91,7 +84,7 @@ const Profile = () => {
             await deleteDatosWithAuth(`recipe/delete/${recipeToDelete.idReceta}`, "Error al borrar la receta")
             await fetchRecipes(0)
         } catch (error) {
-            console.error("Error al borrar receta:", error.message)
+            console.log("Error al borrar receta:", error.message)
         } finally {
             setConfirmVisible(false)
             setRecipeToDelete(null)
@@ -106,23 +99,37 @@ const Profile = () => {
 
         try {
             const params = {
-                page: page.toString(),
-                size: "10",
-                sort: ["nombreReceta,asc"],
-                name: "",
                 userName: username,
-                rating: "",
-                includeIngredientId: "",
-                excludeIngredientId: "",
-                tipoRecetaId: "",
             }
 
-            const data = await getRecipesPaginated(params, 'Error al cargar recetas')
+            const data = await getRecipesPaginatedWithAuth(params, 'Error al cargar recetas')
             setMyRecipes(data || { content: [] })
             console.log("Mis Recetas:", data)
 
         } catch (error) {
-            console.error("Error fetching recipes:", error.message)
+            console.log("Error fetching recipes:", error.message)
+        }
+    }
+
+    const fetchRecipesInactives = async () => {
+        try {
+
+            const data = await getDatosWithAuth(`recipe/${userId}/inactivas`, 'Error al cargar recetas inactivas')
+            setMyRecipesInactives(data || { content: [] })
+            console.log("Mis Recetas:", data)
+
+        } catch (error) {
+            console.log("Error fetching recipes:", error.message)
+        }
+    }
+
+    const fetchFavorites = async () => {
+        try {
+
+            const data = await getDatosWithAuth(`favorites/${userId}`, 'Error al cargar recetas favoritas')
+            setFavoritesRecipes(data)
+        } catch (error) {
+            console.log("Error fetching recipes:", error.message)
         }
     }
 
@@ -137,7 +144,7 @@ const Profile = () => {
             setUserProfile(data);
             console.log("Datos del perfil del usuario:", data);
         } catch (error) {
-            console.error("Error al obtener el perfil del usuario:", error.message);
+            console.log("Error al obtener el perfil del usuario:", error.message);
         }
     };
 
@@ -145,6 +152,8 @@ const Profile = () => {
         fetchUserProfileData();
         if (username) {
             fetchRecipes(0);
+            fetchFavorites();
+            fetchRecipesInactives();
         }
     }, [userId, username]);
 
@@ -154,14 +163,12 @@ const Profile = () => {
         }
     }, [username]);
 
-    // **Nueva función para renderizar el avatar del usuario**
     const renderUserAvatar = () => {
-        const defaultAvatar = "https://picsum.photos/id/64/200/300"; // Una imagen por defecto si userProfile.avatar es nulo o vacío
         const userNameInitial = userProfile?.nombre ? userProfile.nombre.charAt(0).toUpperCase() : '';
         const hasAvatar = userProfile?.avatar && userProfile.avatar.trim() !== '';
 
         return (
-            <View className="w-20 h-20 rounded-full overflow-hidden items-center justify-center bg-gray-300"> {/* Fondo gris por si no hay imagen */}
+            <View className="w-20 h-20 rounded-full overflow-hidden items-center justify-center bg-gray-300">
                 {hasAvatar ? (
                     <Image source={{ uri: userProfile.avatar }} className="w-full h-full object-cover" />
                 ) : (
@@ -183,41 +190,66 @@ const Profile = () => {
 
     const renderFavoritos = () => (
         <View className="p-4">
-            <View className="flex-row flex-wrap justify-between">
-                {favoriteCategories.map((category) => (
-                    <TouchableOpacity
-                        key={category.id}
-                        className="w-[48%] bg-white rounded-xl p-4 mb-4 border border-gray-100 shadow-sm"
-                        onPress={() =>
-                            navigation.navigate("SaveRecipe", {
-                                categoryId: category.id,
-                                categoryName: category.name,
-                            })
-                        }
-                    >
-                        <View className="items-center">
-                            <View className="w-16 h-16 bg-amber-100 rounded-full items-center justify-center mb-3">
-                                <MaterialCommunityIcons name={category.icon} size={32} color="#F59E0B" />
-                            </View>
-                            <Text className="text-gray-800 font-medium text-center mb-1">{category.name}</Text>
-                            <Text className="text-gray-500 text-sm">{category.count} recetas</Text>
-                        </View>
-                    </TouchableOpacity>
-                ))}
-            </View>
-        </View>
-    )
-
-    const renderMisRecetas = () => (
-        <View className="p-4">
-            {myRecipes.content && myRecipes.content.length > 0 ? (
-                myRecipes.content.map((recipe) => (
+                {favoritesRecipes.map((recipe) => (
                     <View key={recipe.idReceta} className="bg-white rounded-xl mb-4 overflow-hidden border border-gray-100 shadow-sm">
                         <TouchableOpacity
                             onPress={() => navigation.navigate("DetailsRecipes", { recipeId: recipe.idReceta })}
                             className="flex-row"
                         >
-                            <Image source={{ uri: `https://picsum.photos/seed/${recipe.idReceta}/200/200` }} className="w-24 h-24" />
+                            <View className="w-28 h-28 p-2 relative">
+                                <RetrieveMediaFile imageUrl={recipe.fotoPrincipal}></RetrieveMediaFile>
+                            </View>
+                            <View className="flex-1 p-4">
+                                <View className="flex-row justify-between items-center">
+                                    <Text className="text-lg font-bold">{recipe.nombreReceta}</Text>
+                                    <View className="flex-row items-center">
+                                        <AntDesign name="star" size={16} color="#F59E0B" />
+                                        <Text className="ml-1 text-amber-500 font-medium">{recipe.averageRating}</Text>
+                                    </View>
+                                </View>
+                                <Text className="text-gray-600 text-sm mb-2" numberOfLines={2}>
+                                    {recipe.descripcionReceta}
+                                </Text>
+                                <View className="flex-row items-center justify-between">
+                                    <View className="flex-row items-center mr-4">
+                                    <FontAwesome name="user" size={14} color="#9CA3AF" />
+                                    <Text className="text-xs text-gray-500 ml-1">Por {recipe.nombreUsuario}</Text>
+                                    </View>
+                                    <View className="flex-row items-center">
+                                        <AntDesign name="piechart" size={14} color="#9CA3AF" />
+                                        <Text className="text-xs text-gray-500 ml-1">{recipe.porciones}</Text>
+                                    </View>
+                                    <View className="flex-row items-center">
+                                        <AntDesign name="team" size={14} color="#9CA3AF" />
+                                        <Text className="text-xs text-gray-500 ml-1">{recipe.cantidadPersonas}</Text>
+                                    </View>
+                                </View>
+                            </View>
+                        </TouchableOpacity>
+                    </View>
+                ))}
+                {favoritesRecipes.length === 0 &&                 
+                    <Text className="text-gray-500 text-center mt-8">No tienes recetas guardadas aún.</Text>
+                }
+        </View>
+    )
+
+    const renderMisRecetas = () => (
+        <View className="p-4">
+            {myRecipesInactives.length !== 0 &&
+                <Text className="text-lg font-bold text-gray-700 mb-2">Recetas en etapa de validación</Text>
+            }
+            
+            {myRecipesInactives && myRecipesInactives.length > 0 && (
+                myRecipesInactives.map((recipe) => (
+                    <View key={recipe.idReceta} className="bg-white rounded-xl mb-4 overflow-hidden border border-gray-100 shadow-sm">
+                        <TouchableOpacity
+                            onPress={() => navigation.navigate("DetailsRecipes", { recipeId: recipe.idReceta })}
+                            className="flex-row"
+                        >
+                            <View className="w-28 h-28 p-2 relative">
+                                <RetrieveMediaFile imageUrl={recipe.fotoPrincipal}></RetrieveMediaFile>
+                            </View>
                             <View className="flex-1 p-4">
                                 <View className="flex-row justify-between items-center mb-1">
                                     <Text className="text-lg font-bold">{recipe.nombreReceta}</Text>
@@ -227,7 +259,39 @@ const Profile = () => {
                                     </View>
                                 </View>
                                 <Text className="text-gray-600 text-sm" numberOfLines={2}>
-                                    Descripción breve de la receta que se muestra aquí para dar una idea del contenido.
+                                    {recipe.descripcionReceta}
+                                </Text>
+
+                            </View>
+                        </TouchableOpacity>
+                    </View>
+                ))
+            )}
+
+            {myRecipesInactives.length !== 0 &&
+                <Text className="text-lg font-bold text-gray-700 mb-2">Recetas validadas</Text>
+            }
+
+            {myRecipes.content && myRecipes.content.length > 0 ? (
+                myRecipes.content.map((recipe) => (
+                    <View key={recipe.idReceta} className="bg-white rounded-xl mb-4 overflow-hidden border border-gray-100 shadow-sm">
+                        <TouchableOpacity
+                            onPress={() => navigation.navigate("DetailsRecipes", { recipeId: recipe.idReceta })}
+                            className="flex-row"
+                        >
+                            <View className="w-28 h-28 p-2 relative">
+                                <RetrieveMediaFile imageUrl={recipe.fotoPrincipal}></RetrieveMediaFile>
+                            </View>
+                            <View className="flex-1 p-4">
+                                <View className="flex-row justify-between items-center mb-1">
+                                    <Text className="text-lg font-bold">{recipe.nombreReceta}</Text>
+                                    <View className="flex-row items-center">
+                                        <AntDesign name="star" size={16} color="#F59E0B" />
+                                        <Text className="ml-1 text-amber-500 font-medium">{recipe.averageRating}</Text>
+                                    </View>
+                                </View>
+                                <Text className="text-gray-600 text-sm" numberOfLines={2}>
+                                    {recipe.description}
                                 </Text>
                             </View>
                         </TouchableOpacity>
@@ -273,7 +337,6 @@ const Profile = () => {
 
     const renderCursos = () => (
         <View className="p-4">
-            {/* Cursos Activos */}
             <Text className="text-lg font-bold text-gray-800 mb-4">Cursos en progreso</Text>
             {myCourses.active.map((course) => (
                 <View key={course.id} className="bg-white rounded-xl mb-4 p-4 border border-gray-100 shadow-sm">
@@ -288,7 +351,6 @@ const Profile = () => {
                         <Text className="text-lg font-bold text-gray-800 mb-1">{course.name}</Text>
                         <Text className="text-gray-600 text-sm mb-3">Instructor: {course.instructor}</Text>
 
-                        {/* Barra de progreso */}
                         <View className="mb-3">
                             <View className="flex-row justify-between mb-1">
                                 <Text className="text-gray-500 text-sm">Progreso</Text>
@@ -308,7 +370,6 @@ const Profile = () => {
                 </View>
             ))}
 
-            {/* Cursos Completados */}
             <Text className="text-lg font-bold text-gray-800 mb-4 mt-6">Cursos finalizados</Text>
             {myCourses.completed.map((course) => (
                 <TouchableOpacity
@@ -374,38 +435,37 @@ const Profile = () => {
         <View style={{ flex: 1, backgroundColor: "#F5F3E4", paddingTop: insets.top }}>
             <StatusBar barStyle="dark-content" backgroundColor="#F5F3E4" />
 
-            {/* Header del Perfil - Sección de datos del usuario */}
-            <View className="bg-amber-100 p-4 pb-8 rounded-b-3xl shadow-md"> {/* Añadido padding bottom y rounded corners */}
-                <View className="flex-row items-center justify-between mb-6"> {/* Espacio inferior */}
+            <View className="bg-amber-100 p-4 pb-8 rounded-b-3xl shadow-md"> 
+                <View className="flex-row items-center justify-between mb-6"> 
                     <TouchableOpacity onPress={() => navigation.goBack()} className="p-2">
                         <AntDesign name="arrowleft" size={24} color="#333" />
                     </TouchableOpacity>
 
-                    {/* Botón de cerrar sesión a la derecha del todo */}
                     <TouchableOpacity onPress={handleLogout} className="px-4 py-2 bg-red-500 rounded-full shadow-sm">
                         <Text className="text-white font-semibold text-sm">Cerrar sesión</Text>
                     </TouchableOpacity>
                 </View>
 
-                {/* Avatar y Datos del Usuario */}
-                <View className="flex-row items-center px-2"> {/* Alineación y padding */}
-                    {renderUserAvatar()} {/* Llama a la función para renderizar el avatar */}
+                {/* User dates */}
+                <View className="flex-row items-center px-2"> 
+                    {renderUserAvatar()}
 
                     <View className="flex-1 ml-4 justify-center">
                         <Text className="text-2xl font-extrabold text-gray-800 mb-1">
-                            {userProfile ? `${userProfile.nombre} ${userProfile.apellido}` : 'Cargando...'}
+                            {firstName} {lastName}
                         </Text>
-                        <Text className="text-gray-700 text-base mb-2">@{userProfile ? userProfile.nickname : 'Cargando...'}</Text>
-                        <TouchableOpacity onPress={() => navigation.navigate("EditProfile")} className="flex-row items-center">
-                            <MaterialCommunityIcons name="pencil-outline" size={16} color="#F59E0B" />
-                            <Text className="text-amber-600 text-sm ml-1">Editar perfil</Text>
+                        <Text className="text-gray-700 text-base mb-2">@{username}</Text>
+                        <Text className="text-gray-700 text-base mb-2">{email}</Text>
+                        <TouchableOpacity onPress={() => navigation.navigate("EditProfile")} className="flex-row self-start rounded-full  bg-amber-400 px-4 py-2">
+                            <MaterialCommunityIcons name="pencil-outline" size={16} color="#fff" />
+                            <Text className="text-white text-sm ml-1">Editar perfil</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
 
-                {/* Tabs Navigation (dots) - Cambiado de posición para estar debajo de los datos del usuario */}
-                <View className="flex-row justify-center mt-6"> {/* Margen superior para separarlo */}
-                    {tabs.map((tab, index) => (
+                {/* Tabs */}
+                <View className="flex-row justify-center mt-6">
+                    {tabs.map((tab) => (
                         <TouchableOpacity
                             key={tab.id}
                             className={`w-3 h-3 rounded-full mx-1 ${activeTab === tab.id ? "bg-gray-800" : "bg-gray-400"}`}
@@ -415,7 +475,6 @@ const Profile = () => {
                 </View>
             </View>
 
-            {/* Tab Labels */}
             <View className="bg-white border-b border-gray-200">
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} className="px-4">
                     {tabs.map((tab) => (
@@ -432,7 +491,6 @@ const Profile = () => {
                 </ScrollView>
             </View>
 
-            {/* Tab Content */}
             <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
                 {renderTabContent()}
             </ScrollView>

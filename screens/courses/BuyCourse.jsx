@@ -33,7 +33,6 @@ const BuyCourse = () => {
   return (
     <SafeAreaView className="flex-1 bg-white">
       <ScrollView className="flex-1 p-4">
-        {/* Header */}
         <View className="flex-row items-center mb-4">
           <TouchableOpacity
             className="mr-4 p-2 rounded-full bg-amber-400"
@@ -47,7 +46,6 @@ const BuyCourse = () => {
           </Text>
         </View>
 
-        {/* Detalles del curso */}
         <View className="bg-gray-100 p-4 rounded-lg mb-4">
           <Text className="text-gray-700">Sede: {sede?.nombre || 'Sin especificar'}</Text>
           <Text className="text-gray-700">Inicio: {course.fechaInicio}</Text>
@@ -55,7 +53,6 @@ const BuyCourse = () => {
           <Text className="text-gray-700">Precio: ${course.precioBase}</Text>
         </View>
 
-        {/* Usuario */}
         <View className="flex-row items-center bg-white p-4 rounded-lg mb-4 border border-gray-200">
           <Image source={{ uri: currentUser.avatar }} className="w-12 h-12 rounded-full mr-4" />
           <View>
@@ -64,10 +61,8 @@ const BuyCourse = () => {
           </View>
         </View>
 
-        {/* Métodos de pago */}
         <Text className="text-gray-500 mb-2">Métodos de pago disponibles</Text>
 
-        {/* Tarjeta */}
         <TouchableOpacity className="bg-white p-4 rounded-lg mb-4 border border-green-300 flex-row items-center justify-between">
           <View className="flex-row items-center">
             <FontAwesome5 name="credit-card" size={24} color="#10B981" />
@@ -76,7 +71,6 @@ const BuyCourse = () => {
           <MaterialIcons name="check-circle" size={20} color="#10B981" />
         </TouchableOpacity>
 
-        {/* Pago en sede */}
         <TouchableOpacity className="bg-white p-4 rounded-lg mb-4 border border-gray-300 flex-row items-center justify-between">
           <View className="flex-row items-center">
             <FontAwesome5 name="building" size={24} color="#6B7280" />
@@ -84,11 +78,9 @@ const BuyCourse = () => {
           </View>
         </TouchableOpacity>
 
-        {/* Botón de compra */}
         <TouchableOpacity
           className="bg-amber-400 py-3 rounded-xl items-center mt-4"
           onPress={() => {
-            // Aquí podés hacer la lógica de pago, envío al backend, etc.
             console.log("Comprar curso", courseId, "en sede", sedeId)
           }}
         >

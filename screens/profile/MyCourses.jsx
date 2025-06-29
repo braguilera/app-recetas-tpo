@@ -11,10 +11,8 @@ const MyCourses = () => {
   const route = useRoute()
   const insets = useSafeAreaInsets()
 
-  // Obtener el ID del curso de los parámetros de la ruta
   const { courseId = 1, isActive = true } = route.params || {}
 
-  // Datos simulados del curso
   const [course, setCourse] = useState({
     id: courseId,
     title: "Curso de cocina italiana",
@@ -32,7 +30,6 @@ const MyCourses = () => {
     isActive: isActive,
   })
 
-  // Función para realizar asistencia
   const handleAttendance = () => {
     navigation.navigate("ScanQR", { courseId: course.id })
   }
@@ -41,7 +38,6 @@ const MyCourses = () => {
     <View style={{ flex: 1, backgroundColor: "#FEF3E2", paddingTop: insets.top }}>
       <StatusBar barStyle="dark-content" backgroundColor="#FEF3E2" />
 
-      {/* Header */}
       <View className="flex-row items-center p-4 border-b border-gray-200">
         <TouchableOpacity className="mr-4" onPress={() => navigation.goBack()} accessibilityLabel="Volver atrás">
           <AntDesign name="arrowleft" size={24} color="#333" />
@@ -50,7 +46,6 @@ const MyCourses = () => {
       </View>
 
       <ScrollView className="flex-1">
-        {/* Información del curso */}
         <View className="p-4">
           <Text className="text-2xl font-bold text-gray-800 mb-2">{course.title}</Text>
           <Text className="text-gray-600 mb-4">{course.instructor}</Text>
@@ -64,7 +59,6 @@ const MyCourses = () => {
             </View>
           </View>
 
-          {/* Barra de asistencia */}
           <View className="mb-6">
             <View className="flex-row justify-between mb-1">
               <Text className="text-gray-700 font-medium">Asistencia</Text>
@@ -75,14 +69,12 @@ const MyCourses = () => {
             </View>
           </View>
 
-          {/* Botón de asistencia (solo si el curso está activo) */}
           {course.isActive && (
             <TouchableOpacity className="bg-amber-400 rounded-lg py-3 items-center mb-6" onPress={handleAttendance}>
               <Text className="text-white font-bold">Realizar asistencia</Text>
             </TouchableOpacity>
           )}
 
-          {/* Contenidos del curso */}
           <Text className="text-lg font-bold text-gray-800 mb-4">Contenidos del curso</Text>
 
           {course.contents.map((content) => (
@@ -94,7 +86,6 @@ const MyCourses = () => {
         </View>
       </ScrollView>
 
-      {/* Footer con íconos */}
       <View className="flex-row justify-center p-4 border-t border-gray-200">
         <TouchableOpacity className="items-center mx-4">
           <MaterialIcons name="restaurant-menu" size={24} color="#F59E0B" />

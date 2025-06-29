@@ -11,10 +11,8 @@ const SaveRecipe = () => {
   const route = useRoute()
   const insets = useSafeAreaInsets()
 
-  // Obtener el nombre de la categoría de los parámetros de la ruta
   const { categoryName = "Favoritos", categoryId = 1 } = route.params || {}
 
-  // Datos simulados de recetas guardadas
   const [savedRecipes, setSavedRecipes] = useState([
     {
       id: 1,
@@ -42,12 +40,10 @@ const SaveRecipe = () => {
     },
   ])
 
-  // Función para quitar una receta de guardados
   const handleRemoveRecipe = (recipeId) => {
     setSavedRecipes(savedRecipes.filter((recipe) => recipe.id !== recipeId))
   }
 
-  // Renderizar cada item de la lista
   const renderRecipeItem = ({ item }) => (
     <View className="flex-row bg-white rounded-xl mb-4 overflow-hidden border border-gray-100">
       <TouchableOpacity
@@ -74,7 +70,6 @@ const SaveRecipe = () => {
     <View style={{ flex: 1, backgroundColor: "#FEF3E2", paddingTop: insets.top }}>
       <StatusBar barStyle="dark-content" backgroundColor="#FEF3E2" />
 
-      {/* Header */}
       <View className="flex-row items-center p-4 border-b border-gray-200">
         <TouchableOpacity className="mr-4" onPress={() => navigation.goBack()} accessibilityLabel="Volver atrás">
           <AntDesign name="arrowleft" size={24} color="#333" />
@@ -82,7 +77,6 @@ const SaveRecipe = () => {
         <Text className="text-xl font-bold text-gray-800">Mis recetas guardadas</Text>
       </View>
 
-      {/* Contenido */}
       <View className="flex-1 p-4">
         {savedRecipes.length > 0 ? (
           <FlatList

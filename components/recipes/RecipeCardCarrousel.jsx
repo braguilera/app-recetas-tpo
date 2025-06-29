@@ -16,7 +16,7 @@ const RecipeCardCarrousel = ({recipe}) => {
             <RetrieveMediaFile imageUrl={recipe.fotoPrincipal}></RetrieveMediaFile>
             <View className="p-3 absolute w-[95%] left-2 bottom-2 rounded-lg bg-gray-50">
                 <Text className="text-lg font-bold text-gray-700">{recipe.nombreReceta}</Text>
-                <Text className="text-gray-400 text-sm mb-2" numberOfLines={2}>Descripción breve de la receta que se muestra aquí para dar una idea del contenido.</Text>
+                <Text className="text-gray-400 text-sm mb-2" numberOfLines={2}>{recipe.descripcionReceta}</Text>
             <View className="flex-row justify-between items-center">
                 <View className="flex-row items-center mr-4">
                     <FontAwesome name="user" size={14} color="#9CA3AF" />

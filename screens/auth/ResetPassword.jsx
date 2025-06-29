@@ -1,5 +1,3 @@
-"use client"
-
 import { useState } from "react"
 import { View, Text, TextInput, TouchableOpacity, StatusBar, Alert } from "react-native"
 import { useNavigation, useRoute } from "@react-navigation/native"
@@ -34,7 +32,6 @@ const ResetPassword = () => {
       return
     }
 
-    // Navegar directamente al login
     navigation.navigate("Login")
   }
 
@@ -42,7 +39,6 @@ const ResetPassword = () => {
     <View style={{ flex: 1, backgroundColor: "#FEF3E2", paddingTop: insets.top }}>
       <StatusBar barStyle="dark-content" backgroundColor="#FEF3E2" />
 
-      {/* Header */}
       <View className="flex-row items-center p-4 mb-8">
         <TouchableOpacity
           className="bg-amber-500 rounded-full p-2 mr-4"
@@ -55,14 +51,12 @@ const ResetPassword = () => {
       </View>
 
       <View className="flex-1 px-6">
-        {/* Descripción */}
         <View className="mb-8">
           <Text className="text-gray-600 text-center leading-6">
             Ingresa tu nueva contraseña. Asegúrate de que sea segura y fácil de recordar.
           </Text>
         </View>
 
-        {/* Nueva contraseña */}
         <View className="mb-6">
           <Text className="text-gray-700 font-medium mb-3">Nueva contraseña</Text>
           <View className="relative">
@@ -80,7 +74,6 @@ const ResetPassword = () => {
           </View>
         </View>
 
-        {/* Verificar contraseña */}
         <View className="mb-8">
           <Text className="text-gray-700 font-medium mb-3">Verificar contraseña</Text>
           <View className="relative">
@@ -101,7 +94,6 @@ const ResetPassword = () => {
           </View>
         </View>
 
-        {/* Indicadores de seguridad */}
         <View className="mb-8">
           <Text className="text-sm text-gray-500 mb-2">Tu contraseña debe tener:</Text>
           <View className="flex-row items-center mb-1">
@@ -128,7 +120,6 @@ const ResetPassword = () => {
           </View>
         </View>
 
-        {/* Botón */}
         <View className="mt-auto pb-8">
           <TouchableOpacity className="bg-amber-400 rounded-lg py-4 items-center" onPress={handleResetPassword}>
             <Text className="text-white font-bold text-lg">Cambiar contraseña</Text>

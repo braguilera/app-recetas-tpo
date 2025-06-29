@@ -1,52 +1,65 @@
-// components/utils/UploadMediaFile.js
 import { View, Text, TouchableOpacity, Alert, Image, ActivityIndicator } from "react-native";
 import * as ImagePicker from 'expo-image-picker';
-import { firebase } from '../../config'; // Ajusta esta ruta si es necesario
+import { firebase } from '../../config'; // Assuming firebase is correctly configured
 import React, { useState, forwardRef, useImperativeHandle, useEffect } from "react";
 import { AntDesign } from "@expo/vector-icons";
 
-// Usamos forwardRef para permitir que el componente padre acceda a métodos o estados del hijo
-const UploadMediaFile = forwardRef(({ onUploadComplete, initialImageUri }, ref) => {
+const UploadMediaFile = forwardRef(({ onUploadComplete, initialImageUri, onImageChange }, ref) => {
     const [imageUri, setImageUri] = useState(initialImageUri);
     const [uploading, setUploading] = useState(false);
-    // Cambiado para almacenar un objeto { url, path } o null
-    const [uploadedMediaInfo, setUploadedMediaInfo] = useState(null); 
+    const [uploadedMediaInfo, setUploadedMediaInfo] = useState(null);
+    const [isDirty, setIsDirty] = useState(false); // New state to track changes
 
-    // Usa useEffect para actualizar imageUri si initialImageUri cambia
     useEffect(() => {
         setImageUri(initialImageUri);
-        // Si initialImageUri es una URL de Firebase, asumimos que ya está subida
-        // y necesitamos inferir el uniqueFilename si es posible o usar la URL como fallback
         if (initialImageUri && initialImageUri.startsWith('http')) {
             const uniqueFilenameFromUrl = `media/${initialImageUri.split('/').pop().split('?')[0]}`;
             setUploadedMediaInfo({ url: initialImageUri, path: uniqueFilenameFromUrl });
+            setIsDirty(false); // If it's an initial remote URL, no immediate changes
         } else {
-            setUploadedMediaInfo(null); // Si es una nueva selección, reseteamos
+            setUploadedMediaInfo(null);
+            // If initialImageUri is null or not a remote URL, it might be dirty if it was just cleared
+            // We'll rely on pickImage/clearImage for setting isDirty for local changes
         }
     }, [initialImageUri]);
 
-    // Expone la función upload y la URI seleccionada al componente padre
     useImperativeHandle(ref, () => ({
-        // Método que el padre puede llamar para iniciar la subida
         upload: async () => {
+            if (uploading) {
+                Alert.alert("Subiendo", "Ya hay una subida en progreso.");
+                return null;
+            }
             if (!imageUri) {
-                Alert.alert("No hay archivo", "Por favor, selecciona un archivo primero.");
-                return null; // Retorna null si no hay imagen seleccionada
+                // If there's no image and it's not marked as dirty, nothing to upload
+                // If it was cleared, it means no image to send, but we still return null
+                console.log("No hay archivo para subir.");
+                return null;
             }
 
-            // Si la imagen ya es una URL remota y ya está "subida" (o preexistente), no la resubimos.
-            // Simplemente retornamos la información existente.
-            if (uploadedMediaInfo && uploadedMediaInfo.url && uploadedMediaInfo.path) {
-                console.log("La imagen ya es una URL remota, no se requiere re-subida.");
+            // If the image is already a remote URL and no new changes were made, return its info
+            if (uploadedMediaInfo && uploadedMediaInfo.url && uploadedMediaInfo.path && !isDirty) {
+                console.log("La imagen ya es una URL remota y no hay cambios, no se requiere re-subida.");
                 if (onUploadComplete) {
                     onUploadComplete(uploadedMediaInfo.url, uploadedMediaInfo.path);
                 }
-                return uploadedMediaInfo; // Retorna el objeto completo con url y path
+                return uploadedMediaInfo;
             }
-            return await performUpload(); // Llama a la función de subida interna
+
+            // Otherwise, perform the upload
+            const result = await performUpload();
+            if (result) {
+                setIsDirty(false); // Reset dirty state after successful upload
+            }
+            return result;
         },
-        // Método para que el padre obtenga la URI actual (seleccionada o subida)
         getImageUri: () => imageUri,
+        hasChanges: () => isDirty, // Expose the hasChanges method
+        clearImage: () => { // Expose a method to clear the image
+            setImageUri(null);
+            setUploadedMediaInfo(null);
+            setIsDirty(true); // Mark as dirty because content was removed
+            if (onImageChange) onImageChange(null);
+        }
     }));
 
     const pickImage = async () => {
@@ -60,14 +73,41 @@ const UploadMediaFile = forwardRef(({ onUploadComplete, initialImageUri }, ref) 
         if (!result.canceled && result.assets && result.assets.length > 0) {
             const selectedUri = result.assets[0].uri;
             setImageUri(selectedUri);
-            setUploadedMediaInfo(null); // Resetea la info de descarga si se selecciona una nueva imagen
+            setUploadedMediaInfo(null); // Clear previous uploaded info
+            setIsDirty(true); // A new image was picked, so it's dirty
+            if (onImageChange) { // Notify parent about image change
+                onImageChange(selectedUri);
+            }
             console.log("Imagen seleccionada URI:", selectedUri);
         } else {
             console.log("Selección de imagen cancelada o sin imagen.");
         }
     };
 
-    // Esta función ahora es interna y se llama desde el método expuesto por useImperativeHandle
+    const handleClearImage = () => {
+        Alert.alert(
+            "Confirmar eliminación",
+            "¿Estás seguro de que quieres eliminar esta imagen?",
+            [
+                {
+                    text: "Cancelar",
+                    style: "cancel"
+                },
+                {
+                    text: "Eliminar",
+                    onPress: () => {
+                        setImageUri(null);
+                        setUploadedMediaInfo(null);
+                        setIsDirty(true); // Mark as dirty because content was removed
+                        if (onImageChange) onImageChange(null); // Notify parent
+                    },
+                    style: "destructive"
+                }
+            ],
+            { cancelable: true }
+        );
+    };
+
     const performUpload = async () => {
         setUploading(true);
         try {
@@ -85,7 +125,7 @@ const UploadMediaFile = forwardRef(({ onUploadComplete, initialImageUri }, ref) 
 
             const filename = imageUri.substring(imageUri.lastIndexOf('/') + 1);
             const fileExtension = filename.split('.').pop();
-            const uniqueFilename = `media/${Date.now()}.${fileExtension}`; // Path en Firebase Storage
+            const uniqueFilename = `media/${Date.now()}.${fileExtension}`;
 
             const storageRef = firebase.storage().ref().child(uniqueFilename);
             const snapshot = await storageRef.put(blob);
@@ -99,34 +139,30 @@ const UploadMediaFile = forwardRef(({ onUploadComplete, initialImageUri }, ref) 
             console.log("Archivo subido. URL de descarga:", downloadURL);
 
             const resultInfo = { url: downloadURL, path: uniqueFilename };
-            setUploadedMediaInfo(resultInfo); // Guarda el objeto completo
+            setUploadedMediaInfo(resultInfo);
             setUploading(false);
-            Alert.alert('¡Archivo Subido!', `Tu archivo se ha subido.`);
 
             if (onUploadComplete) {
-                onUploadComplete(downloadURL, uniqueFilename); // Notifica al padre con ambos valores
+                onUploadComplete(downloadURL, uniqueFilename);
             }
-            return resultInfo; // Retorna el objeto con url y path
+            return resultInfo;
         } catch (error) {
             console.error("Error al subir:", error);
             Alert.alert('Error de Subida', `Hubo un problema: ${error.message}`);
             setUploading(false);
-            return null; // Retorna null en caso de error
+            return null;
         }
     };
 
     return (
         <View className="w-full items-center mb-10 p-4 border border-gray-200 rounded-lg shadow-sm bg-white">
-            <Text className="text-xl font-bold text-gray-800 mb-4">Subir Imagen Principal</Text>
-
             <TouchableOpacity
-                className="bg-gray-100 rounded-lg w-full h-32 items-center justify-center border-2 border-dashed border-gray-300 mb-4"
+                className="bg-gray-100 rounded-lg w-full h-32 items-center justify-center border-2 border-dashed border-gray-300 "
                 onPress={pickImage}
                 disabled={uploading}
             >
-                {/* Muestra la URL final si ya se subió, de lo contrario la URI temporal */}
-                {uploadedMediaInfo?.url || imageUri ? (
-                    <Image source={{ uri: uploadedMediaInfo?.url || imageUri }} className="w-full h-full rounded-lg resize-contain" />
+                {imageUri ? ( // Use imageUri directly for display
+                    <Image source={{ uri: imageUri }} className="w-full h-full rounded-lg resize-contain" />
                 ) : (
                     <View className="items-center">
                         <AntDesign name="picture" size={30} color="#9CA3AF" />
@@ -134,6 +170,15 @@ const UploadMediaFile = forwardRef(({ onUploadComplete, initialImageUri }, ref) 
                     </View>
                 )}
             </TouchableOpacity>
+
+            {imageUri && ( // Show clear button if an image is selected
+                <TouchableOpacity
+                    onPress={handleClearImage}
+                    className="absolute top-2 right-2 bg-red-500 p-1 rounded-full z-10"
+                >
+                    <AntDesign name="close" size={16} color="white" />
+                </TouchableOpacity>
+            )}
 
             {uploading && (
                 <View className="mt-4 items-center">

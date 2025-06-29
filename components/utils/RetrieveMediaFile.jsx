@@ -1,7 +1,7 @@
 import { View, Image, ActivityIndicator } from "react-native";
-import { firebase } from '../../config'; // Asegúrate que esta ruta sea correcta
+import { firebase } from '../../config'; 
 import React, { useState, useEffect } from "react";
-import { MaterialIcons } from "@expo/vector-icons"; // Importamos MaterialIcons para el icono
+import { MaterialIcons } from "@expo/vector-icons"; 
 
 const RetrieveMediaFile = ({ imageUrl }) => {
     const [retrievedImageUri, setRetrievedImageUri] = useState(null);
@@ -10,20 +10,17 @@ const RetrieveMediaFile = ({ imageUrl }) => {
     useEffect(() => {
         const fetchImage = async () => {
             if (!imageUrl) {
-                setRetrievedImageUri(null); // Clear previous image if URL is empty
+                setRetrievedImageUri(null); 
                 return;
             }
 
             setSearching(true);
-            setRetrievedImageUri(null); // Reset before new search
+            setRetrievedImageUri(null);
 
             try {
-                // Si la URL ya es una URL completa (http/https), la usamos directamente
                 if (imageUrl.startsWith('media')){
-                    // Si es un path de Firebase Storage, obtenemos la URL de descarga
                     const storageRef = firebase.storage().ref().child(imageUrl);
                     const downloadURL = await storageRef.getDownloadURL();
-                    console.log("Imagen encontrada. URL de descarga:", downloadURL);
                     setRetrievedImageUri(downloadURL);
                 }
             } catch (error) {
@@ -35,8 +32,7 @@ const RetrieveMediaFile = ({ imageUrl }) => {
         };
 
         fetchImage();
-    }, [imageUrl]); // Dependencia del efecto en la prop imageUrl
-
+    }, [imageUrl]); 
     return (
         <View className="w-full h-full items-center justify-center overflow-hidden">
             {searching ? (
@@ -46,7 +42,6 @@ const RetrieveMediaFile = ({ imageUrl }) => {
             ) : retrievedImageUri ? (
                 <Image source={{ uri: retrievedImageUri }} className="w-full  rounded-lg" style={{ aspectRatio: 4/4 }} />
             ) : (
-                // Opcional: mostrar un placeholder inicial si no hay URL y no se está buscando
                 <MaterialIcons name="image-not-supported" size={80} color="lightgray" />
             )}
         </View>

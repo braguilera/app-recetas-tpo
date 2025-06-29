@@ -32,7 +32,6 @@ const DetailsCourses = () => {
   return (
     <SafeAreaView className="flex-1 bg-white">
       <ScrollView className="flex-1">
-        {/* Header */}
         <View className="p-4 flex-row items-center bg-amber-100">
           <TouchableOpacity className="mr-4 p-2 rounded-full bg-amber-400" onPress={() => navigation.goBack()} accessibilityLabel="Volver atrás">
             <AntDesign name="arrowleft" size={24} color="#fff" />
@@ -40,7 +39,6 @@ const DetailsCourses = () => {
 
         </View>
 
-        {/* Price and Discount */}
         <View className="p-4 bg-amber-50 flex-col justify-between">
           <View className="flex-1">
             <Text className="text-2xl font-bold text-gray-800">{course.nombreCurso}</Text>
@@ -68,10 +66,7 @@ const DetailsCourses = () => {
           </View>
         </View>
 
-
-        {/* Content */}
         <View className="p-4">
-          {/* Description */}
             <View>
 
               <View className="bg-gray-50 rounded-xl p-4 mb-4">
@@ -108,7 +103,6 @@ const DetailsCourses = () => {
               </View>
             </View>
 
-          {/* Details */}
             <View>
               <Text className="text-lg font-bold text-gray-800 mb-3">Insumos Requeridos</Text>
               <View className="bg-gray-50 rounded-xl p-4 mb-6">
@@ -125,7 +119,6 @@ const DetailsCourses = () => {
               </View>
             </View>
 
-          {/* Locations */}
             <View>
               {course.sedes.map((sede) => {
                 const discount = getDiscount(sede.promociones);

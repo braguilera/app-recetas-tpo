@@ -1,5 +1,3 @@
-"use client"
-
 import { StatusBar, Platform } from "react-native"
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs"
 import { createNativeStackNavigator } from "@react-navigation/native-stack"
@@ -7,7 +5,8 @@ import { NavigationContainer } from "@react-navigation/native"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
 import { SafeAreaProvider } from "react-native-safe-area-context"
 
-// Screens
+import Splash from "screens/conexion/Splash"; 
+
 import HomeCourses from "screens/courses/HomeCourses"
 import DetailsCourses from "screens/courses/DetailsCourses"
 import HomeRecipes from "screens/recipes/HomeRecipes"
@@ -25,6 +24,7 @@ import EditProfile from "screens/profile/EditProfile"
 import SaveRecipe from "screens/profile/SaveRecipe"
 import MyCourses from "screens/profile/MyCourses"
 import ScanQR from "screens/profile/ScanQR"
+import NoConexion from "screens/conexion/NoConexion" 
 
 const Tab = createBottomTabNavigator()
 const RecipesStack = createNativeStackNavigator()
@@ -33,7 +33,6 @@ const AuthStack = createNativeStackNavigator()
 const ProfileStack = createNativeStackNavigator()
 const RootStack = createNativeStackNavigator()
 
-// Stack de perfil
 function ProfileStackScreen() {
   return (
     <ProfileStack.Navigator
@@ -54,7 +53,6 @@ function ProfileStackScreen() {
   )
 }
 
-// Stack de autenticación completo
 function AuthStackScreen() {
   return (
     <AuthStack.Navigator
@@ -74,7 +72,6 @@ function AuthStackScreen() {
   )
 }
 
-// Stack de recetas
 function RecipesStackScreen() {
   return (
     <RecipesStack.Navigator
@@ -91,7 +88,6 @@ function RecipesStackScreen() {
   )
 }
 
-// Stack de cursos
 function CoursesStackScreen() {
   return (
     <CoursesStack.Navigator
@@ -108,7 +104,6 @@ function CoursesStackScreen() {
   )
 }
 
-// Tabs principales
 function MyTabs() {
   return (
     <Tab.Navigator
@@ -161,7 +156,14 @@ export default function Navigation() {
             animation: "slide_from_right",
           }}
         >
-          {/* Pantalla principal con tabs */}
+          <RootStack.Screen
+            name="Splash"
+            component={Splash}
+            options={{
+              gestureEnabled: false,
+            }}
+          />
+
           <RootStack.Screen
             name="MainTabs"
             component={MyTabs}
@@ -170,7 +172,6 @@ export default function Navigation() {
             }}
           />
 
-          {/* Stack de autenticación completo */}
           <RootStack.Screen
             name="AuthStack"
             component={AuthStackScreen}
@@ -180,13 +181,20 @@ export default function Navigation() {
             }}
           />
 
-          {/* Stack de perfil */}
           <RootStack.Screen
             name="ProfileStack"
             component={ProfileStackScreen}
             options={{
               presentation: "modal",
               gestureEnabled: true,
+            }}
+          />
+          {/* Add NoConexion screen if you still want it in the stack */}
+          <RootStack.Screen
+            name="NoConexion"
+            component={NoConexion}
+            options={{
+              gestureEnabled: false,
             }}
           />
         </RootStack.Navigator>

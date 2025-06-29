@@ -26,7 +26,7 @@ const RecipeCard = ({recipe}) => {
             </View>
         </View>
         <Text className="text-gray-600 text-sm" numberOfLines={2}>
-            Descripción breve de la receta que se muestra aquí para dar una idea del contenido.
+            {recipe.description}
         </Text>
         <View className="flex-row items-center">
             <View className="flex-row items-center mr-4">

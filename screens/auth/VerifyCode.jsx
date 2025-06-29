@@ -1,137 +1,311 @@
-// screens/auth/VerifyCode.js
-"use client"
-
-import { useState, useRef } from "react"
-import { View, Text, TextInput, TouchableOpacity, StatusBar, Alert } from "react-native"
-import { useNavigation, useRoute } from "@react-navigation/native"
-import { AntDesign } from "@expo/vector-icons"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
-// Importa la nueva función para GET con query params
-import { getDatosConQueryParams, getDatosConQueryParamsWithAuth, postDatos } from "../../api/crud"; // Ajusta la ruta
+import React, { useState, useRef, useEffect } from "react";
+import { View, Text, TextInput, TouchableOpacity, StatusBar, ScrollView, ActivityIndicator, StyleSheet } from "react-native";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { AntDesign } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { getDatosConQueryParams, postDatos, postDatosWithAuth } from "../../api/crud";
+import { Ionicons } from "@expo/vector-icons";
+import LoadingModal from "../../components/utils/LoadingModal";
+import UploadMediaFile from "components/utils/UploadMediaFIle";
 
 const VerifyCode = () => {
-  const navigation = useNavigation()
-  const route = useRoute()
-  const insets = useSafeAreaInsets()
+  const navigation = useNavigation();
+  const route = useRoute();
+  const insets = useSafeAreaInsets();
 
-  // 'email' aquí es realmente el 'username' (mail) que se pasó desde Register
-  const { type = "login", email = "", userType = "usuario" } = route.params || {}
+  // Parámetros de ruta:
+  // Ahora esperamos 'isStudentRegister' directamente, además de 'type', 'email' y 'username'.
+  const { type = "login", email = "", username = "", isStudentRegister: routeIsStudentRegister = false } = route.params || {};
 
-  const [code, setCode] = useState(["", "", "", "", ""]) // Código de 5 caracteres
-  // Estos formData parecen ser para otro tipo de registro (registerUser/registerStudent)
-  // Si no se usan para la verificación, podrías considerar eliminarlos o moverlos
-  const [formData, setFormData] = useState({
-    nombre: "",
-    contraseña: "",
-    verificarContraseña: "",
-    numeroTarjeta: "",
-    numeroTramite: "",
-    dniFrente: null,
-    dniDorso: null,
-  })
 
-  const codeInputs = useRef([])
+  const [code, setCode] = useState(["", "", "", "", ""]);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [password, setPassword] = useState("");
+  const [rePassword, setRePassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Campos específicos de estudiante
+  const [cardNumber, setCardNumber] = useState("");
+  const dniFrontUploadRef = useRef(null);
+  const dniBackUploadRef = useRef(null);
+  const [dniFrontImageUri, setDniFrontImageUri] = useState(null);
+  const [dniBackImageUri, setDniBackImageUri] = useState(null);
+  const [dni, setDni] = useState("");
+
+  const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("Verificando...");
+
+  // --- ESTADOS PARA MENSAJES DE ERROR ---
+  const [generalError, setGeneralError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState({}); // Para errores específicos de campos
+
+  const codeInputs = useRef([]);
+
+  const isRegisterStep2 = type === "registerStep2";
+  // La variable que determina si mostrar los campos de estudiante ahora usa 'routeIsStudentRegister'
+  const shouldShowStudentFields = isRegisterStep2 && routeIsStudentRegister;
+
+  useEffect(() => {
+    codeInputs.current[0]?.focus();
+  }, []);
+
+  // Función para resetear errores al cambiar de campo o al intentar de nuevo
+  const clearErrors = () => {
+    setGeneralError("");
+    setFieldErrors({});
+  };
 
   const handleCodeChange = (value, index) => {
-    const newCode = [...code]
-    // Solo toma el último carácter si el usuario pega algo
-    newCode[index] = value.slice(-1) 
-    setCode(newCode)
+    clearErrors(); // Limpia errores al empezar a escribir
+    const newCode = [...code];
+    newCode[index] = value.slice(-1);
+    setCode(newCode);
 
-    // Enfocar al siguiente input si hay un valor y no es el último
     if (value && index < 4) {
-      codeInputs.current[index + 1]?.focus()
+      codeInputs.current[index + 1]?.focus();
     }
-  }
+  };
 
   const handleKeyPress = (e, index) => {
-    // Para retroceso, mueve el foco al input anterior
     if (e.nativeEvent.key === "Backspace" && !code[index] && index > 0) {
-      codeInputs.current[index - 1]?.focus()
+      codeInputs.current[index - 1]?.focus();
     }
-  }
-
-  const handleImageUpload = (field) => {
-    Alert.alert("Cargar Imagen", "¿Desde dónde quieres cargar la imagen?", [
-      { text: "Cámara", onPress: () => simulateImageUpload(field, "camera") },
-      { text: "Galería", onPress: () => simulateImageUpload(field, "gallery") },
-      { text: "Cancelar", style: "cancel" },
-    ])
-  }
-
-  const simulateImageUpload = (field, source) => {
-    const imageUrl = `https://picsum.photos/seed/${field}-${Date.now()}/400/300`
-    setFormData((prev) => ({ ...prev, [field]: imageUrl }))
-  }
+  };
 
   const handleResendCode = async () => {
+    clearErrors(); // Limpia errores antes de reenviar
+    setLoadingMessage("Reenviando código...");
+    setLoading(true);
     try {
-        // *** MODIFICACIÓN AQUÍ: Endpoint para reenviar código (GET con query param) ***
-        // Asumiendo que el endpoint para reenviar código es GET /register/resend y espera 'mail' como query param
-        // Usamos 'email' que se pasó desde Register (que es el 'username' con el mail)
-        await getDatosConQueryParams('register/resend', { mail: email }, 'Error al reenviar el código');
-
-        Alert.alert("Código reenviado", `Se ha enviado un nuevo código a ${email}`);
-        setCode(["", "", "", "", ""]); // Limpiar el código actual
-        codeInputs.current[0]?.focus(); // Enfocar el primer input
+      await getDatosConQueryParams('auth/send-code', { email: email }, 'Error al reenviar el código');
+      console.log("Código reenviado exitosamente.");
+      setCode(["", "", "", "", ""]);
+      codeInputs.current[0]?.focus();
     } catch (error) {
-        console.error("Error al reenviar el código:", error);
-        Alert.alert("Error", error.message || "No se pudo reenviar el código. Intenta de nuevo más tarde.");
+      console.error("Error al reenviar el código:", error);
+      setGeneralError(error.message || "No se pudo reenviar el código. Intenta de nuevo más tarde.");
+    } finally {
+      setLoading(false);
     }
-  }
+  };
+
+  const handlePasswordReset = async (codeString) => {
+    clearErrors();
+    let errors = {};
+    if (!newPassword) errors.newPassword = "Ingresa tu nueva contraseña.";
+    if (!confirmPassword) errors.confirmPassword = "Confirma tu nueva contraseña.";
+    if (newPassword !== confirmPassword) errors.confirmPassword = "Las contraseñas no coinciden.";
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return false;
+    }
+
+    setLoadingMessage("Restableciendo contraseña...");
+    try {
+      await postDatosWithAuth(
+        'password/confirm-reset',
+        { code: codeString, newPassword: newPassword, confirmPassword: confirmPassword },
+        'Error al restablecer la contraseña'
+      );
+      console.log("Contraseña restablecida exitosamente.");
+      navigation.replace("Login");
+      return true;
+    } catch (error) {
+      console.error("Error en handlePasswordReset:", error);
+      setGeneralError(error.message || "No se pudo restablecer la contraseña.");
+      throw error;
+    }
+  };
+
+  const handleRegisterStep2 = async (codeString) => {
+    clearErrors();
+    let errors = {};
+
+    if (!firstName) errors.firstName = "El nombre es obligatorio.";
+    if (!lastName) errors.lastName = "El apellido es obligatorio.";
+    if (!password) errors.password = "La contraseña es obligatoria.";
+    if (!rePassword) errors.rePassword = "Confirma tu contraseña.";
+    if (password !== rePassword) errors.rePassword = "Las contraseñas no coinciden.";
+
+    // Usamos 'shouldShowStudentFields' aquí para la validación
+    if (shouldShowStudentFields) {
+      if (!cardNumber) errors.cardNumber = "El número de tarjeta es obligatorio.";
+      if (!dni) errors.dni = "El DNI es obligatorio.";
+      if (!dniFrontImageUri) errors.dniFrontImage = "La imagen frontal del DNI es obligatoria.";
+      if (!dniBackImageUri) errors.dniBackImage = "La imagen trasera del DNI es obligatoria.";
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors);
+      return false;
+    }
+
+    let finalDniFrontPath = null;
+    let finalDniBackPath = null;
+
+    try {
+      // Usamos 'shouldShowStudentFields' para la subida de imágenes
+      if (shouldShowStudentFields) {
+        setLoadingMessage("Cargando...");
+        if (dniFrontUploadRef.current) {
+          if (dniFrontUploadRef.current.hasChanges() || !dniFrontImageUri?.startsWith('http')) {
+            const uploadResult = await dniFrontUploadRef.current.upload();
+            if (uploadResult && uploadResult.path) {
+              finalDniFrontPath = uploadResult.path;
+            } else {
+              setGeneralError("No se pudo subir la imagen frontal del DNI.");
+              return false;
+            }
+          } else {
+            finalDniFrontPath = dniFrontUploadRef.current.uploadedMediaInfo?.path || dniFrontImageUri;
+          }
+        } else {
+          setGeneralError("Referencia a DNI Frente no disponible. (Error interno)");
+          return false;
+        }
+
+        if (dniBackUploadRef.current) {
+          if (dniBackUploadRef.current.hasChanges() || !dniBackImageUri?.startsWith('http')) {
+            const uploadResult = await dniBackUploadRef.current.upload();
+            if (uploadResult && uploadResult.path) {
+              finalDniBackPath = uploadResult.path;
+            } else {
+              setGeneralError("No se pudo subir la imagen trasera del DNI.");
+              return false;
+            }
+          } else {
+            finalDniBackPath = dniBackUploadRef.current.uploadedMediaInfo?.path || dniBackImageUri;
+          }
+        } else {
+          setGeneralError("Referencia a DNI Dorso no disponible. (Error interno)");
+          return false;
+        }
+      }
+
+      setLoadingMessage("Finalizando registro...");
+
+      const userDTO = {
+        verificationCode: codeString,
+        firstname: firstName,
+        lastname: lastName,
+        password: password,
+        rePassword: rePassword,
+        email: email,
+        nickname: username,
+      };
+
+      console.log("Datos del registro (userDTO):", userDTO);
+
+      let endpoint = "";
+      let requestBody = {};
+
+      // Determinamos el endpoint y el body basado en 'shouldShowStudentFields'
+      if (shouldShowStudentFields) {
+        endpoint = "register/step2/student";
+        requestBody = {
+          userDTO: userDTO,
+          studentDto: {
+            numeroTarjeta: cardNumber,
+            dniFrente: finalDniFrontPath,
+            dniDorso: finalDniBackPath,
+            tramite: dni,
+          },
+        };
+      } else {
+        endpoint = "register/step2/user";
+        requestBody = userDTO;
+      }
+
+      console.log(`Enviando a ${endpoint}:`, requestBody);
+
+      await postDatos(
+        endpoint,
+        requestBody,
+        `Error al completar el registro como ${shouldShowStudentFields ? "estudiante" : "usuario"}`
+      );
+
+      console.log(`Registro completado exitosamente en ${endpoint}.`);
+      navigation.replace("SuccessScreen", {
+        type: "newAccount",
+      });
+      return true;
+
+    } catch (error) {
+      console.error("Error en handleRegisterStep2:", error);
+      setGeneralError(error.message || `No se pudo completar el registro como ${shouldShowStudentFields ? "estudiante" : "usuario"}.`);
+      throw error;
+    }
+  };
 
   const handleSubmit = async () => {
+    clearErrors(); // Siempre limpia los errores al inicio de un nuevo intento
     const codeString = code.join("");
 
     if (codeString.length !== 5) {
-      Alert.alert("Error", "Por favor ingresa el código completo (5 caracteres).");
+      setFieldErrors(prev => ({ ...prev, code: "Ingresa el código completo (5 caracteres)." }));
       return;
     }
 
+    setLoading(true);
+
     try {
-      // *** MODIFICACIÓN AQUÍ: Endpoint de verificación (GET con un solo parámetro 'code') ***
-      // Endpoint de verificación según tu Postman: GET http://localhost:8081/register/verify?code=P4KPS
-      const response = await getDatosConQueryParamsWithAuth('register/verify', { code: codeString }, 'Error al verificar el código');
-      console.log("Respuesta de verificación:", response);
-
-      // La respuesta puede ser un objeto o un mensaje directo, ajusta esto si es necesario
-      Alert.alert("Verificación Exitosa", response?.message || "Tu cuenta ha sido verificada exitosamente. ¡Ya puedes iniciar sesión!");
-
-      // Después de la verificación exitosa, navegar al Login
-      navigation.replace("Login"); // Usar replace para que no puedan volver a esta pantalla
-
+      if (type === "passwordReset") {
+        await handlePasswordReset(codeString);
+      } else if (isRegisterStep2) {
+        await handleRegisterStep2(codeString);
+      } else {
+        console.log("Código verificado (flujo general). Redirigiendo a Login.");
+        navigation.replace("Login");
+      }
     } catch (error) {
-      console.error("Error en handleSubmit (VerifyCode):", error);
-      const errorMessage = error.message || 'Ocurrió un error al verificar el código.';
-      Alert.alert("Error de Verificación", errorMessage);
+      console.error("Error en handleSubmit (VerifyCode - Catch principal):", error);
+      if (!generalError) {
+          setGeneralError(error.message || 'Ocurrió un error inesperado. Intenta de nuevo.');
+      }
+    } finally {
+      setLoading(false);
     }
-  }
-
-  const updateFormData = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
+  };
 
   const getTitle = () => {
+    // Usamos 'shouldShowStudentFields' para el título
+    if (isRegisterStep2) {
+      return shouldShowStudentFields ? "Registro de Estudiante" : "Registro";
+    }
     switch (type) {
       case "registerVerification":
-        return "Verificar Registro"
+        return "Verificar Registro";
       case "forgotPassword":
-        return "Verificar Código"
+        return "Verificar Código";
+      case "passwordReset":
+        return "Restablecer Contraseña";
       default:
-        return "Verificar Código"
+        return "Verificar Código";
     }
-  }
+  };
 
   const getButtonText = () => {
+    // Usamos 'shouldShowStudentFields' para el texto del botón
+    if (isRegisterStep2) {
+      return shouldShowStudentFields ? "Finalizar Registro Estudiante" : "Finalizar Registro";
+    }
     switch (type) {
       case "registerVerification":
-        return "Confirmar Registro"
+        return "Confirmar Registro";
       case "forgotPassword":
-        return "Verificar"
+        return "Verificar";
+      case "passwordReset":
+        return "Restablecer Contraseña";
       default:
-        return "Verificar"
+        return "Verificar";
     }
-  }
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: "#FEF3E2", paddingTop: insets.top }}>
@@ -148,137 +322,210 @@ const VerifyCode = () => {
         <Text className="text-xl font-bold text-gray-800">{getTitle()}</Text>
       </View>
 
-      <View className="flex-1 px-6">
+      <ScrollView className="flex-1 px-6">
         <View className="items-center mb-8">
-          <Text className="text-lg font-medium text-gray-800 mb-4">Ingresa el código enviado a {email}</Text>
+          <Text className="text-lg font-medium text-gray-800 mb-4 text-center">
+            {isRegisterStep2
+              ? `Ingresa el código enviado a ${email} y completa tus datos:`
+              : type === "passwordReset"
+                ? "Ingresa el código enviado a tu correo y tu nueva contraseña"
+                : `Ingresa el código enviado a ${email}`}
+          </Text>
           <View className="flex-row justify-center space-x-3">
             {code.map((digit, index) => (
               <TextInput
                 key={index}
                 ref={(ref) => (codeInputs.current[index] = ref)}
-                className="w-14 h-14 bg-white border-2 border-gray-200 rounded-xl text-center text-xl font-bold text-gray-800 shadow-sm"
+                className={`w-14 h-14 bg-white border-2 rounded-xl text-center text-xl font-bold text-gray-800 shadow-sm ${fieldErrors.code ? 'border-red-500' : 'border-gray-200'}`}
                 value={digit}
                 onChangeText={(value) => handleCodeChange(value, index)}
                 onKeyPress={(e) => handleKeyPress(e, index)}
-                // *** MODIFICACIÓN AQUÍ: Se quita keyboardType="numeric" para permitir letras y números ***
                 maxLength={1}
-                autoCapitalize="characters" // Para que las letras mayúsculas se auto-conviertan
+                keyboardType="numeric"
+                autoCapitalize="none"
                 selectTextOnFocus
               />
             ))}
           </View>
+          {fieldErrors.code && <Text style={styles.errorText}>{fieldErrors.code}</Text>}
         </View>
 
-        {/* Campos adicionales según el tipo, tal como los tenías */}
-        {(type === "registerUser" || type === "registerStudent") && (
-            <View className="space-y-4 mb-6">
-                {/* Nombre */}
-                <View>
-                    <Text className="text-gray-700 font-medium mb-2">Nombre</Text>
-                    <TextInput
-                        className="bg-white border border-gray-200 rounded-xl px-4 py-4 text-gray-800 shadow-sm"
-                        placeholder="Ingresa tu nombre completo"
-                        value={formData.nombre}
-                        onChangeText={(value) => updateFormData("nombre", value)}
-                    />
-                </View>
+        {generalError ? (
+          <View className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-md mb-4" role="alert">
+            <Text className="font-bold text-red-700">Error:</Text>
+            <Text className="text-sm text-red-700">{generalError}</Text>
+          </View>
+        ) : null}
 
-                {/* Contraseña */}
-                <View>
-                    <Text className="text-gray-700 font-medium mb-2">Contraseña</Text>
-                    <TextInput
-                        className="bg-white border border-gray-200 rounded-xl px-4 py-4 text-gray-800 shadow-sm"
-                        placeholder="Ingresa tu contraseña"
-                        value={formData.contraseña}
-                        onChangeText={(value) => updateFormData("contraseña", value)}
-                        secureTextEntry
-                    />
-                </View>
+        {isRegisterStep2 && ( // Este bloque de campos de registro SIEMPRE se muestra si es registerStep2
+          <View className="mt-4">
+            <Text className="text-gray-700 font-medium mb-2">Nombre</Text>
+            <TextInput
+              className={`border rounded-xl px-4 py-2 mb-1 text-gray-800 bg-gray-50 ${fieldErrors.firstName ? 'border-red-500' : 'border-gray-300'}`}
+              placeholder="Ingresa tu nombre"
+              placeholderTextColor="#9CA3AF"
+              value={firstName}
+              onChangeText={(text) => { setFirstName(text); clearErrors(); }}
+              editable={!loading}
+            />
+            {fieldErrors.firstName && <Text style={styles.errorText}>{fieldErrors.firstName}</Text>}
 
-                {/* Verificar Contraseña */}
-                <View>
-                    <Text className="text-gray-700 font-medium mb-2">Verificar Contraseña</Text>
-                    <TextInput
-                        className="bg-white border border-gray-200 rounded-xl px-4 py-4 text-gray-800 shadow-sm"
-                        placeholder="Confirma tu contraseña"
-                        value={formData.verificarContraseña}
-                        onChangeText={(value) => updateFormData("verificarContraseña", value)}
-                        secureTextEntry
-                    />
-                </View>
+            <Text className="text-gray-700 font-medium mb-2 mt-3">Apellido</Text>
+            <TextInput
+              className={`border rounded-xl px-4 py-2 mb-1 text-gray-800 bg-gray-50 ${fieldErrors.lastName ? 'border-red-500' : 'border-gray-300'}`}
+              placeholder="Ingresa tu apellido"
+              placeholderTextColor="#9CA3AF"
+              value={lastName}
+              onChangeText={(text) => { setLastName(text); clearErrors(); }}
+              editable={!loading}
+            />
+            {fieldErrors.lastName && <Text style={styles.errorText}>{fieldErrors.lastName}</Text>}
 
-                {/* Campos adicionales para estudiantes */}
-                {type === "registerStudent" && (
-                    <>
-                        {/* Número de tarjeta */}
-                        <View>
-                            <Text className="text-gray-700 font-medium mb-2">Número de tarjeta</Text>
-                            <TextInput
-                                className="bg-white border border-gray-200 rounded-xl px-4 py-4 text-gray-800 shadow-sm"
-                                placeholder="Ingresa el número de tarjeta"
-                                value={formData.numeroTarjeta}
-                                onChangeText={(value) => updateFormData("numeroTarjeta", value)}
-                                keyboardType="numeric"
-                            />
-                        </View>
+            <Text className="text-gray-700 font-medium mb-2 mt-3">Contraseña</Text>
+            <TextInput
+              className={`border rounded-xl px-4 py-2 mb-1 text-gray-800 bg-gray-50 ${fieldErrors.password ? 'border-red-500' : 'border-gray-300'}`}
+              placeholder="••••••••"
+              placeholderTextColor="#9CA3AF"
+              value={password}
+              onChangeText={(text) => { setPassword(text); clearErrors(); }}
+              secureTextEntry
+              editable={!loading}
+            />
+            {fieldErrors.password && <Text style={styles.errorText}>{fieldErrors.password}</Text>}
 
-                        {/* DNI Frente */}
-                        <View>
-                            <Text className="text-gray-700 font-medium mb-2">DNI frente</Text>
-                            <TouchableOpacity
-                                className="bg-gray-200 rounded-lg px-4 py-3 flex-row items-center justify-center"
-                                onPress={() => handleImageUpload("dniFrente")}
-                            >
-                                <AntDesign name="upload" size={20} color="#6B7280" />
-                                <Text className="text-gray-600 ml-2">
-                                    {formData.dniFrente ? "Imagen cargada" : "cargar imagen"}
-                                </Text>
-                            </TouchableOpacity>
-                        </View>
+            <Text className="text-gray-700 font-medium mb-2 mt-3">Repetir Contraseña</Text>
+            <TextInput
+              className={`border rounded-xl px-4 py-2 mb-1 text-gray-800 bg-gray-50 ${fieldErrors.rePassword ? 'border-red-500' : 'border-gray-300'}`}
+              placeholder="••••••••"
+              placeholderTextColor="#9CA3AF"
+              value={rePassword}
+              onChangeText={(text) => { setRePassword(text); clearErrors(); }}
+              secureTextEntry
+              editable={!loading}
+            />
+            {fieldErrors.rePassword && <Text style={styles.errorText}>{fieldErrors.rePassword}</Text>}
 
-                        {/* DNI Dorso */}
-                        <View>
-                            <Text className="text-gray-700 font-medium mb-2">DNI dorso</Text>
-                            <TouchableOpacity
-                                className="bg-gray-200 rounded-lg px-4 py-3 flex-row items-center justify-center"
-                                onPress={() => handleImageUpload("dniDorso")}
-                            >
-                                <AntDesign name="upload" size={20} color="#6B7280" />
-                                <Text className="text-gray-600 ml-2">{formData.dniDorso ? "Imagen cargada" : "cargar imagen"}</Text>
-                            </TouchableOpacity>
-                        </View>
+            {/* Este bloque de campos específicos de estudiante SOLO se muestra si shouldShowStudentFields es true */}
+            {shouldShowStudentFields && (
+              <View>
+                <Text className="text-gray-700 font-medium mb-2 mt-3">
+                  Número de tarjeta
+                </Text>
+                <TextInput
+                  className={`border rounded-xl px-4 py-2 mb-1 text-gray-800 bg-gray-50 ${fieldErrors.cardNumber ? 'border-red-500' : 'border-gray-300'}`}
+                  placeholder="Ingresa tu número de tarjeta"
+                  placeholderTextColor="#9CA3AF"
+                  value={cardNumber}
+                  onChangeText={(text) => { setCardNumber(text); clearErrors(); }}
+                  keyboardType="numeric"
+                  editable={!loading}
+                />
+                {fieldErrors.cardNumber && <Text style={styles.errorText}>{fieldErrors.cardNumber}</Text>}
 
-                        {/* Número de trámite */}
-                        <View>
-                            <Text className="text-gray-700 font-medium mb-2">Número de trámite</Text>
-                            <TextInput
-                                className="bg-white border border-gray-200 rounded-xl px-4 py-4 text-gray-800 shadow-sm"
-                                placeholder="Ingresa el número de trámite"
-                                value={formData.numeroTramite}
-                                onChangeText={(value) => updateFormData("numeroTramite", value)}
-                                keyboardType="numeric"
-                            />
-                        </View>
-                    </>
-                )}
-            </View>
+                <Text className="text-gray-700 font-medium mb-2 mt-3">DNI Frente</Text>
+                <UploadMediaFile
+                  ref={dniFrontUploadRef}
+                  initialImageUri={dniFrontImageUri}
+                  onImageChange={(uri) => { setDniFrontImageUri(uri); clearErrors(); }}
+                />
+                {fieldErrors.dniFrontImage && <Text style={styles.errorText}>{fieldErrors.dniFrontImage}</Text>}
+
+                <Text className="text-gray-700 font-medium mb-2 mt-4">DNI Dorso</Text>
+                <UploadMediaFile
+                  ref={dniBackUploadRef}
+                  initialImageUri={dniBackImageUri}
+                  onImageChange={(uri) => { setDniBackImageUri(uri); clearErrors(); }}
+                />
+                {fieldErrors.dniBackImage && <Text style={styles.errorText}>{fieldErrors.dniBackImage}</Text>}
+
+                <Text className="text-gray-700 font-medium mb-2 mt-4">DNI</Text>
+                <TextInput
+                  className={`border rounded-xl px-4 py-2 mb-1 text-gray-800 bg-gray-50 ${fieldErrors.dni ? 'border-red-500' : 'border-gray-300'}`}
+                  placeholder="Ingresa tu DNI"
+                  placeholderTextColor="#9CA3AF"
+                  value={dni}
+                  onChangeText={(text) => { setDni(text); clearErrors(); }}
+                  keyboardType="numeric"
+                  editable={!loading}
+                />
+                {fieldErrors.dni && <Text style={styles.errorText}>{fieldErrors.dni}</Text>}
+              </View>
+            )}
+          </View>
         )}
 
-        {/* Botones */}
+        {type === "passwordReset" && (
+          <View className="mt-8">
+            <View className="mb-6">
+              <Text className="text-gray-700 font-medium mb-3">Nueva contraseña</Text>
+              <View className="relative">
+                <TextInput
+                  className={`bg-gray-200 rounded-lg px-4 py-4 pr-12 text-gray-800 text-base ${fieldErrors.newPassword ? 'border border-red-500' : ''}`}
+                  placeholder="Ingresa tu nueva contraseña"
+                  placeholderTextColor="#9CA3AF"
+                  value={newPassword}
+                  onChangeText={(text) => { setNewPassword(text); clearErrors(); }}
+                  secureTextEntry={!showNewPassword}
+                />
+                <TouchableOpacity className="absolute right-4 top-4" onPress={() => setShowNewPassword(!showNewPassword)}>
+                  <Ionicons name={showNewPassword ? "eye-off" : "eye"} size={20} color="#9CA3AF" />
+                </TouchableOpacity>
+              </View>
+              {fieldErrors.newPassword && <Text style={styles.errorText}>{fieldErrors.newPassword}</Text>}
+            </View>
+
+            <View className="mb-8">
+              <Text className="text-gray-700 font-medium mb-3">Verificar contraseña</Text>
+              <View className="relative">
+                <TextInput
+                  className={`bg-gray-200 rounded-lg px-4 py-4 pr-12 text-gray-800 text-base ${fieldErrors.confirmPassword ? 'border border-red-500' : ''}`}
+                  placeholder="Confirma tu nueva contraseña"
+                  placeholderTextColor="#9CA3AF"
+                  value={confirmPassword}
+                  onChangeText={(text) => { setConfirmPassword(text); clearErrors(); }}
+                  secureTextEntry={!showConfirmPassword}
+                />
+                <TouchableOpacity
+                  className="absolute right-4 top-4"
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  <Ionicons name={showConfirmPassword ? "eye-off" : "eye"} size={20} color="#9CA3AF" />
+                </TouchableOpacity>
+              </View>
+              {fieldErrors.confirmPassword && <Text className="text-red-500 mt-2 mb-4 ml-5 text-sm">{fieldErrors.confirmPassword}</Text>}
+            </View>
+          </View>
+        )}
+
         <View className="mt-auto pb-8">
-          {(type === "registerVerification" || type === "forgotPassword") && (
-            <TouchableOpacity className="items-center mb-4" onPress={handleResendCode}>
+          {type !== "passwordReset" && (
+            <TouchableOpacity className="items-center mb-4" onPress={handleResendCode} disabled={loading}>
               <Text className="text-gray-600 underline">Reenviar código</Text>
             </TouchableOpacity>
           )}
 
-          <TouchableOpacity className="bg-amber-400 rounded-lg py-4 items-center" onPress={handleSubmit}>
-            <Text className="text-white font-bold text-lg">{getButtonText()}</Text>
+          <TouchableOpacity className="bg-amber-400 rounded-lg py-4 items-center" onPress={handleSubmit} disabled={loading}>
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text className="text-white font-bold text-lg">{getButtonText()}</Text>
+            )}
           </TouchableOpacity>
         </View>
-      </View>
+      </ScrollView>
+      <LoadingModal visible={loading} message={loadingMessage} />
     </View>
-  )
-}
+  );
+};
 
-export default VerifyCode
+const styles = StyleSheet.create({
+  errorText: {
+    color: '#EF4444', // red-500
+    fontSize: 12,
+    marginTop: 2,
+    marginBottom: 4,
+    marginLeft: 5,
+  },
+});
+
+export default VerifyCode;
