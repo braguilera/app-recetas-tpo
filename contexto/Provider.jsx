@@ -49,7 +49,7 @@ const Provider = ({ children }) => {
       await checkAndSetIsStudent(userIdData, tokenData);
 
     } catch (e) {
-      console.error("Error al guardar en AsyncStorage (login):", e);
+      console.log("Error al guardar en AsyncStorage (login):", e);
     }
   };
 
@@ -74,7 +74,7 @@ const Provider = ({ children }) => {
       await AsyncStorage.removeItem('lastName');
       await AsyncStorage.removeItem('isStudent'); // Eliminar también el estado de estudiante
     } catch (e) {
-      console.error("Error al eliminar de AsyncStorage (logout):", e);
+      console.log("Error al eliminar de AsyncStorage (logout):", e);
     }
   };
 
@@ -95,7 +95,7 @@ const Provider = ({ children }) => {
         await AsyncStorage.setItem('isStudent', 'false');
       }
     } catch (e) {
-      console.error("Error al verificar si es estudiante:", e);
+      console.log("Error al verificar si es estudiante:", e);
       setIsStudent(false);
       await AsyncStorage.setItem('isStudent', 'false');
     }
@@ -106,7 +106,7 @@ const Provider = ({ children }) => {
     try {
       await AsyncStorage.setItem('isStudent', String(status));
     } catch (e) {
-      console.error("Error al guardar isStudent en AsyncStorage:", e);
+      console.log("Error al guardar isStudent en AsyncStorage:", e);
     }
   };
 
@@ -122,7 +122,7 @@ const Provider = ({ children }) => {
       await AsyncStorage.setItem(SAVE_ACCOUNTS_KEY, JSON.stringify(currentAccounts));
       setSavedUserAccounts(currentAccounts);
     } catch (e) {
-      console.error("Error al guardar credenciales:", e);
+      console.log("Error al guardar credenciales:", e);
     }
   };
 
@@ -133,7 +133,7 @@ const Provider = ({ children }) => {
         setSavedUserAccounts(JSON.parse(storedAccounts));
       }
     } catch (e) {
-      console.error("Error al cargar credenciales:", e);
+      console.log("Error al cargar credenciales:", e);
       setSavedUserAccounts([]);
     }
   };
@@ -149,7 +149,7 @@ const Provider = ({ children }) => {
         setSavedUserAccounts(currentAccounts);
       }
     } catch (e) {
-      console.error("Error al eliminar credenciales:", e);
+      console.log("Error al eliminar credenciales:", e);
     }
   };
 
@@ -164,7 +164,7 @@ const Provider = ({ children }) => {
           setModifiedRecipes(JSON.parse(storedRecipes));
         }
       } catch (error) {
-        console.error("Error cargando recetas modificadas de AsyncStorage:", error);
+        console.log("Error cargando recetas modificadas de AsyncStorage:", error);
       }
     };
     loadModifiedRecipes();
@@ -176,7 +176,7 @@ const Provider = ({ children }) => {
       try {
         await AsyncStorage.setItem(MODIFIED_RECIPES_STORAGE_KEY, JSON.stringify(modifiedRecipes));
       } catch (error) {
-        console.error("Error guardando recetas modificadas en AsyncStorage:", error);
+        console.log("Error guardando recetas modificadas en AsyncStorage:", error);
       }
     };
     saveModifiedRecipesToStorage();
@@ -271,7 +271,7 @@ const Provider = ({ children }) => {
         }
         await loadUserCredentials(); // Cargar credenciales guardadas para auto-login
       } catch (e) {
-        console.error("Error al cargar estado inicial de la app desde AsyncStorage:", e);
+        console.log("Error al cargar estado inicial de la app desde AsyncStorage:", e);
       }
     };
 

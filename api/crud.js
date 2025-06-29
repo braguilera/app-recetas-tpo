@@ -227,13 +227,20 @@ export const putDatosWithAuth = async (endpoint, data, errorMessage = 'Error al 
 
 
 
-// DELETE
-export const deleteDatosWithAuth = async (endpoint, errorMessage = 'Error al eliminar recurso (auth)') => {
+// DELETE with authentication (now supports body)
+export const deleteDatosWithAuth = async (endpoint, errorMessage = 'Error deleting data (auth)', body = null, token = null) => {
     try {
-        const response = await fetch(`${API_CONFIG.BASE_URL}${endpoint}`, {
+        const headers = await getHeadersWithAuth(token);
+        const options = {
             method: 'DELETE',
-            headers: await getHeadersWithAuth() 
-        });
+            headers: headers,
+        };
+
+        if (body) {
+            options.body = JSON.stringify(body);
+        }
+
+        const response = await fetch(`${API_CONFIG.BASE_URL}${endpoint}`, options);
         return handleResponse(response, errorMessage);
     } catch (error) {
         throw new Error(`${errorMessage}: ${error.message}`);

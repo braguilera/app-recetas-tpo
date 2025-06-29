@@ -1,42 +1,43 @@
 import { useContext, useEffect, useState, useCallback } from "react"
-import { ScrollView, Text, View, TouchableOpacity, Image, StatusBar, Alert } from "react-native"
+import { ScrollView, Text, View, TouchableOpacity, Image, StatusBar, Alert, ActivityIndicator } from "react-native"
 import { useNavigation } from "@react-navigation/native"
-import { AntDesign, FontAwesome, MaterialCommunityIcons } from "@expo/vector-icons"
+import { AntDesign, FontAwesome, MaterialCommunityIcons, MaterialIcons } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { deleteDatosWithAuth, getRecipesPaginated, getDatosWithAuth, postDatos, getRecipesPaginatedWithAuth } from "api/crud"
-import ConfirmModal from "../../components/common/ConfirmModal" // Asegúrate de que esta ruta sea correcta
+import { deleteDatosWithAuth, getDatosWithAuth, postDatos, getRecipesPaginatedWithAuth } from "api/crud"
+import ConfirmModal from "../../components/common/ConfirmModal"
 import { Contexto } from "../../contexto/Provider"
 import RetrieveMediaFile from "components/utils/RetrieveMediaFile"
+import CourseCard from "../../components/profile/CourseCard";
+import RefundOptionsModal from "../../components/profile/RefundOptionsModal"; // Import the new RefundOptionsModal
 
 const Profile = () => {
     const navigation = useNavigation()
     const insets = useSafeAreaInsets()
-    // Destructure modifiedRecipes and removeModifiedRecipe from context
-    const { userId, username, firstName, lastName, email, logeado, logout, modifiedRecipes, removeModifiedRecipe } = useContext(Contexto);
+    const { userId, username, firstName, lastName, email, logeado, logout, modifiedRecipes, removeModifiedRecipe, token } = useContext(Contexto);
 
     const [activeTab, setActiveTab] = useState("favoritos")
     const [myRecipes, setMyRecipes] = useState({ content: [] })
-    const [confirmVisible, setConfirmVisible] = useState(false) // Para borrar recetas publicadas
-    const [recipeToDelete, setRecipeToDelete] = useState(null) // Para borrar recetas publicadas
+    const [confirmVisible, setConfirmVisible] = useState(false)
+    const [recipeToDelete, setRecipeToDelete] = useState(null)
     const [userProfile, setUserProfile] = useState(null);
     const [myRecipesInactives, setMyRecipesInactives] = useState([]);
     const [favoritesRecipes, setFavoritesRecipes] = useState([]);
 
-    // NUEVOS estados para el modal de confirmación de recetas modificadas
     const [confirmModifiedVisible, setConfirmModifiedVisible] = useState(false);
     const [modifiedRecipeToDelete, setModifiedRecipeToDelete] = useState(null);
 
+    const [activeCourses, setActiveCourses] = useState([]);
+    const [completedCourses, setCompletedCourses] = useState([]);
+    const [loadingCourses, setLoadingCourses] = useState(true);
 
-    const myCourses = {
-        active: [
-            { id: 1, name: "Pastelería Avanzada", progress: 60, instructor: "Chef María" },
-            { id: 2, name: "Cocina Mediterránea", progress: 30, instructor: "Chef Carlos" },
-        ],
-        completed: [
-            { id: 3, name: "Cocina Básica", completedAt: "2023-12-15", instructor: "Chef Ana" },
-            { id: 4, name: "Repostería Francesa", completedAt: "2023-11-20", instructor: "Chef Pierre" },
-        ],
-    }
+    // Estados para el modal de confirmación FINAL de baja de curso (tras elegir el medio)
+    const [confirmUnsubscribeVisible, setConfirmUnsubscribeVisible] = useState(false);
+    const [courseUnsubscribeResult, setCourseUnsubscribeResult] = useState(null); // Almacena el resultado del backend para el modal final
+
+    // Estados para el modal de OPCIONES de reintegro (primer modal)
+    const [showRefundOptionsModal, setShowRefundOptionsModal] = useState(false);
+    const [courseForRefundSelection, setCourseForRefundSelection] = useState(null); // Almacena el objeto completo del curso para la selección de medio
+
 
     const myReviews = [
         {
@@ -78,7 +79,7 @@ const Profile = () => {
             await postDatos('auth/logout', {}, 'Error al cerrar sesión en el backend');
             navigation.replace("MainTabs");
         } catch (error) {
-            console.log("Error al cerrar sesión:", error);
+            console.error("Error al cerrar sesión:", error);
             Alert.alert("Error", error.message || 'Ocurrió un error al cerrar sesión.');
         }
     }
@@ -88,8 +89,9 @@ const Profile = () => {
         try {
             await deleteDatosWithAuth(`recipe/delete/${recipeToDelete.idReceta}`, "Error al borrar la receta")
             await fetchRecipes(0)
+            Alert.alert("Éxito", "Receta eliminada correctamente.");
         } catch (error) {
-            console.log("Error al borrar receta:", error.message)
+            console.error("Error al borrar receta:", error.message)
             Alert.alert("Error", error.message || "Ocurrió un error al eliminar la receta.");
         } finally {
             setConfirmVisible(false)
@@ -110,7 +112,7 @@ const Profile = () => {
             setMyRecipes(data || { content: [] })
             console.log("Mis Recetas:", data)
         } catch (error) {
-            console.log("Error fetching recipes:", error.message)
+            console.error("Error fetching recipes:", error.message)
         }
     }
 
@@ -120,7 +122,7 @@ const Profile = () => {
             setMyRecipesInactives(data || [])
             console.log("Mis Recetas Inactivas:", data)
         } catch (error) {
-            console.log("Error fetching inactive recipes:", error.message)
+            console.error("Error fetching inactive recipes:", error.message)
         }
     }
 
@@ -129,7 +131,7 @@ const Profile = () => {
             const data = await getDatosWithAuth(`favorites/${userId}`, 'Error al cargar recetas favoritas')
             setFavoritesRecipes(data || [])
         } catch (error) {
-            console.log("Error fetching favorites:", error.message)
+            console.error("Error fetching favorites:", error.message)
         }
     }
 
@@ -143,29 +145,149 @@ const Profile = () => {
             setUserProfile(data);
             console.log("Datos del perfil del usuario:", data);
         } catch (error) {
-            console.log("Error al obtener el perfil del usuario:", error.message);
+            console.error("Error al obtener el perfil del usuario:", error.message);
         }
     };
 
-    // Modificado para usar ConfirmModal
     const handleRemoveModifiedRecipe = useCallback((modifiedId, recipeName) => {
         setModifiedRecipeToDelete({ modifiedId, recipeName });
         setConfirmModifiedVisible(true);
     }, []);
 
-    // Nueva función para confirmar la eliminación de receta modificada
     const confirmRemoveModifiedRecipe = useCallback(async () => {
         if (!modifiedRecipeToDelete) return;
 
         try {
             await removeModifiedRecipe(modifiedRecipeToDelete.modifiedId);
+            Alert.alert("Éxito", "Receta modificada eliminada correctamente.");
         } catch (error) {
-            console.log("Error al eliminar receta modificada:", error);
+            console.error("Error al eliminar receta modificada:", error);
+            Alert.alert("Error", "Ocurrió un error al eliminar la receta modificada.");
         } finally {
             setConfirmModifiedVisible(false);
             setModifiedRecipeToDelete(null);
         }
     }, [modifiedRecipeToDelete, removeModifiedRecipe]);
+
+    const fetchActiveCourses = useCallback(async () => {
+        setLoadingCourses(true);
+        if (!userId || !token) {
+            console.warn("User ID o Token no disponibles para cargar cursos activos.");
+            setLoadingCourses(false);
+            return;
+        }
+        try {
+            const data = await getDatosWithAuth(`course/student/${userId}/in-progress`, 'Error al cargar cursos en progreso', token);
+            setActiveCourses(data || []);
+        } catch (error) {
+            console.error("Error fetching active courses:", error.message);
+            Alert.alert("Error", "No se pudieron cargar los cursos en progreso.");
+            setActiveCourses([]);
+        } finally {
+            setLoadingCourses(false);
+        }
+    }, [userId, token]);
+
+    const fetchCompletedCourses = useCallback(async () => {
+        setLoadingCourses(true);
+        if (!userId || !token) {
+            console.warn("User ID o Token no disponibles para cargar cursos finalizados.");
+            setLoadingCourses(false);
+            return;
+        }
+        try {
+            const data = await getDatosWithAuth(`course/student/${userId}/completed`, 'Error al cargar cursos finalizados', token);
+            setCompletedCourses(data || []);
+        } catch (error) {
+            console.error("Error fetching completed courses:", error.message);
+            Alert.alert("Error", "No se pudieron cargar los cursos finalizados.");
+            setCompletedCourses([]);
+        } finally {
+            setLoadingCourses(false);
+        }
+    }, [userId, token]);
+
+
+    // Paso 1: Manejador para abrir el modal de opciones de reintegro
+    const handleUnsubscribeOption = useCallback((course) => {
+        setCourseForRefundSelection(course); // Guardar el curso completo para la selección de medio
+        setShowRefundOptionsModal(true); // Mostrar el modal de opciones
+    }, []);
+
+    // Helper para formatear precio (podría ser un util global)
+    const formatPrice = (price) => {
+        if (typeof price !== 'number' || isNaN(price)) {
+            return "$0";
+        }
+        return `$${price.toLocaleString("es-AR", {
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 2,
+        })}`;
+    };
+
+    // Paso 2: Función que se llama desde RefundOptionsModal con el medio de devolución elegido
+    const confirmUnsubscribeWithRefundType = useCallback(async (medioDevolucion) => {
+        setShowRefundOptionsModal(false); // Cerrar el modal de opciones de reembolso
+
+        if (!courseForRefundSelection || !userId || !token) {
+            Alert.alert("Error", "Datos incompletos para procesar la baja del curso.");
+            return;
+        }
+
+        const cronograma = courseForRefundSelection.cronogramaCursos && courseForRefundSelection.cronogramaCursos.length > 0
+            ? courseForRefundSelection.cronogramaCursos[0]
+            : null;
+
+        if (!cronograma) {
+            Alert.alert("Error", "No se encontró información del cronograma para el curso seleccionado.");
+            return;
+        }
+
+        try {
+            setLoadingCourses(true); // Activar loading mientras se procesa la baja
+
+            const body = {
+                idAlumno: parseInt(userId),
+                idCronogramaCurso: cronograma.idCronograma,
+                medioDevolucion: medioDevolucion
+            };
+            console.log("Unsubscribe request body:", body);
+
+            // Realizar la llamada a la API DELETE
+            const response = await deleteDatosWithAuth('course/unsubscribe', 'Error al darse de baja del curso', body, token);
+            console.log("Unsubscribe API Response:", response);
+
+            // Asumo que la respuesta del backend tiene 'importeReintegrado' y 'mensaje'
+            setCourseUnsubscribeResult({ // Configurar la información para el modal de confirmación final
+                courseName: courseForRefundSelection.nombreCurso,
+                refundAmount: response.importeReintegrado, // Usar el valor del backend
+                refundMessage: response.mensaje, // Usar el mensaje del backend
+                medioDevolucion: medioDevolucion,
+                // Calcular porcentaje si el backend no lo devuelve explícitamente
+                refundPercentage: (response.importeReintegrado !== undefined && courseForRefundSelection.precio)
+                    ? ((response.importeReintegrado / courseForRefundSelection.precio) * 100).toFixed(0) // Redondear a entero
+                    : 0
+            });
+            setConfirmUnsubscribeVisible(true); // Mostrar el modal de confirmación final
+
+            await fetchActiveCourses(); // Recargar la lista de cursos activos
+
+        } catch (error) {
+            console.error("Error al darse de baja del curso:", error);
+            // Mensaje de error más detallado si el backend devuelve un error.message
+            Alert.alert("Error", error.message || "Ocurrió un error al darse de baja del curso.");
+        } finally {
+            setLoadingCourses(false); // Desactivar loading
+            setCourseForRefundSelection(null); // Limpiar el estado
+        }
+    }, [courseForRefundSelection, userId, token, fetchActiveCourses]);
+
+
+    // Paso 3: Función para navegar a HomeCursos después de la confirmación final
+    const navigateToHomeCursos = useCallback(() => {
+        setConfirmUnsubscribeVisible(false); // Cerrar el modal final
+        navigation.navigate("MainTabs", { screen: "HomeCursos" }); // Navegar a la pestaña HomeCursos
+    }, [navigation]);
 
 
     useEffect(() => {
@@ -175,13 +297,11 @@ const Profile = () => {
             fetchFavorites();
             fetchRecipesInactives();
         }
-    }, [userId, username]);
-
-    useEffect(() => {
-        if (username && myRecipes.content.length === 0) {
-            fetchRecipes(0);
+        if (userId && token) {
+            fetchActiveCourses();
+            fetchCompletedCourses();
         }
-    }, [username]);
+    }, [userId, username, token, fetchActiveCourses, fetchCompletedCourses]);
 
 
     const renderUserAvatar = () => {
@@ -221,7 +341,7 @@ const Profile = () => {
                         <TouchableOpacity
                             onPress={() => navigation.navigate("DetailsRecipes", {
                                 recipeId: recipe.originalRecipeId,
-                                modifiedData: recipe // Pass the full modified object
+                                modifiedData: recipe
                             })}
                             className="flex-row"
                         >
@@ -231,7 +351,6 @@ const Profile = () => {
                             <View className="flex-1 p-4">
                                 <View className="flex-row justify-between items-center mb-1">
                                     <Text className="text-lg font-bold">{recipe.nombreReceta}</Text>
-                                    {/* Display modified persons if relevant */}
                                     {recipe.cantidadPersonas && (
                                         <View className="flex-row items-center">
                                             <AntDesign name="team" size={14} color="#9CA3AF" />
@@ -423,66 +542,56 @@ const Profile = () => {
     const renderCursos = () => (
         <View className="p-4">
             <Text className="text-lg font-bold text-gray-800 mb-4">Cursos en progreso</Text>
-            {myCourses.active.length > 0 ? (
-                myCourses.active.map((course) => (
-                    <View key={course.id} className="bg-white rounded-xl mb-4 p-4 border border-gray-100 shadow-sm">
-                        <TouchableOpacity
-                            onPress={() =>
-                                navigation.navigate("MyCourses", {
-                                    courseId: course.id,
-                                    isActive: true,
-                                })
-                            }
-                        >
-                            <Text className="text-lg font-bold text-gray-800 mb-1">{course.name}</Text>
-                            <Text className="text-gray-600 text-sm mb-3">Instructor: {course.instructor}</Text>
-
-                            <View className="mb-3">
-                                <View className="flex-row justify-between mb-1">
-                                    <Text className="text-gray-500 text-sm">Progreso</Text>
-                                    <Text className="text-amber-500 text-sm font-medium">{course.progress}%</Text>
-                                </View>
-                                <View className="w-full bg-gray-200 rounded-full h-2">
-                                    <View className="bg-amber-400 h-2 rounded-full" style={{ width: `${course.progress}%` }} />
-                                </View>
-                            </View>
-                        </TouchableOpacity>
-
-                        {logeado &&
-                            <TouchableOpacity className="bg-red-50 py-2 px-4 rounded-lg">
-                                <Text className="text-red-600 font-medium text-center">Darse de baja</Text>
-                            </TouchableOpacity>
-                        }
-                    </View>
+            {loadingCourses ? (
+                <ActivityIndicator size="large" color="#F59E0B" className="mt-8" />
+            ) : activeCourses.length > 0 ? (
+                activeCourses.map((course) => (
+                    <CourseCard
+                        key={course.idCurso}
+                        course={course}
+                        isActive={true}
+                        onUnsubscribe={() => handleUnsubscribeOption(course)} // Pasa el objeto completo del curso
+                    />
                 ))
             ) : (
                 <Text className="text-gray-500 text-center mt-8">No tienes cursos en progreso.</Text>
             )}
 
             <Text className="text-lg font-bold text-gray-800 mb-4 mt-6">Cursos finalizados</Text>
-            {myCourses.completed.length > 0 ? (
-                myCourses.completed.map((course) => (
-                    <TouchableOpacity
-                        key={course.id}
-                        className="bg-green-50 rounded-xl mb-4 p-4 border border-green-100"
-                        onPress={() =>
-                            navigation.navigate("MyCourses", {
-                                courseId: course.id,
-                                isActive: false,
-                            })
-                        }
-                    >
-                        <Text className="text-lg font-bold text-gray-800 mb-1">{course.name}</Text>
-                        <Text className="text-gray-600 text-sm mb-1">Instructor: {course.instructor}</Text>
-                        <View className="flex-row items-center">
-                            <AntDesign name="checkcircle" size={16} color="#10B981" />
-                            <Text className="text-green-600 text-sm ml-2">Completado el {course.completedAt}</Text>
-                        </View>
-                    </TouchableOpacity>
+            {loadingCourses ? (
+                <ActivityIndicator size="large" color="#F59E0B" className="mt-8" />
+            ) : completedCourses.length > 0 ? (
+                completedCourses.map((course) => (
+                    <CourseCard
+                        key={course.idCurso}
+                        course={course}
+                        isActive={false} // Marca como finalizado
+                    />
                 ))
             ) : (
                 <Text className="text-gray-500 text-center mt-8">No tienes cursos finalizados.</Text>
             )}
+
+            {/* Confirm Modal para la confirmación FINAL de baja con detalles del reembolso */}
+            <ConfirmModal
+                visible={confirmUnsubscribeVisible}
+                title="Baja de Curso Confirmada"
+                message={
+                    `¡Te has dado de baja de "${courseUnsubscribeResult?.courseName}"!\n\n` +
+                    (courseUnsubscribeResult?.refundMessage || 'Operación completada exitosamente.')
+                }
+                onCancel={navigateToHomeCursos} // Ambos botones navegarán a HomeCursos
+                onConfirm={navigateToHomeCursos}
+                cancelText="Aceptar"
+            />
+
+            {/* Modal de Opciones de Reintegro (el primer modal para elegir medio) */}
+            <RefundOptionsModal
+                visible={showRefundOptionsModal}
+                onClose={() => setShowRefundOptionsModal(false)}
+                courseDetails={courseForRefundSelection}
+                onConfirmRefund={confirmUnsubscribeWithRefundType}
+            />
         </View>
     )
 
@@ -604,7 +713,6 @@ const Profile = () => {
                 onConfirm={confirmRemoveModifiedRecipe}
                 confirmText="Sí, eliminar"
             />
-
         </View>
     )
 }
