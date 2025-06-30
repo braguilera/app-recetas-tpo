@@ -127,6 +127,8 @@ const UploadMediaFile = forwardRef(({ onUploadComplete, initialImageUri, onImage
             const fileExtension = filename.split('.').pop();
             const uniqueFilename = `media/${Date.now()}.${fileExtension}`;
 
+            console.log("Subiendo archivo:", uniqueFilename);
+
             const storageRef = firebase.storage().ref().child(uniqueFilename);
             const snapshot = await storageRef.put(blob);
 

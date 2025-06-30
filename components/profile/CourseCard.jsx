@@ -1,12 +1,10 @@
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
-import { AntDesign, MaterialIcons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+import { View, Text, TouchableOpacity, Image } from 'react-native';
+import { AntDesign, FontAwesome, MaterialIcons } from "@expo/vector-icons";
+import RetrieveMediaFile from "components/utils/RetrieveMediaFile"; // Asegúrate de que la ruta sea correcta
 
-const CourseCard = ({ course, isActive, onUnsubscribe }) => {
-    const navigation = useNavigation();
-
-    // Helper function to format dates
+const CourseCard = ({ course, isActive, onUnsubscribe, onPressCard }) => {
+    // Helper para formatear fechas
     const formatDate = (dateString) => {
         if (!dateString) return "N/A";
         const date = new Date(dateString);
@@ -17,94 +15,88 @@ const CourseCard = ({ course, isActive, onUnsubscribe }) => {
         });
     };
 
-    // Determine the relevant schedule (assuming the first one for simplicity if multiple)
-    const schedule = course.cronogramaCursos && course.cronogramaCursos.length > 0
+    // Obtenemos el primer cronograma si existe
+    const firstSchedule = course.cronogramaCursos && course.cronogramaCursos.length > 0
         ? course.cronogramaCursos[0]
         : null;
 
-    const courseDurationUnit = course.duracion === 1 ? "hora" : "horas"; // Adjust text for singular/plural
-
     return (
-        <View className="bg-white rounded-xl mb-4 overflow-hidden border border-gray-100 shadow-sm">
-            <TouchableOpacity
-                onPress={() => navigation.navigate("DetailsCourses", { courseId: course.idCurso })}
-                className="p-4"
-            >
-                <View className="flex-row justify-between items-center mb-2">
-                    <Text className="text-lg font-bold text-gray-800 flex-1">{course.nombreCurso}</Text>
-                    {course.modalidad && (
-                        <View className="flex-row items-center ml-2 bg-amber-50 px-2 py-1 rounded-md">
-                            {course.modalidad === "presencial" ? (
-                                <MaterialIcons name="location-on" size={16} color="#F59E0B" />
-                            ) : (
-                                <MaterialIcons name="laptop" size={16} color="#F59E0B" />
-                            )}
-                            <Text className="text-xs font-medium text-amber-500 ml-1 capitalize">
-                                {course.modalidad}
+        <TouchableOpacity
+            key={course.idCurso}
+            className="bg-white rounded-xl mb-4 overflow-hidden border border-gray-100 shadow-sm"
+            onPress={onPressCard} // Usa la prop onPressCard para la navegación
+        >
+            <View className="flex-row">
+                <View className="w-28 h-28 p-2 relative">
+                    {/* Asumiendo que course.fotoPrincipal puede existir para cursos */}
+                    {course.fotoPrincipal ? (
+                        <RetrieveMediaFile imageUrl={course.fotoPrincipal} />
+                    ) : (
+                        <Image
+                            source={{ uri: `https://placehold.co/112x112/E5E7EB/4B5563?text=Curso` }}
+                            className="w-full h-full rounded-md object-cover"
+                        />
+                    )}
+                </View>
+                <View className="flex-1 p-4">
+                    <View className="flex-row justify-between items-center mb-1">
+                        <Text className="text-lg font-bold text-gray-800 flex-1">{course.nombreCurso}</Text>
+                        {isActive && (
+                            <View className="bg-green-100 rounded-full px-3 py-1 ml-2">
+                                <Text className="text-green-700 text-xs font-semibold">En progreso</Text>
+                            </View>
+                        )}
+                        {!isActive && (
+                            <View className="bg-blue-100 rounded-full px-3 py-1 ml-2">
+                                <Text className="text-blue-700 text-xs font-semibold">Finalizado</Text>
+                            </View>
+                        )}
+                    </View>
+                    <Text className="text-gray-600 text-sm mb-2" numberOfLines={2}>
+                        {course.descripcion || 'Sin descripción disponible.'}
+                    </Text>
+
+                    {/* Mostrar Sede solo si hay un cronograma disponible */}
+                    {firstSchedule && firstSchedule.nombreSede && (
+                        <View className="flex-row items-center mb-1">
+                            <MaterialIcons name="location-on" size={14} color="#9CA3AF" />
+                            <Text className="text-xs text-gray-500 ml-1">Sede: {firstSchedule.nombreSede}</Text>
+                        </View>
+                    )}
+
+                    {/* Mostrar Fechas solo si hay un cronograma disponible */}
+                    {firstSchedule && firstSchedule.fechaInicio && firstSchedule.fechaFin && (
+                        <View className="flex-row items-center mb-1">
+                            <AntDesign name="calendar" size={14} color="#9CA3AF" />
+                            <Text className="text-xs text-gray-500 ml-1">
+                                {formatDate(firstSchedule.fechaInicio)} - {formatDate(firstSchedule.fechaFin)}
                             </Text>
                         </View>
                     )}
-                </View>
-                <Text className="text-gray-600 text-sm mb-2" numberOfLines={2}>
-                    {course.descripcion}
-                </Text>
 
-                {schedule && (
-                    <View className="mt-2">
+                    {/* Mostrar Duración (clases totales) */}
+                    {course.duracion !== undefined && (
                         <View className="flex-row items-center mb-1">
-                            <MaterialIcons name="event" size={14} color="#6B7280" />
-                            <Text className="text-xs text-gray-600 ml-1">
-                                Sede: {schedule.nombreSede}
-                            </Text>
+                            <AntDesign name="book" size={14} color="#9CA3AF" />
+                            <Text className="text-xs text-gray-500 ml-1">Clases: {course.duracion}</Text>
                         </View>
-                        <View className="flex-row items-center mb-1">
-                            <AntDesign name="calendar" size={14} color="#6B7280" />
-                            <Text className="text-xs text-gray-600 ml-1">
-                                {formatDate(schedule.fechaInicio)} - {formatDate(schedule.fechaFin)}
-                            </Text>
-                        </View>
-                    </View>
-                )}
-
-                <View className="flex-row items-center mt-2">
-                    <AntDesign name="clockcircleo" size={14} color="#6B7280" />
-                    <Text className="text-xs text-gray-600 ml-1">
-                        Duración: {course.duracion} {courseDurationUnit}
-                    </Text>
+                    )}
                 </View>
-
-                {isActive ? (
-                    // Display progress for active courses (hardcoded for now as backend doesn't provide progress)
-                    <View className="mb-3 mt-4">
-                        <View className="flex-row justify-between mb-1">
-                            <Text className="text-gray-500 text-sm">Progreso</Text>
-                            <Text className="text-amber-500 text-sm font-medium">0%</Text> {/* Placeholder */}
-                        </View>
-                        <View className="w-full bg-gray-200 rounded-full h-2">
-                            <View className="bg-amber-400 h-2 rounded-full" style={{ width: `0%` }} /> {/* Placeholder */}
-                        </View>
-                    </View>
-                ) : (
-                    // Display completion date for completed courses
-                    <View className="flex-row items-center mt-4">
-                        <AntDesign name="checkcircle" size={16} color="#10B981" />
-                        <Text className="text-green-600 text-sm ml-2">Completado el {formatDate(schedule?.fechaFin)}</Text> {/* Assuming completion date is fechaFin of the schedule */}
-                    </View>
-                )}
-            </TouchableOpacity>
-
+            </View>
             {isActive && onUnsubscribe && (
-                <View className="border-t border-gray-100 mt-2">
+                <View className="flex-row border-t border-gray-100">
                     <TouchableOpacity
-                        className="bg-red-50 py-3 px-4 rounded-b-xl flex-row items-center justify-center"
-                        onPress={() => onUnsubscribe(course.idCurso, schedule.idCronograma, course.nombreCurso)}
+                        className="flex-1 py-3 items-center"
+                        onPress={onUnsubscribe}
                     >
-                        <MaterialIcons name="remove-circle-outline" size={20} color="#EF4444" />
-                        <Text className="text-red-600 font-medium ml-2">Darse de baja</Text>
+                        <View className="flex-row items-center">
+                            <AntDesign name="closecircleo" size={16} color="#EF4444" />
+                            <Text className="text-red-500 ml-2 font-medium">Dar de baja</Text>
+                        </View>
                     </TouchableOpacity>
                 </View>
             )}
-        </View>
+        </TouchableOpacity>
     );
 };
 

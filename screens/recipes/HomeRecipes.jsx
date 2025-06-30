@@ -8,6 +8,7 @@ import RecipeCardCarrousel from "components/recipes/RecipeCardCarrousel";
 import RecipeCardHome from "components/recipes/RecipeCardHome";
 import { Contexto } from "contexto/Provider";
 import IngredientSelector from "components/recipes/IngredientSelector";
+import UserAvatar from "components/common/UserAvatar";
 
 const HomeRecipes = () => {
   const { logeado } = useContext(Contexto);
@@ -218,7 +219,7 @@ const HomeRecipes = () => {
         {/* Header */}
         <View className="flex-row justify-between items-center p-4 bg-amber-100">
           <View className="flex-row items-center">
-            <View className="w-10 h-10 rounded-full bg-red-600 mr-1 items-center justify-center">
+            <View className="w-10 h-10 rounded-full bg-yellow-500 mr-1 items-center justify-center">
               <Text className="text-white text-xl font-bold">R</Text>
             </View>
             <Text className="text-xl font-bold text-gray-800">YOURI</Text>
@@ -227,10 +228,9 @@ const HomeRecipes = () => {
             <TouchableOpacity
               onPress={() => navigation.navigate("ProfileStack", { screen: "ProfileScreen" })}
             >
-              <Image
-                source={{ uri: "https://randomuser.me/api/portraits/men/1.jpg" }}
-                className="w-10 h-10 rounded-full"
-                accessibilityLabel="Perfil de usuario"
+              <UserAvatar
+                  sizeClasses="w-12 h-12" // Ajusta el tamaño según la necesidad de este componente
+                  textSizeClasses="text-xl" // Ajusta el tamaño del texto
               />
             </TouchableOpacity>
           ) : (

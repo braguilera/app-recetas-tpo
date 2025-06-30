@@ -52,18 +52,6 @@ const Register = () => {
       );
       return;
     }
-    // NOTA: No necesitamos una alerta aquí para isEmailAvailable === false,
-    // ya que el mensaje de "Correo ya registrado" y el enlace de "Recuperar Contraseña"
-    // ya cumplen esa función visualmente.
-    // if (isEmailAvailable === false) {
-    //   Alert.alert(
-    //     "Error",
-    //     "El correo electrónico ya está registrado. Por favor, utiliza otro o inicia sesión."
-    //   );
-    //   return;
-    // }
-
-    // Deshabilitar el botón si las validaciones de disponibilidad no son true
     if (isAliasAvailable !== true || isEmailAvailable !== true) {
       Alert.alert("Error", "Por favor, verifica que el correo y el alias estén disponibles.");
       return;
@@ -153,12 +141,14 @@ const Register = () => {
         { email: email.trim() },
         "Error al verificar el email"
       );
-      console.log("Respuesta de verificación de email:", data);
+      console.log("Respuesta de verificación de email:", data.status);
 
-      if (typeof data === "boolean") {
+      if (data.status === "AVAILABLE") {
+        setIsEmailAvailable(true);
+      } else if (data.status === "TAKEN_PENDING") {
         setIsEmailAvailable(data);
-      } else if (data && typeof data === "object" && typeof data.available === "boolean") {
-        setIsEmailAvailable(data.available);
+      } else if (data.status === "TAKEN_ENABLED") {
+        setIsEmailAvailable(data);
       } else {
         setIsEmailAvailable(null);
         console.warn("Formato de respuesta inesperado para check-email:", data);
@@ -210,7 +200,7 @@ const Register = () => {
             className={`border rounded-xl px-4 py-2 mb-2 text-gray-800 bg-gray-50 ${
               isEmailAvailable === true
                 ? "border-green-500"
-                : isEmailAvailable === false
+                : isEmailAvailable?.status === "TAKEN_PENDING" || isEmailAvailable?.status === "TAKEN_ENABLED"
                 ? "border-red-500"
                 : "border-gray-300"
             }`}
@@ -223,18 +213,26 @@ const Register = () => {
             autoCapitalize="none"
             editable={!loading}
           />
-          {isEmailAvailable === false && (
-            <View>
-              <Text className="text-red-600 text-sm mb-2">
-                Este correo electrónico ya está registrado.
-              </Text>
-              <TouchableOpacity className="mt-[-8] mb-2" onPress={navigateToForgotPassword}>
-                <Text className="text-amber-600 text-sm font-medium underline">
-                  ¿Olvidaste tu contraseña? Recupérala aquí.
+            {isEmailAvailable?.status === "TAKEN_ENABLED" && (
+              <View>
+                <Text className="text-red-600 text-sm mb-2">
+                  {isEmailAvailable.message}
                 </Text>
-              </TouchableOpacity>
-            </View>
-          )}
+                <TouchableOpacity className="mt-[-8] mb-2" onPress={navigateToForgotPassword}>
+                  <Text className="text-amber-600 text-sm font-medium underline">
+                    ¿Olvidaste tu contraseña? Recupérala aquí.
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {isEmailAvailable?.status === "TAKEN_PENDING" && (
+              <View>
+                <Text className="text-red-600 text-sm mb-2">
+                  {isEmailAvailable.message}
+                </Text>
+              </View>
+            )}
 
           <Text className="text-gray-700 font-medium mb-2 mt-2">Alias</Text>
           <TextInput
@@ -280,8 +278,8 @@ const Register = () => {
           <TouchableOpacity
             className={`rounded-xl py-3 mt-8 ${
               loading ||
-              isAliasAvailable !== true || // Deshabilitar si no es true
-              isEmailAvailable !== true // Deshabilitar si no es true
+              isAliasAvailable !== true || 
+              isEmailAvailable !== true 
                 ? "bg-gray-400"
                 : "bg-amber-400"
             }`}

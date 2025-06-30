@@ -13,8 +13,6 @@ const VerifyCode = () => {
   const route = useRoute();
   const insets = useSafeAreaInsets();
 
-  // Parámetros de ruta:
-  // Ahora esperamos 'isStudentRegister' directamente, además de 'type', 'email' y 'username'.
   const { type = "login", email = "", username = "", isStudentRegister: routeIsStudentRegister = false } = route.params || {};
 
 
@@ -196,8 +194,6 @@ const VerifyCode = () => {
         lastname: lastName,
         password: password,
         rePassword: rePassword,
-        email: email,
-        nickname: username,
       };
 
       console.log("Datos del registro (userDTO):", userDTO);
@@ -416,6 +412,7 @@ const VerifyCode = () => {
                   placeholder="Ingresa tu número de tarjeta"
                   placeholderTextColor="#9CA3AF"
                   value={cardNumber}
+                  maxLength={12}
                   onChangeText={(text) => { setCardNumber(text); clearErrors(); }}
                   keyboardType="numeric"
                   editable={!loading}
@@ -444,6 +441,7 @@ const VerifyCode = () => {
                   placeholder="Ingresa tu DNI"
                   placeholderTextColor="#9CA3AF"
                   value={dni}
+                  maxLength={11}
                   onChangeText={(text) => { setDni(text); clearErrors(); }}
                   keyboardType="numeric"
                   editable={!loading}

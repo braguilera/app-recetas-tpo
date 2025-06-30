@@ -24,14 +24,14 @@ const ConfirmModal = ({
 
           <View className="flex-row justify-between">
             <TouchableOpacity
-              className={`bg-gray-200 px-4 py-2 rounded-lg ${title==="Baja de Curso Confirmada" && "w-full items-center"}`}
+              className={`bg-gray-200 px-4 py-2 rounded-lg ${title==="Baja de Curso Confirmada" || title==="¡Curso Comprado Exitosamente!" && "w-full items-center"}`}
               onPress={onCancel}
             >
               <Text className="text-gray-800">{cancelText}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
-              className={`${title==="Confirmar Compra" ? "bg-yellow-500" : "bg-red-500"} ${title==="Baja de Curso Confirmada" && "hidden"} px-4 py-2 rounded-lg`}
+              className={`${title==="Confirmar Compra" ? "bg-yellow-500" : "bg-red-500"} ${title==="Baja de Curso Confirmada" || title==="¡Curso Comprado Exitosamente!" && "hidden"} px-4 py-2 rounded-lg`}
               onPress={onConfirm}
             >
               <Text className="text-white">{confirmText}</Text>

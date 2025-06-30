@@ -8,7 +8,9 @@ import ConfirmModal from "../../components/common/ConfirmModal"
 import { Contexto } from "../../contexto/Provider"
 import RetrieveMediaFile from "components/utils/RetrieveMediaFile"
 import CourseCard from "../../components/profile/CourseCard";
-import RefundOptionsModal from "../../components/profile/RefundOptionsModal"; // Import the new RefundOptionsModal
+import RefundOptionsModal from "../../components/profile/RefundOptionsModal";
+import MyCount from './MyCount';
+import UserAvatar from "components/common/UserAvatar"
 
 const Profile = () => {
     const navigation = useNavigation()
@@ -39,38 +41,13 @@ const Profile = () => {
     const [courseForRefundSelection, setCourseForRefundSelection] = useState(null); // Almacena el objeto completo del curso para la selección de medio
 
 
-    const myReviews = [
-        {
-            id: 1,
-            recipeTitle: "Pizza Napolitana",
-            rating: 5,
-            comment: "Estas pizzas están increíbles con queso.",
-            date: "2024-01-20",
-            recipeId: 1,
-        },
-        {
-            id: 2,
-            recipeTitle: "Empanadas",
-            rating: 4,
-            comment: "Estas empanadas están increíbles.",
-            date: "2024-01-18",
-            recipeId: 2,
-        },
-        {
-            id: 3,
-            recipeTitle: "Tacos al Pastor",
-            rating: 5,
-            comment: "Perfectos para una cena familiar.",
-            date: "2024-01-15",
-            recipeId: 3,
-        },
-    ]
+    // Se elimina el array myReviews ya que no se usará más
 
     const tabs = [
         { id: "favoritos", name: "Favoritos" },
         { id: "recetas", name: "Mis Recetas" },
         { id: "cursos", name: "Cursos" },
-        { id: "calificaciones", name: "Calificaciones" },
+        { id: "miCuenta", name: "Mi Cuenta" }, // Nuevo tab para MyCount
     ]
 
     const handleLogout = async () => {
@@ -79,8 +56,7 @@ const Profile = () => {
             await postDatos('auth/logout', {}, 'Error al cerrar sesión en el backend');
             navigation.replace("MainTabs");
         } catch (error) {
-            console.error("Error al cerrar sesión:", error);
-            Alert.alert("Error", error.message || 'Ocurrió un error al cerrar sesión.');
+            console.log("Error al cerrar sesión:", error);
         }
     }
 
@@ -89,10 +65,8 @@ const Profile = () => {
         try {
             await deleteDatosWithAuth(`recipe/delete/${recipeToDelete.idReceta}`, "Error al borrar la receta")
             await fetchRecipes(0)
-            Alert.alert("Éxito", "Receta eliminada correctamente.");
         } catch (error) {
-            console.error("Error al borrar receta:", error.message)
-            Alert.alert("Error", error.message || "Ocurrió un error al eliminar la receta.");
+            console.log("Error al borrar receta:", error.message)
         } finally {
             setConfirmVisible(false)
             setRecipeToDelete(null)
@@ -112,7 +86,7 @@ const Profile = () => {
             setMyRecipes(data || { content: [] })
             console.log("Mis Recetas:", data)
         } catch (error) {
-            console.error("Error fetching recipes:", error.message)
+            console.log("Error fetching recipes:", error.message)
         }
     }
 
@@ -122,7 +96,7 @@ const Profile = () => {
             setMyRecipesInactives(data || [])
             console.log("Mis Recetas Inactivas:", data)
         } catch (error) {
-            console.error("Error fetching inactive recipes:", error.message)
+            console.log("Error fetching inactive recipes:", error.message)
         }
     }
 
@@ -131,7 +105,7 @@ const Profile = () => {
             const data = await getDatosWithAuth(`favorites/${userId}`, 'Error al cargar recetas favoritas')
             setFavoritesRecipes(data || [])
         } catch (error) {
-            console.error("Error fetching favorites:", error.message)
+            console.log("Error fetching favorites:", error.message)
         }
     }
 
@@ -145,7 +119,7 @@ const Profile = () => {
             setUserProfile(data);
             console.log("Datos del perfil del usuario:", data);
         } catch (error) {
-            console.error("Error al obtener el perfil del usuario:", error.message);
+            console.log("Error al obtener el perfil del usuario:", error.message);
         }
     };
 
@@ -159,10 +133,8 @@ const Profile = () => {
 
         try {
             await removeModifiedRecipe(modifiedRecipeToDelete.modifiedId);
-            Alert.alert("Éxito", "Receta modificada eliminada correctamente.");
         } catch (error) {
-            console.error("Error al eliminar receta modificada:", error);
-            Alert.alert("Error", "Ocurrió un error al eliminar la receta modificada.");
+            console.log("Error al eliminar receta modificada:", error);
         } finally {
             setConfirmModifiedVisible(false);
             setModifiedRecipeToDelete(null);
@@ -180,8 +152,7 @@ const Profile = () => {
             const data = await getDatosWithAuth(`course/student/${userId}/in-progress`, 'Error al cargar cursos en progreso', token);
             setActiveCourses(data || []);
         } catch (error) {
-            console.error("Error fetching active courses:", error.message);
-            Alert.alert("Error", "No se pudieron cargar los cursos en progreso.");
+            console.log("Error fetching active courses:", error.message);
             setActiveCourses([]);
         } finally {
             setLoadingCourses(false);
@@ -199,8 +170,7 @@ const Profile = () => {
             const data = await getDatosWithAuth(`course/student/${userId}/completed`, 'Error al cargar cursos finalizados', token);
             setCompletedCourses(data || []);
         } catch (error) {
-            console.error("Error fetching completed courses:", error.message);
-            Alert.alert("Error", "No se pudieron cargar los cursos finalizados.");
+            console.log("Error fetching completed courses:", error.message);
             setCompletedCourses([]);
         } finally {
             setLoadingCourses(false);
@@ -230,7 +200,7 @@ const Profile = () => {
         setShowRefundOptionsModal(false); // Cerrar el modal de opciones de reembolso
 
         if (!courseForRefundSelection || !userId || !token) {
-            Alert.alert("Error", "Datos incompletos para procesar la baja del curso.");
+            console.log("Error", "Datos incompletos para procesar la baja del curso.");
             return;
         }
 
@@ -239,7 +209,7 @@ const Profile = () => {
             : null;
 
         if (!cronograma) {
-            Alert.alert("Error", "No se encontró información del cronograma para el curso seleccionado.");
+            console.log("Error", "No se encontró información del cronograma para el curso seleccionado.");
             return;
         }
 
@@ -247,7 +217,7 @@ const Profile = () => {
             setLoadingCourses(true); // Activar loading mientras se procesa la baja
 
             const body = {
-                idAlumno: parseInt(userId),
+                idAlumno: parseInt(userId), // Convertir userId a número
                 idCronogramaCurso: cronograma.idCronograma,
                 medioDevolucion: medioDevolucion
             };
@@ -273,9 +243,8 @@ const Profile = () => {
             await fetchActiveCourses(); // Recargar la lista de cursos activos
 
         } catch (error) {
-            console.error("Error al darse de baja del curso:", error);
+            console.log("Error al darse de baja del curso:", error);
             // Mensaje de error más detallado si el backend devuelve un error.message
-            Alert.alert("Error", error.message || "Ocurrió un error al darse de baja del curso.");
         } finally {
             setLoadingCourses(false); // Desactivar loading
             setCourseForRefundSelection(null); // Limpiar el estado
@@ -302,32 +271,6 @@ const Profile = () => {
             fetchCompletedCourses();
         }
     }, [userId, username, token, fetchActiveCourses, fetchCompletedCourses]);
-
-
-    const renderUserAvatar = () => {
-        const userNameInitial = userProfile?.nombre ? userProfile.nombre.charAt(0).toUpperCase() : '';
-        const hasAvatar = userProfile?.avatar && userProfile.avatar.trim() !== '';
-
-        return (
-            <View className="w-20 h-20 rounded-full overflow-hidden items-center justify-center bg-gray-300">
-                {hasAvatar ? (
-                    <Image source={{ uri: userProfile.avatar }} className="w-full h-full object-cover" />
-                ) : (
-                    <View className="w-full h-full rounded-full items-center justify-center bg-amber-500">
-                        <Text className="text-white text-4xl font-bold">
-                            {userNameInitial}
-                        </Text>
-                    </View>
-                )}
-            </View>
-        );
-    };
-
-    const renderStars = (rating) => {
-        return Array.from({ length: 5 }, (_, index) => (
-            <AntDesign key={index} name="star" size={14} color={index < rating ? "#F59E0B" : "#E5E7EB"} />
-        ))
-    }
 
     const renderModifiedRecipesList = () => {
         if (modifiedRecipes.length === 0) {
@@ -577,12 +520,15 @@ const Profile = () => {
                 visible={confirmUnsubscribeVisible}
                 title="Baja de Curso Confirmada"
                 message={
-                    `¡Te has dado de baja de "${courseUnsubscribeResult?.courseName}"!\n\n` +
+                    `¡Te has dado de baja de "${courseUnsubscribeResult?.courseName || 'el curso'}"!\n\n` +
+                    `Reintegro: ${courseUnsubscribeResult?.refundPercentage}% (${formatPrice(courseUnsubscribeResult?.refundAmount)}) ` +
+                    `en ${courseUnsubscribeResult?.medioDevolucion === 'tarjeta' ? 'tu tarjeta' : 'tu cuenta corriente'}.\n\n` +
                     (courseUnsubscribeResult?.refundMessage || 'Operación completada exitosamente.')
                 }
                 onCancel={navigateToHomeCursos} // Ambos botones navegarán a HomeCursos
                 onConfirm={navigateToHomeCursos}
-                cancelText="Aceptar"
+                confirmText="Ok"
+                cancelText="Ok"
             />
 
             {/* Modal de Opciones de Reintegro (el primer modal para elegir medio) */}
@@ -595,32 +541,8 @@ const Profile = () => {
         </View>
     )
 
-    const renderCalificaciones = () => (
-        <View className="p-4">
-            {myReviews.length > 0 ? (
-                myReviews.map((review) => (
-                    <TouchableOpacity
-                        key={review.id}
-                        className="bg-white rounded-xl mb-4 p-4 border border-gray-100 shadow-sm"
-                        onPress={() => navigation.navigate("DetailsRecipes", { recipeId: review.recipeId })}
-                    >
-                        <View className="flex-row justify-between items-start mb-2">
-                            <Text className="text-lg font-bold text-gray-800 flex-1">{review.recipeTitle}</Text>
-                            <Text className="text-amber-500 font-bold text-lg ml-2">{review.rating}</Text>
-                        </View>
-
-                        <View className="flex-row mb-3">{renderStars(review.rating)}</View>
-
-                        <Text className="text-gray-700 mb-3">{review.comment}</Text>
-
-                        <Text className="text-gray-400 text-sm">{review.date}</Text>
-                    </TouchableOpacity>
-                ))
-            ) : (
-                <Text className="text-gray-500 text-center mt-8">No tienes calificaciones aún.</Text>
-            )}
-        </View>
-    )
+    // Se elimina la función renderCalificaciones ya que no se usará más
+    // const renderCalificaciones = () => ( ... )
 
     const renderTabContent = () => {
         switch (activeTab) {
@@ -630,8 +552,8 @@ const Profile = () => {
                 return renderMisRecetas()
             case "cursos":
                 return renderCursos()
-            case "calificaciones":
-                return renderCalificaciones()
+            case "miCuenta": // Aquí se renderiza el componente MyCount
+                return <MyCount />
             default:
                 return renderFavoritos()
         }
@@ -654,7 +576,10 @@ const Profile = () => {
 
                 {/* User dates */}
                 <View className="flex-row items-center px-2">
-                    {renderUserAvatar()}
+                    <UserAvatar
+                        sizeClasses="w-20 h-20" // Puedes personalizar el tamaño
+                        textSizeClasses="text-4xl" // Puedes personalizar el tamaño del texto de la inicial
+                    />
 
                     <View className="flex-1 ml-4 justify-center">
                         <Text className="text-2xl font-extrabold text-gray-800 mb-1">

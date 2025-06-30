@@ -19,14 +19,19 @@ const BuyCourse = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Estados para el ConfirmModal
+  // Estados para el ConfirmModal de la PRE-compra (el que ya existía)
   const [isConfirmModalVisible, setIsConfirmModalVisible] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
   const [onModalConfirm, setOnModalConfirm] = useState(() => () => {}); // Función a ejecutar al confirmar
   const [confirmButtonText, setConfirmButtonText] = useState("Confirmar");
 
-  // NUEVO ESTADO: Método de pago seleccionado (null, 'card', 'account')
+  // NUEVOS ESTADOS para el ConfirmModal de ÉXITO de la compra
+  const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
+  const [successModalTitle, setSuccessModalTitle] = useState("");
+  const [successModalMessage, setSuccessModalMessage] = useState("");
+
+  // Método de pago seleccionado (null, 'card', 'account')
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
 
 
@@ -92,6 +97,13 @@ const BuyCourse = () => {
     fetchData();
   }, [fetchData]);
 
+  // Función para navegar al HomeCursos después del modal de éxito
+  const navigateToHomeCursos = useCallback(() => {
+    setIsSuccessModalVisible(false); // Cerrar el modal de éxito
+    navigation.navigate("HomeCourses"); // Navegar a HomeCursos
+  }, [navigation]);
+
+
   // Lógica de confirmación y pago (ahora llamada desde el modal)
   const handlePurchaseExecution = useCallback(async () => {
     try {
@@ -106,30 +118,27 @@ const BuyCourse = () => {
         endpoint = `course/inscribe-pay-account/${selectedSchedule.idCronograma}/${studentData.idAlumno}`;
         errorMessage = "Error al inscribirse con cuenta corriente";
       } else {
+        // Esto no debería ocurrir si el botón "Confirmar Pago" está deshabilitado
+        // hasta que se seleccione un método, pero se añade como fallback
         Alert.alert("Error", "No se ha seleccionado un método de pago.");
         return;
       }
       console.log(endpoint);
       await putDatosWithAuth(endpoint, {}, errorMessage);
 
-      // Mostrar el mensaje de éxito y luego navegar
-      Alert.alert(
-        "¡Curso Comprado Exitosamente!",
-        `Has sido inscrito en el curso "${courseData.nombreCurso}" en la sede "${selectedSchedule.nombreSede}". \n\n¡Felicidades!`,
-        [
-          {
-            text: "Confirmar",
-            onPress: () => navigation.navigate("HomeCourses"), // Navegar a HomeCursos
-          },
-        ]
+      // Configurar y mostrar el modal de éxito en lugar del Alert.alert
+      setSuccessModalTitle("¡Curso Comprado Exitosamente!");
+      setSuccessModalMessage(
+        `Has sido inscrito en el curso "${courseData.nombreCurso}" en la sede "${selectedSchedule.nombreSede}".`
       );
+      setIsSuccessModalVisible(true); // Mostrar el modal de éxito
 
     } catch (err) {
       console.error(`Error al pagar (${selectedPaymentMethod}):`, err);
       Alert.alert("Error", err.message || `No se pudo completar la compra con ${selectedPaymentMethod === "card" ? "tarjeta" : "cuenta corriente"}.`);
     } finally {
       setLoading(false);
-      setIsConfirmModalVisible(false); // Cerrar el modal después de la operación
+      setIsConfirmModalVisible(false); // Cerrar el modal de pre-compra
     }
   }, [selectedPaymentMethod, selectedSchedule, studentData, navigation, courseData]);
 
@@ -304,7 +313,7 @@ const BuyCourse = () => {
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Confirm Modal (fuera del ScrollView pero dentro del SafeAreaView) */}
+      {/* Confirm Modal (para la pre-compra) */}
       <ConfirmModal
         visible={isConfirmModalVisible}
         title={modalTitle}
@@ -313,6 +322,16 @@ const BuyCourse = () => {
         onConfirm={onModalConfirm}
         confirmText={confirmButtonText}
         cancelText="Cancelar"
+      />
+
+      {/* NUEVO Confirm Modal (para el éxito de la compra) */}
+      <ConfirmModal
+        visible={isSuccessModalVisible}
+        title={successModalTitle}
+        message={successModalMessage}
+        onCancel={navigateToHomeCursos} 
+        onConfirm={navigateToHomeCursos}
+        cancelText="Ok"
       />
     </SafeAreaView>
   );
