@@ -1,12 +1,10 @@
-// contexto/Provider.js
 import React, { createContext, useState, useEffect, useCallback } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { getDatosWithAuth } from '../api/crud'; // Asegúrate de tener esta importación, asumiendo la ruta
+import { getDatosWithAuth } from '../api/crud'; 
 
 export const Contexto = createContext();
 
 const Provider = ({ children }) => {
-  // Estados existentes para autenticación y perfil de usuario
   const [logeado, setLogeado] = useState(false);
   const [userId, setUserId] = useState(null);
   const [username, setUsername] = useState(null);
@@ -18,14 +16,11 @@ const Provider = ({ children }) => {
   const [isStudent, setIsStudent] = useState(false);
   const [savedUserAccounts, setSavedUserAccounts] = useState([]);
 
-  // NUEVOS estados y constantes para recetas modificadas
-  const [modifiedRecipes, setModifiedRecipes] = useState([]); // Array de recetas modificadas
-  const MAX_MODIFIED_RECIPES = 10; // Límite de recetas modificadas localmente
-  const MODIFIED_RECIPES_STORAGE_KEY = '@modifiedRecipes'; // Clave para AsyncStorage
+  const [modifiedRecipes, setModifiedRecipes] = useState([]);
+  const MAX_MODIFIED_RECIPES = 10; 
+  const MODIFIED_RECIPES_STORAGE_KEY = '@modifiedRecipes';
 
-  const SAVE_ACCOUNTS_KEY = 'savedUserAccounts'; // Clave existente para cuentas guardadas
-
-  // --- Lógica de Autenticación y Credenciales ---
+  const SAVE_ACCOUNTS_KEY = 'savedUserAccounts'; 
 
   const login = async (tokenData, userIdData, usernameData, useremailData, firstNameData, lastNameData) => {
     setLogeado(true);
@@ -40,7 +35,7 @@ const Provider = ({ children }) => {
     try {
       await AsyncStorage.setItem('isLoggedIn', 'true');
       await AsyncStorage.setItem('token', tokenData);
-      await AsyncStorage.setItem('userId', String(userIdData)); // Asegúrate de guardar como string
+      await AsyncStorage.setItem('userId', String(userIdData));
       await AsyncStorage.setItem('username', usernameData);
       await AsyncStorage.setItem('email', useremailData);
       await AsyncStorage.setItem('firstName', firstNameData);
@@ -72,7 +67,7 @@ const Provider = ({ children }) => {
       await AsyncStorage.removeItem('email');
       await AsyncStorage.removeItem('firstName');
       await AsyncStorage.removeItem('lastName');
-      await AsyncStorage.removeItem('isStudent'); // Eliminar también el estado de estudiante
+      await AsyncStorage.removeItem('isStudent'); 
     } catch (e) {
       console.log("Error al eliminar de AsyncStorage (logout):", e);
     }
@@ -85,7 +80,6 @@ const Provider = ({ children }) => {
       return;
     }
     try {
-      // Nota: Si getDatosWithAuth necesita el token para 'student/{id}', asegúrate de pasarlo
       const studentData = await getDatosWithAuth(`student/${id}`, "Error al verificar rol de estudiante", currentToken);
       if (studentData && Object.keys(studentData).length > 0) {
         setIsStudent(true);
@@ -99,7 +93,7 @@ const Provider = ({ children }) => {
       setIsStudent(false);
       await AsyncStorage.setItem('isStudent', 'false');
     }
-  }, []); // Dependencias: ninguna, ya que id y currentToken se pasan como argumentos
+  }, []); 
 
   const setIsStudentStatus = async (status) => {
     setIsStudent(status);
@@ -153,9 +147,7 @@ const Provider = ({ children }) => {
     }
   };
 
-  // --- NUEVA Lógica para Recetas Modificadas ---
 
-  // Cargar recetas modificadas desde AsyncStorage al iniciar el Provider
   useEffect(() => {
     const loadModifiedRecipes = async () => {
       try {
@@ -168,9 +160,8 @@ const Provider = ({ children }) => {
       }
     };
     loadModifiedRecipes();
-  }, []); // Se ejecuta una sola vez al montar el componente
+  }, []); 
 
-  // Guardar recetas modificadas en AsyncStorage cada vez que el estado 'modifiedRecipes' cambie
   useEffect(() => {
     const saveModifiedRecipesToStorage = async () => {
       try {
@@ -180,37 +171,33 @@ const Provider = ({ children }) => {
       }
     };
     saveModifiedRecipesToStorage();
-  }, [modifiedRecipes]); // Se ejecuta cada vez que modifiedRecipes cambia
+  }, [modifiedRecipes]); 
 
   /**
-   * Guarda una receta modificada en el almacenamiento local.
-   * @param {object} recipeToSave - El objeto de la receta modificada a guardar.
-   * @returns {Promise<{success: boolean, message: string}>} - Un objeto con el estado y un mensaje.
+   * @param {object} recipeToSave 
+   * @returns {Promise<{success: boolean, message: string}>}
    */
+
   const saveModifiedRecipe = useCallback(async (recipeToSave) => {
     return new Promise((resolve) => {
       setModifiedRecipes(prevRecipes => {
-        // Verificar si la receta modificada ya existe (misma receta original y misma cantidad de personas)
         const exists = prevRecipes.some(
           r => String(r.originalRecipeId) === String(recipeToSave.originalRecipeId) && r.cantidadPersonas === recipeToSave.cantidadPersonas
         );
 
         if (exists) {
           resolve({ success: false, message: "Esta versión modificada ya está guardada." });
-          return prevRecipes; // No hay cambios
+          return prevRecipes;
         }
 
-        // Verificar el límite de recetas
         if (prevRecipes.length >= MAX_MODIFIED_RECIPES) {
           resolve({ success: false, message: `Has alcanzado el límite de ${MAX_MODIFIED_RECIPES} recetas modificadas guardadas.` });
-          return prevRecipes; // No hay cambios
+          return prevRecipes; 
         }
 
-        // Generar un ID único para esta instancia de receta modificada
-        // Esto es crucial para poder eliminarla individualmente desde el perfil
         const newModifiedRecipe = {
           ...recipeToSave,
-          modifiedId: `${recipeToSave.originalRecipeId}-${recipeToSave.cantidadPersonas}-${Date.now()}`, // ID compuesto para unicidad
+          modifiedId: `${recipeToSave.originalRecipeId}-${recipeToSave.cantidadPersonas}-${Date.now()}`, 
         };
 
         const updatedRecipes = [...prevRecipes, newModifiedRecipe];
@@ -218,12 +205,11 @@ const Provider = ({ children }) => {
         return updatedRecipes;
       });
     });
-  }, []); // Dependencias: ninguna, ya que setModifiedRecipes es estable y no usamos variables externas mutables
+  }, []); 
 
   /**
-   * Elimina una receta modificada del almacenamiento local por su ID único.
-   * @param {string} modifiedIdToRemove - El ID único de la receta modificada a eliminar.
-   * @returns {Promise<{success: boolean, message: string}>} - Un objeto con el estado y un mensaje.
+   * @param {string} modifiedIdToRemove 
+   * @returns {Promise<{success: boolean, message: string}>}
    */
   const removeModifiedRecipe = useCallback(async (modifiedIdToRemove) => {
     return new Promise((resolve) => {
@@ -238,10 +224,8 @@ const Provider = ({ children }) => {
         return updatedRecipes;
       });
     });
-  }, []); // Dependencias: ninguna, setModifiedRecipes es estable
+  }, []);
 
-  // --- Efecto de Inicialización Global ---
-  // Este useEffect se encargará de cargar los datos de autenticación y credenciales
   useEffect(() => {
     const initializeAppState = async () => {
       try {
@@ -254,7 +238,7 @@ const Provider = ({ children }) => {
         const storedLastName = await AsyncStorage.getItem('lastName');
         const storedIsStudent = await AsyncStorage.getItem('isStudent');
 
-        if (loggedIn === 'true' && storedToken && storedUserId) { // Simplificado para que solo necesite los básicos
+        if (loggedIn === 'true' && storedToken && storedUserId) { 
           setLogeado(true);
           setToken(storedToken);
           setUserId(storedUserId);
@@ -264,31 +248,26 @@ const Provider = ({ children }) => {
           setLastName(storedLastName);
           setIsStudent(storedIsStudent === 'true');
 
-          // Verificación de rol de estudiante al iniciar la app si los datos están incompletos o para refrescar
           if (storedUserId && storedToken && storedIsStudent === null) {
             await checkAndSetIsStudent(storedUserId, storedToken);
           }
         }
-        await loadUserCredentials(); // Cargar credenciales guardadas para auto-login
+        await loadUserCredentials(); 
       } catch (e) {
         console.log("Error al cargar estado inicial de la app desde AsyncStorage:", e);
       }
     };
 
     initializeAppState();
-  }, [checkAndSetIsStudent, loadUserCredentials]); // Dependencias para useCallback
-
+  }, [checkAndSetIsStudent, loadUserCredentials]);
 
   return (
     <Contexto.Provider value={{
-      // Propiedades de autenticación y perfil
       logeado, userId, username, firstName, lastName, email, token, userRole, isStudent,
       login, logout, setIsStudentStatus,
 
-      // Propiedades de cuentas guardadas
       savedUserAccounts, saveUserCredentials, removeUserCredentials,
 
-      // NUEVAS propiedades para recetas modificadas
       modifiedRecipes,
       saveModifiedRecipe,
       removeModifiedRecipe,

@@ -16,27 +16,22 @@ const HomeCourses = () => {
   const navigation = useNavigation()
   const insets = useSafeAreaInsets()
 
-  // Estados para la paginación y lista de cursos
   const [courseList, setCourseList] = useState({});
   const [currentPage, setCurrentPage] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  // Estados para los filtros
   const [showFilter, setShowFilter] = useState(false);
   const [searchCourseName, setSearchCourseName] = useState("");
   const [searchSedeId, setSearchSedeId] = useState("");
   const [activeFilterModalidad, setActiveFilterModalidad] = useState("Todo");
 
-  // Estados para el ordenamiento
-  const [sortType, setSortType] = useState(""); // Por defecto: "nombreCurso"
-  const [directionType, setDirectionType] = useState(""); // Por defecto: "asc"
+  const [sortType, setSortType] = useState(""); 
+  const [directionType, setDirectionType] = useState(""); 
 
   const pageSize = 5;
 
-  // Opciones de filtro para modalidad
   const filterOptions = ["Todo", "Presencial", "Remoto", "Virtual"];
 
-  // Función para obtener los números de paginación
   const getPaginationNumbers = () => {
     const totalPages = courseList.totalPages || 1;
     const current = currentPage;
@@ -71,7 +66,6 @@ const HomeCourses = () => {
     return numbers;
   };
 
-  // Función para hacer el fetch de cursos
   const fetchCourses = useCallback(async (page = 0, reset = false) => {
     if (loading) return;
 
@@ -89,7 +83,7 @@ const HomeCourses = () => {
       const params = {
         page: page,
         size: pageSize,
-        sortBy: sortType, // CORREGIDO: 'sortBy' en lugar de 'sort' para coincidir con la API
+        sortBy: sortType,
         direction: directionType,
         nombreCurso: searchCourseName !== "" ? searchCourseName : undefined,
         idSede: searchSedeId !== "" ? searchSedeId : undefined,
@@ -116,13 +110,11 @@ const HomeCourses = () => {
     }
   }, [loading, pageSize, sortType, directionType, searchCourseName, searchSedeId, activeFilterModalidad]);
 
-  // Función para refrescar los cursos
   const refreshCourses = () => {
     setCurrentPage(0);
     fetchCourses(0, true);
   };
 
-  // Función para limpiar todos los filtros
   const clearFilters = () => {
     setSearchCourseName("");
     setSearchSedeId("");
@@ -131,13 +123,11 @@ const HomeCourses = () => {
     setDirectionType("");
   };
 
-  // Función para resetear solo el ordenamiento
   const resetSorting = () => {
     setSortType("");
     setDirectionType("");
   };
 
-  // Hooks de efecto para cargar datos y aplicar filtros
   useEffect(() => {
     fetchCourses(0, true);
   }, []);
@@ -215,7 +205,6 @@ const HomeCourses = () => {
           )}
         </View>
 
-        {/* Course Collection */}
         <View className="p-4">
           <View className="flex-row justify-between items-center mb-1">
             <Text className="text-xl font-bold text-gray-800">Explora Nuestros Cursos</Text>
@@ -253,7 +242,7 @@ const HomeCourses = () => {
             }
           </View>
 
-          {/* Course Modality Filter */}
+          {/* Course Filter */}
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
             {filterOptions.map((option) => (
               <TouchableOpacity
@@ -347,7 +336,7 @@ const HomeCourses = () => {
         </View>
       </ScrollView>
 
-      {/* Filter Drawer */}
+      {/* Filters */}
       {showFilter &&
         <View className="absolute w-full h-full bg-black/50">
           <View className="w-4/5 h-full bg-white absolute right-0 shadow-lg">
@@ -362,7 +351,7 @@ const HomeCourses = () => {
                 </TouchableOpacity>
               </View>
 
-              {/* Sort by Course Name (Alphabetical) */}
+              {/* Sort by Course Name */}
               <View className="mb-4">
                 <Text className="font-semibold text-lg text-gray-800 mb-2">Ordenar alfabéticamente</Text>
                 <Text className="text-sm text-gray-600 mb-3">Organiza los cursos por el nombre:</Text>
@@ -408,7 +397,7 @@ const HomeCourses = () => {
                 </TouchableOpacity>
               </View>
 
-              {/* Apply/Clear Filters Buttons */}
+              {/* Apply/Clear Buttons */}
               <View className="border-t border-gray-200 pt-6 pb-16">
                 <View className="flex-row gap-8 space-x-3">
                   <TouchableOpacity
@@ -422,7 +411,7 @@ const HomeCourses = () => {
                     onPress={() => {
                       setShowFilter(false);
                       setCurrentPage(0);
-                      fetchCourses(0, true); // Aplicar filtros
+                      fetchCourses(0, true); 
                     }}
                     className="flex-1 bg-amber-400 py-3 rounded-lg"
                   >

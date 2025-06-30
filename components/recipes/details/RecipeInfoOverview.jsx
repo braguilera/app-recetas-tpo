@@ -1,4 +1,3 @@
-// components/RecipeInfoOverview.js
 import React from 'react';
 import { View, Text } from 'react-native';
 import { AntDesign, FontAwesome } from '@expo/vector-icons';

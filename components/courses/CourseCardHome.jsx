@@ -2,21 +2,19 @@ import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, Modal, StyleSheet, Pressable } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import LogVerificator from '../common/LogVerificator'; // Asegúrate de que esta ruta sea correcta
+import LogVerificator from '../common/LogVerificator'; 
 
 const CourseCardHome = ({ course, logeado, isStudent }) => {
   const navigation = useNavigation();
   const [modalVisible, setModalVisible] = useState(false);
 
+  // Navegacion segun el estado del usuario
   const handleCardPress = () => {
     if (!logeado) {
-      // Si no está logueado, navegar a la pantalla de Login
-      navigation.navigate("AuthStack", { screen: "Login" }); // Asumo que tienes un AuthStack con una pantalla "Login"
+      navigation.navigate("AuthStack", { screen: "Login" }); 
     } else if (!isStudent) {
-      // Si está logueado pero no es estudiante, mostrar el popup
       setModalVisible(true);
     } else {
-      // Si está logueado y es estudiante, navegar a los detalles del curso
       navigation.navigate("DetailsCourses", { courseId: course.idCurso });
     }
   };
@@ -26,23 +24,21 @@ const CourseCardHome = ({ course, logeado, isStudent }) => {
   };
 
   const goToProfile = () => {
-    setModalVisible(false); // Cierra el modal
-    navigation.navigate("ProfileStack", { screen: "EditProfile" }); // Navega a la pantalla de perfil (ajusta el nombre de tu ruta de perfil)
+    setModalVisible(false);
+    navigation.navigate("ProfileStack", { screen: "EditProfile" }); 
   };
 
   return (
     <TouchableOpacity
-      className="bg-white rounded-lg shadow-md overflow-hidden mb-4 border border-gray-200" // Fondo blanco y borde gris
+      className="bg-white rounded-lg shadow-md overflow-hidden mb-4 border border-gray-200" 
       onPress={handleCardPress}
     >
-      {/* No hay imagen en este diseño, solo el contenido */}
       <View className="p-4">
-        {/* Título del curso y modalidad */}
         <View className="flex-row items-center justify-between">
           <View className="flex-1">
             <Text className="text-lg font-bold text-gray-800">{course.nombreCurso}</Text>
           </View>
-          {course.modalidad && ( // Solo muestra la modalidad si existe
+          {course.modalidad && ( 
             <View className="bg-amber-50 rounded-md px-3 mb-2 flex-row items-center w-28 ">
               <MaterialIcons
                 name={course.modalidad.toLowerCase() === "presencial" ? "location-on" : "laptop"}
@@ -56,7 +52,6 @@ const CourseCardHome = ({ course, logeado, isStudent }) => {
           )}
         </View>
 
-        {/* Descripción corta del curso */}
         <View className="w-full">
           <View className="bg-gray-100 w-full rounded-md px-3 py-2 mr-2 mb-2 flex-row items-center">
             <Text className="text-xs text-gray-600 ml-2">
@@ -65,19 +60,18 @@ const CourseCardHome = ({ course, logeado, isStudent }) => {
           </View>
         </View>
 
-        {/* Sección del botón de acción (Inscribirse o Mensaje) */}
+
         <View className="flex-row mt-2">
           <View className="flex-1">
-            {logeado && isStudent ? ( // <-- Condición para mostrar el botón de Inscribirse
+            {logeado && isStudent ? (
               <LogVerificator
-                onPress={() => navigation.navigate("DetailsCourses", { courseId: course.idCurso })} // Asegúrate de usar la ruta correcta para la inscripción
+                onPress={() => navigation.navigate("DetailsCourses", { courseId: course.idCurso })} 
                 className="bg-amber-400 w-full px-4 py-2 rounded-md mr-2"
                 loginRequiredMessage="Para inscribirte en un curso, necesitas iniciar sesión."
               >
                 <Text className="text-white text-center font-bold">Inscribirse</Text>
               </LogVerificator>
             ) : (
-              // Este texto se mostrará si no es estudiante o no está logueado
               <Text className="text-gray-500 text-center text-sm">
                 Solo estudiantes pueden inscribirse
               </Text>
@@ -86,7 +80,7 @@ const CourseCardHome = ({ course, logeado, isStudent }) => {
         </View>
       </View>
 
-      {/* Modal para el mensaje de "No es estudiante" */}
+      {/* Modal para cuando no es estudiante */}
       <Modal
         animationType="fade"
         transparent={true}

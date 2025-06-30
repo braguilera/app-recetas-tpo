@@ -2,16 +2,16 @@ import { useRoute, useNavigation } from '@react-navigation/native';
 import React, { useEffect, useState, useContext, useCallback } from 'react';
 import { SafeAreaView, ScrollView, Text, TouchableOpacity, View, Image, Alert, ActivityIndicator } from 'react-native';
 import { AntDesign, FontAwesome5, MaterialIcons } from "@expo/vector-icons";
-import { getDatosWithAuth, postDatosWithAuth, putDatosWithAuth } from 'api/crud';
+import { getDatosWithAuth, putDatosWithAuth } from 'api/crud';
 import { Contexto } from 'contexto/Provider';
-import ConfirmModal from '../../components/common/ConfirmModal'; // Importar el ConfirmModal
+import ConfirmModal from '../../components/common/ConfirmModal';
 
 const BuyCourse = () => {
   const route = useRoute();
   const navigation = useNavigation();
   const { courseId, scheduleId } = route.params || {};
 
-  const { userId, token, logeado } = useContext(Contexto);
+  const { userId, token } = useContext(Contexto);
 
   const [courseData, setCourseData] = useState(null);
   const [studentData, setStudentData] = useState(null);
@@ -19,23 +19,18 @@ const BuyCourse = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Estados para el ConfirmModal de la PRE-compra (el que ya existía)
   const [isConfirmModalVisible, setIsConfirmModalVisible] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
-  const [onModalConfirm, setOnModalConfirm] = useState(() => () => {}); // Función a ejecutar al confirmar
+  const [onModalConfirm, setOnModalConfirm] = useState(() => () => {});
   const [confirmButtonText, setConfirmButtonText] = useState("Confirmar");
 
-  // NUEVOS ESTADOS para el ConfirmModal de ÉXITO de la compra
   const [isSuccessModalVisible, setIsSuccessModalVisible] = useState(false);
   const [successModalTitle, setSuccessModalTitle] = useState("");
   const [successModalMessage, setSuccessModalMessage] = useState("");
 
-  // Método de pago seleccionado (null, 'card', 'account')
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
 
-
-  // Función para formatear precios
   const formatPrice = (price) => {
     if (typeof price !== 'number' || isNaN(price)) {
       return "$0";
@@ -46,7 +41,6 @@ const BuyCourse = () => {
     })}`;
   };
 
-  // Función para formatear fechas
   const formatDate = (dateString) => {
     if (!dateString) return "Fecha no disponible";
     const date = new Date(dateString);
@@ -97,14 +91,11 @@ const BuyCourse = () => {
     fetchData();
   }, [fetchData]);
 
-  // Función para navegar al HomeCursos después del modal de éxito
   const navigateToHomeCursos = useCallback(() => {
-    setIsSuccessModalVisible(false); // Cerrar el modal de éxito
-    navigation.navigate("HomeCourses"); // Navegar a HomeCursos
+    setIsSuccessModalVisible(false);
+    navigation.navigate("HomeCourses");
   }, [navigation]);
 
-
-  // Lógica de confirmación y pago (ahora llamada desde el modal)
   const handlePurchaseExecution = useCallback(async () => {
     try {
       setLoading(true);
@@ -118,32 +109,27 @@ const BuyCourse = () => {
         endpoint = `course/inscribe-pay-account/${selectedSchedule.idCronograma}/${studentData.idAlumno}`;
         errorMessage = "Error al inscribirse con cuenta corriente";
       } else {
-        // Esto no debería ocurrir si el botón "Confirmar Pago" está deshabilitado
-        // hasta que se seleccione un método, pero se añade como fallback
         Alert.alert("Error", "No se ha seleccionado un método de pago.");
         return;
       }
-      console.log(endpoint);
+
       await putDatosWithAuth(endpoint, {}, errorMessage);
 
-      // Configurar y mostrar el modal de éxito en lugar del Alert.alert
       setSuccessModalTitle("¡Curso Comprado Exitosamente!");
       setSuccessModalMessage(
         `Has sido inscrito en el curso "${courseData.nombreCurso}" en la sede "${selectedSchedule.nombreSede}".`
       );
-      setIsSuccessModalVisible(true); // Mostrar el modal de éxito
+      setIsSuccessModalVisible(true);
 
     } catch (err) {
       console.error(`Error al pagar (${selectedPaymentMethod}):`, err);
       Alert.alert("Error", err.message || `No se pudo completar la compra con ${selectedPaymentMethod === "card" ? "tarjeta" : "cuenta corriente"}.`);
     } finally {
       setLoading(false);
-      setIsConfirmModalVisible(false); // Cerrar el modal de pre-compra
+      setIsConfirmModalVisible(false);
     }
   }, [selectedPaymentMethod, selectedSchedule, studentData, navigation, courseData]);
 
-
-  // Manejador del botón "Confirmar Pago" principal
   const handleConfirmPaymentButton = () => {
     if (!selectedPaymentMethod) {
       Alert.alert("Información", "Por favor, selecciona un método de pago para continuar.");
@@ -155,14 +141,12 @@ const BuyCourse = () => {
       return;
     }
 
-    // Configura el modal de confirmación basado en el método seleccionado
     setModalTitle("Confirmar Compra");
     setModalMessage(`¿Confirmas la inscripción al curso "${courseData.nombreCurso}" en la sede "${selectedSchedule.nombreSede}" utilizando ${selectedPaymentMethod === 'card' ? 'tarjeta' : 'tu cuenta corriente'}?`);
     setConfirmButtonText("Confirmar Pago");
-    setOnModalConfirm(() => handlePurchaseExecution); // La función a ejecutar al confirmar en el modal
+    setOnModalConfirm(() => handlePurchaseExecution);
     setIsConfirmModalVisible(true);
   };
-
 
   if (loading) {
     return (
@@ -238,8 +222,8 @@ const BuyCourse = () => {
             <Text className="ml-2 text-gray-700">Inicio: {formatDate(selectedSchedule.fechaInicio)}</Text>
           </View>
           <View className="flex-row items-center mb-1">
-            <AntDesign name="clockcircleo" size={16} color="#6B7280" />
-            <Text className="ml-2 text-gray-700">Duración: {courseData.duracion} horas</Text>
+            <AntDesign name="book" size={16} color="#6B7280" />
+            <Text className="ml-2 text-gray-700">Duración: {courseData.duracion} clases</Text>
           </View>
           <Text className="text-xl font-bold text-amber-500 mt-2">Precio: {formatPrice(courseData.precio)}</Text>
         </View>
@@ -269,7 +253,7 @@ const BuyCourse = () => {
             selectedPaymentMethod === 'card' ? 'bg-yellow-50 border border-yellow-400' : 'bg-gray-50 border border-gray-200'
           }`}
           onPress={() => setSelectedPaymentMethod('card')}
-          disabled={loading || !studentData.numeroTarjeta} // Deshabilitar si no hay tarjeta o cargando
+          disabled={loading || !studentData.numeroTarjeta}
         >
           <View className="flex-row items-center">
             <FontAwesome5 name="credit-card" size={24} color={selectedPaymentMethod === 'card' ? '#ca8a04' : '#6B7280'} />
@@ -289,7 +273,7 @@ const BuyCourse = () => {
             selectedPaymentMethod === 'account' ? 'bg-yellow-50 border-yellow-400' : 'bg-gray-50 border border-gray-100'
           }`}
           onPress={() => setSelectedPaymentMethod('account')}
-          disabled={loading || !hasEnoughBalance} // Deshabilitar si no hay saldo o cargando
+          disabled={loading || !hasEnoughBalance}
         >
           <View className="flex-row items-center">
             <FontAwesome5 name="coins" size={24} color={selectedPaymentMethod === 'account' ? '#2563EB' : '#F59E0B'} />
@@ -301,19 +285,19 @@ const BuyCourse = () => {
           )}
         </TouchableOpacity>
 
-        {/* Botón de Confirmar Pago */}
+        {/* Botón de Confirmación */}
         <TouchableOpacity
           className={`py-3 rounded-xl items-center mt-4 ${
             selectedPaymentMethod && !loading ? 'bg-amber-400' : 'bg-gray-400'
           }`}
           onPress={handleConfirmPaymentButton}
-          disabled={!selectedPaymentMethod || loading} // Deshabilitar si no hay método seleccionado o está cargando
+          disabled={!selectedPaymentMethod || loading}
         >
           <Text className="text-white font-bold text-lg">Confirmar Pago</Text>
         </TouchableOpacity>
       </ScrollView>
 
-      {/* Confirm Modal (para la pre-compra) */}
+      {/* Confirm Modal para la pre-compra */}
       <ConfirmModal
         visible={isConfirmModalVisible}
         title={modalTitle}
@@ -324,7 +308,7 @@ const BuyCourse = () => {
         cancelText="Cancelar"
       />
 
-      {/* NUEVO Confirm Modal (para el éxito de la compra) */}
+      {/* Confirm Modal para el éxito de la compra */}
       <ConfirmModal
         visible={isSuccessModalVisible}
         title={successModalTitle}

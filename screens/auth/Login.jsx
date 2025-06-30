@@ -3,7 +3,7 @@ import { Text, View, TextInput, TouchableOpacity, StatusBar, Alert, FlatList, Sw
 import { useNavigation } from "@react-navigation/native"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
 import { Contexto } from "../../contexto/Provider";
-import { postDatos } from "../../api/crud"; // Asegúrate de que esta ruta es correcta para postDatos
+import { postDatos } from "../../api/crud"; 
 
 const Login = () => {
   const { login, savedUserAccounts, saveUserCredentials, removeUserCredentials } = useContext(Contexto);
@@ -39,7 +39,6 @@ const Login = () => {
       console.log("Respuesta de inicio de sesión:", responseData);
 
       if (responseData && responseData.token) {
-        // La función login en el contexto ahora maneja la verificación de estudiante
         login(
           responseData.token,
           responseData.userId,

@@ -1,23 +1,13 @@
 import React, { useState, useEffect, useContext, useCallback } from 'react';
 import { View, Text, Image, ActivityIndicator } from 'react-native';
-import { getDatosWithAuth } from '../../api/crud'; // Asegúrate de que esta ruta sea correcta
-import { Contexto } from '../../contexto/Provider'; // Asegúrate de que esta ruta sea correcta
+import { getDatosWithAuth } from '../../api/crud'; 
+import { Contexto } from '../../contexto/Provider'; 
 
-/**
- * Componente para mostrar el avatar de un usuario o su inicial si no tiene foto.
- * Busca los datos del usuario internamente usando el ID del contexto.
- *
- * @param {object} props - Propiedades del componente.
- * @param {string} [props.sizeClasses="w-16 h-16"] - Clases de Tailwind para el tamaño (ej: "w-20 h-20").
- * @param {string} [props.textSizeClasses="text-2xl"] - Clases de Tailwind para el tamaño del texto de la inicial (ej: "text-4xl").
- * @param {string} [props.bgColorClass="bg-amber-500"] - Clase de Tailwind para el color de fondo de la inicial.
- * @param {string} [props.textColorClass="text-white"] - Clase de Tailwind para el color del texto de la inicial.
- */
 const UserAvatar = ({
-    sizeClasses = "w-16 h-16", // Tamaño por defecto: w-16 h-16 (64px)
-    textSizeClasses = "text-2xl", // Tamaño de texto por defecto: text-2xl
-    bgColorClass = "bg-amber-500", // Color de fondo por defecto: ámbar
-    textColorClass = "text-white" // Color de texto por defecto: blanco
+    sizeClasses = "w-16 h-16", 
+    textSizeClasses = "text-2xl", 
+    bgColorClass = "bg-amber-500", 
+    textColorClass = "text-white"
 }) => {
     const { userId, token } = useContext(Contexto);
     const [userProfileData, setUserProfileData] = useState(null);
@@ -54,7 +44,7 @@ const UserAvatar = ({
     }
 
     if (error) {
-        // En caso de error, muestra un avatar genérico o un placeholder
+        // En caso de error, muestra un avatar genérico 
         return (
             <View className={`${sizeClasses} rounded-full overflow-hidden items-center justify-center bg-red-400`}>
                 <Text className={`${textColorClass} ${textSizeClasses} font-bold`}>?</Text>

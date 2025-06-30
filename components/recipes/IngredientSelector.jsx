@@ -30,7 +30,6 @@ const IngredientSelector = ({
       <Text className="text-sm text-gray-600 mb-3">{description}</Text>
 
       <View className="flex-row flex-wrap">
-        {/* Opción "Todos" o "Ninguno" */}
         <TouchableOpacity
           onPress={() => onSelect("")}
           className={`mr-2 mb-2 px-3 py-2 rounded-full border ${

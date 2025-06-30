@@ -189,7 +189,6 @@ export default function Navigation() {
               gestureEnabled: true,
             }}
           />
-          {/* Add NoConexion screen if you still want it in the stack */}
           <RootStack.Screen
             name="NoConexion"
             component={NoConexion}

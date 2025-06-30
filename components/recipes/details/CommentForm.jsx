@@ -1,4 +1,3 @@
-// components/CommentForm.js
 import React from 'react';
 import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import { Picker } from '@react-native-picker/picker';

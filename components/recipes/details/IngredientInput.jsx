@@ -2,16 +2,6 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, KeyboardAvoidingView, Platform, Keyboard } from 'react-native';
 import { AntDesign } from '@expo/vector-icons';
 
-/**
- * Componente para mostrar y permitir la edición de una cantidad de ingrediente.
- * Al tocar el texto, se convierte en un TextInput.
- *
- * @param {object} props - Propiedades del componente.
- * @param {string} props.value - La cantidad actual del ingrediente (string).
- * @param {function} props.onValueChange - Callback cuando la cantidad es modificada (newValue: string).
- * @param {string} props.unit - La unidad del ingrediente (ej: "gramos", "ml", "unidad").
- * @param {string} props.name - El nombre del ingrediente.
- */
 const IngredientInput = ({ value, onValueChange, unit, name }) => {
     const [isEditing, setIsEditing] = useState(false);
     const [inputValue, setInputValue] = useState(value.toString());
@@ -23,13 +13,12 @@ const IngredientInput = ({ value, onValueChange, unit, name }) => {
     const handleEditEnd = () => {
         setIsEditing(false);
         const parsedValue = parseFloat(inputValue);
-        // Solo llamar a onValueChange si el valor cambió y es un número válido
         if (!isNaN(parsedValue) && parsedValue > 0 && parseFloat(value) !== parsedValue) {
-            onValueChange(parsedValue.toString()); // Convertir a string para consistencia
+            onValueChange(parsedValue.toString()); 
         } else {
-            setInputValue(value.toString()); // Revertir si no es válido o no cambió
+            setInputValue(value.toString());
         }
-        Keyboard.dismiss(); // Ocultar el teclado al finalizar la edición
+        Keyboard.dismiss(); 
     };
 
     return (
@@ -49,8 +38,8 @@ const IngredientInput = ({ value, onValueChange, unit, name }) => {
                             keyboardType="numeric"
                             value={inputValue}
                             onChangeText={setInputValue}
-                            onBlur={handleEditEnd} // Cuando el input pierde el foco
-                            onSubmitEditing={handleEditEnd} // Cuando se presiona "Enter" en el teclado
+                            onBlur={handleEditEnd}
+                            onSubmitEditing={handleEditEnd}
                             autoFocus
                         />
                         <Text className="ml-1 text-gray-600 text-base">{unit}</Text>

@@ -32,22 +32,16 @@ const Profile = () => {
     const [completedCourses, setCompletedCourses] = useState([]);
     const [loadingCourses, setLoadingCourses] = useState(true);
 
-    // Estados para el modal de confirmación FINAL de baja de curso (tras elegir el medio)
     const [confirmUnsubscribeVisible, setConfirmUnsubscribeVisible] = useState(false);
-    const [courseUnsubscribeResult, setCourseUnsubscribeResult] = useState(null); // Almacena el resultado del backend para el modal final
-
-    // Estados para el modal de OPCIONES de reintegro (primer modal)
+    const [courseUnsubscribeResult, setCourseUnsubscribeResult] = useState(null); 
     const [showRefundOptionsModal, setShowRefundOptionsModal] = useState(false);
-    const [courseForRefundSelection, setCourseForRefundSelection] = useState(null); // Almacena el objeto completo del curso para la selección de medio
-
-
-    // Se elimina el array myReviews ya que no se usará más
+    const [courseForRefundSelection, setCourseForRefundSelection] = useState(null); 
 
     const tabs = [
         { id: "favoritos", name: "Favoritos" },
         { id: "recetas", name: "Mis Recetas" },
         { id: "cursos", name: "Cursos" },
-        { id: "miCuenta", name: "Mi Cuenta" }, // Nuevo tab para MyCount
+        { id: "miCuenta", name: "Mi Cuenta" }, 
     ]
 
     const handleLogout = async () => {
@@ -178,13 +172,11 @@ const Profile = () => {
     }, [userId, token]);
 
 
-    // Paso 1: Manejador para abrir el modal de opciones de reintegro
     const handleUnsubscribeOption = useCallback((course) => {
-        setCourseForRefundSelection(course); // Guardar el curso completo para la selección de medio
-        setShowRefundOptionsModal(true); // Mostrar el modal de opciones
+        setCourseForRefundSelection(course); 
+        setShowRefundOptionsModal(true); 
     }, []);
 
-    // Helper para formatear precio (podría ser un util global)
     const formatPrice = (price) => {
         if (typeof price !== 'number' || isNaN(price)) {
             return "$0";
@@ -195,9 +187,8 @@ const Profile = () => {
         })}`;
     };
 
-    // Paso 2: Función que se llama desde RefundOptionsModal con el medio de devolución elegido
     const confirmUnsubscribeWithRefundType = useCallback(async (medioDevolucion) => {
-        setShowRefundOptionsModal(false); // Cerrar el modal de opciones de reembolso
+        setShowRefundOptionsModal(false); 
 
         if (!courseForRefundSelection || !userId || !token) {
             console.log("Error", "Datos incompletos para procesar la baja del curso.");
@@ -214,48 +205,42 @@ const Profile = () => {
         }
 
         try {
-            setLoadingCourses(true); // Activar loading mientras se procesa la baja
+            setLoadingCourses(true); 
 
             const body = {
-                idAlumno: parseInt(userId), // Convertir userId a número
+                idAlumno: parseInt(userId), 
                 idCronogramaCurso: cronograma.idCronograma,
                 medioDevolucion: medioDevolucion
             };
             console.log("Unsubscribe request body:", body);
 
-            // Realizar la llamada a la API DELETE
             const response = await deleteDatosWithAuth('course/unsubscribe', 'Error al darse de baja del curso', body, token);
             console.log("Unsubscribe API Response:", response);
 
-            // Asumo que la respuesta del backend tiene 'importeReintegrado' y 'mensaje'
-            setCourseUnsubscribeResult({ // Configurar la información para el modal de confirmación final
+            setCourseUnsubscribeResult({ 
                 courseName: courseForRefundSelection.nombreCurso,
-                refundAmount: response.importeReintegrado, // Usar el valor del backend
-                refundMessage: response.mensaje, // Usar el mensaje del backend
+                refundAmount: response.importeReintegrado, 
+                refundMessage: response.mensaje,
                 medioDevolucion: medioDevolucion,
-                // Calcular porcentaje si el backend no lo devuelve explícitamente
                 refundPercentage: (response.importeReintegrado !== undefined && courseForRefundSelection.precio)
-                    ? ((response.importeReintegrado / courseForRefundSelection.precio) * 100).toFixed(0) // Redondear a entero
+                    ? ((response.importeReintegrado / courseForRefundSelection.precio) * 100).toFixed(0)
                     : 0
             });
-            setConfirmUnsubscribeVisible(true); // Mostrar el modal de confirmación final
+            setConfirmUnsubscribeVisible(true);
 
-            await fetchActiveCourses(); // Recargar la lista de cursos activos
+            await fetchActiveCourses(); 
 
         } catch (error) {
             console.log("Error al darse de baja del curso:", error);
-            // Mensaje de error más detallado si el backend devuelve un error.message
         } finally {
-            setLoadingCourses(false); // Desactivar loading
-            setCourseForRefundSelection(null); // Limpiar el estado
+            setLoadingCourses(false); 
+            setCourseForRefundSelection(null); 
         }
     }, [courseForRefundSelection, userId, token, fetchActiveCourses]);
 
-
-    // Paso 3: Función para navegar a HomeCursos después de la confirmación final
     const navigateToHomeCursos = useCallback(() => {
-        setConfirmUnsubscribeVisible(false); // Cerrar el modal final
-        navigation.navigate("MainTabs", { screen: "HomeCursos" }); // Navegar a la pestaña HomeCursos
+        setConfirmUnsubscribeVisible(false); 
+        navigation.navigate("MainTabs", { screen: "HomeCursos" }); 
     }, [navigation]);
 
 
@@ -493,7 +478,7 @@ const Profile = () => {
                         key={course.idCurso}
                         course={course}
                         isActive={true}
-                        onUnsubscribe={() => handleUnsubscribeOption(course)} // Pasa el objeto completo del curso
+                        onUnsubscribe={() => handleUnsubscribeOption(course)} 
                     />
                 ))
             ) : (
@@ -508,14 +493,13 @@ const Profile = () => {
                     <CourseCard
                         key={course.idCurso}
                         course={course}
-                        isActive={false} // Marca como finalizado
+                        isActive={false} 
                     />
                 ))
             ) : (
                 <Text className="text-gray-500 text-center mt-8">No tienes cursos finalizados.</Text>
             )}
 
-            {/* Confirm Modal para la confirmación FINAL de baja con detalles del reembolso */}
             <ConfirmModal
                 visible={confirmUnsubscribeVisible}
                 title="Baja de Curso Confirmada"
@@ -525,13 +509,12 @@ const Profile = () => {
                     `en ${courseUnsubscribeResult?.medioDevolucion === 'tarjeta' ? 'tu tarjeta' : 'tu cuenta corriente'}.\n\n` +
                     (courseUnsubscribeResult?.refundMessage || 'Operación completada exitosamente.')
                 }
-                onCancel={navigateToHomeCursos} // Ambos botones navegarán a HomeCursos
+                onCancel={navigateToHomeCursos}
                 onConfirm={navigateToHomeCursos}
                 confirmText="Ok"
                 cancelText="Ok"
             />
 
-            {/* Modal de Opciones de Reintegro (el primer modal para elegir medio) */}
             <RefundOptionsModal
                 visible={showRefundOptionsModal}
                 onClose={() => setShowRefundOptionsModal(false)}
@@ -541,8 +524,6 @@ const Profile = () => {
         </View>
     )
 
-    // Se elimina la función renderCalificaciones ya que no se usará más
-    // const renderCalificaciones = () => ( ... )
 
     const renderTabContent = () => {
         switch (activeTab) {
@@ -552,7 +533,7 @@ const Profile = () => {
                 return renderMisRecetas()
             case "cursos":
                 return renderCursos()
-            case "miCuenta": // Aquí se renderiza el componente MyCount
+            case "miCuenta": 
                 return <MyCount />
             default:
                 return renderFavoritos()
@@ -574,11 +555,10 @@ const Profile = () => {
                     </TouchableOpacity>
                 </View>
 
-                {/* User dates */}
                 <View className="flex-row items-center px-2">
                     <UserAvatar
-                        sizeClasses="w-20 h-20" // Puedes personalizar el tamaño
-                        textSizeClasses="text-4xl" // Puedes personalizar el tamaño del texto de la inicial
+                        sizeClasses="w-20 h-20" 
+                        textSizeClasses="text-4xl" 
                     />
 
                     <View className="flex-1 ml-4 justify-center">

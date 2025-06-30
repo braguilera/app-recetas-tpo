@@ -1,34 +1,28 @@
-"use client"
-
 import React, { useState, useEffect, useContext, useCallback } from "react"
 import { View, Text, TouchableOpacity, StatusBar, ScrollView, ActivityIndicator, Alert, SafeAreaView } from "react-native"
 import { useNavigation, useRoute } from "@react-navigation/native"
 import { AntDesign, MaterialIcons } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { getDatosWithAuth } from "api/crud" // Importa la función para hacer llamadas con autenticación
-import { Contexto } from "contexto/Provider" // Importa el contexto para acceder a userId y token
+import { getDatosWithAuth } from "api/crud"
+import { Contexto } from "contexto/Provider"
 
 const MyCourses = () => {
     const navigation = useNavigation()
     const route = useRoute()
     const insets = useSafeAreaInsets()
 
-    // Extrae courseId y scheduleId de los parámetros de navegación
     const { courseId, scheduleId } = route.params || {}
     console.log("Course ID:", courseId, "Schedule ID:", scheduleId)
 
-    const { userId, token } = useContext(Contexto) // Obtén userId y token del contexto
+    const { userId, token } = useContext(Contexto) 
 
-    const [courseData, setCourseData] = useState(null) // Estado para almacenar los datos completos del curso
-    const [selectedSchedule, setSelectedSchedule] = useState(null); // Estado para el cronograma específico
-    const [loading, setLoading] = useState(true) // Estado de carga
-    const [error, setError] = useState(null) // Estado de error
+    const [courseData, setCourseData] = useState(null) 
+    const [selectedSchedule, setSelectedSchedule] = useState(null);
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState(null) 
 
-    // Simular el contador de asistencias.
-    // El usuario indicó que se iniciará en 0 y se manejará desde otro componente.
-    const [attendedClasses, setAttendedClasses] = useState(0); // Clases asistidas, inicia en 0
+    const [attendedClasses, setAttendedClasses] = useState(0); 
 
-    // Funciones de formato
     const formatDate = (dateString) => {
         if (!dateString) return "N/A";
         const date = new Date(dateString);
@@ -59,11 +53,9 @@ const MyCourses = () => {
         }
 
         try {
-            // Obtener todos los detalles del curso por su ID
             const courseRes = await getDatosWithAuth(`course/${courseId}`, 'Error al cargar los detalles del curso', token);
             setCourseData(courseRes);
 
-            // Encontrar el cronograma específico usando scheduleId
             const foundSchedule = courseRes.cronogramaCursos?.find(s => s.idCronograma === scheduleId);
             if (foundSchedule) {
                 setSelectedSchedule(foundSchedule);
@@ -84,7 +76,6 @@ const MyCourses = () => {
     }, [fetchCourseDetails]);
 
     const handleAttendance = useCallback(() => {
-        // Navega a la pantalla ScanQR con los IDs del curso y del cronograma
         if (courseData?.idCurso && selectedSchedule?.idCronograma) {
             navigation.navigate("ScanQR", {
                 courseId: courseData.idCurso,
@@ -95,7 +86,6 @@ const MyCourses = () => {
         }
     }, [courseData, selectedSchedule, navigation]);
 
-    // Mostrar estado de carga
     if (loading) {
         return (
             <SafeAreaView className="flex-1 justify-center items-center bg-white">
@@ -105,14 +95,13 @@ const MyCourses = () => {
         );
     }
 
-    // Mostrar estado de error
     if (error) {
         return (
             <SafeAreaView className="flex-1 justify-center items-center bg-white p-4">
                 <Text className="text-red-500 text-lg text-center">Error: {error}</Text>
                 <TouchableOpacity
                     className="mt-6 bg-amber-400 py-3 px-6 rounded-xl"
-                    onPress={fetchCourseDetails} // Permitir reintentar la carga
+                    onPress={fetchCourseDetails} 
                 >
                     <Text className="text-white font-bold">Reintentar</Text>
                 </TouchableOpacity>
@@ -126,7 +115,6 @@ const MyCourses = () => {
         );
     }
 
-    // Si no hay datos del curso o el cronograma específico (por ejemplo, ID inválido o no encontrado)
     if (!courseData || !selectedSchedule) {
         return (
             <SafeAreaView className="flex-1 justify-center items-center bg-white p-4">
@@ -141,13 +129,10 @@ const MyCourses = () => {
         );
     }
 
-    // Calcula el porcentaje de asistencia basado en las clases asistidas (0 inicialmente)
-    // y la duración total (cantidad de clases). Evita división por cero.
     const attendancePercentage = courseData.duracion > 0
         ? (attendedClasses / courseData.duracion) * 100
         : 0;
 
-    // Determinar si el curso está activo basado en la fecha de fin del cronograma
     const isCourseActive = new Date(selectedSchedule.fechaFin) >= new Date();
 
     return (
@@ -203,7 +188,7 @@ const MyCourses = () => {
                         </View>
                     </View>
 
-                    {isCourseActive && ( // Solo muestra el botón si el curso está activo
+                    {isCourseActive && ( 
                         <TouchableOpacity className="bg-amber-400 rounded-lg py-3 items-center mb-6" onPress={handleAttendance}>
                             <Text className="text-white font-bold">Realizar asistencia</Text>
                         </TouchableOpacity>

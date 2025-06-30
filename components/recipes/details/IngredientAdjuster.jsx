@@ -1,4 +1,3 @@
-// components/recipes/details/IngredientAdjuster.js
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, TextInput } from 'react-native';
 import { AntDesign, FontAwesome } from '@expo/vector-icons';
@@ -10,28 +9,24 @@ const IngredientAdjuster = ({
   increasePeople,
   decreasePeople,
   resetPeopleAndIngredients,
-  onIngredientUpdate, // <--- Nueva prop para manejar la actualización
+  onIngredientUpdate, 
 }) => {
-  const [editingId, setEditingId] = useState(null); // ID del ingrediente en edición
-  const [currentValue, setCurrentValue] = useState(''); // Valor temporal del input
+  const [editingId, setEditingId] = useState(null); 
+  const [currentValue, setCurrentValue] = useState(''); 
 
-  // Maneja el click en una cantidad para empezar a editar
   const handlePressIngredient = (ingredient) => {
     setEditingId(ingredient.idUtilizado);
     setCurrentValue(String(ingredient.cantidad));
   };
 
-  // Cuando se confirma el cambio en el input (al perder el foco)
   const handleBlur = () => {
     if (editingId && currentValue) {
       onIngredientUpdate(editingId, currentValue);
     }
-    setEditingId(null); // Termina la edición
+    setEditingId(null);
   };
 
-  // Formatea el número de personas para mostrarlo de forma legible
   const formattedPeopleCount = () => {
-    // Si es un entero, lo muestra sin decimales. Si no, con 2.
     return peopleCount % 1 === 0 ? peopleCount.toFixed(0) : peopleCount.toFixed(2);
   };
 
@@ -56,18 +51,18 @@ const IngredientAdjuster = ({
             )}
           </View>
           
-          {/* Cantidad y unidad (Editable) */}
+          {/* Cantidad y unidad */}
           <View className="flex-row items-center">
             {editingId === ing.idUtilizado ? (
               <TextInput
                 className="text-amber-600 font-medium text-right text-base border-b-2 border-amber-500 px-2"
-                style={{ minWidth: 50 }} // Ancho mínimo para el input
+                style={{ minWidth: 50 }} 
                 value={currentValue}
                 onChangeText={setCurrentValue}
                 keyboardType="numeric"
-                onBlur={handleBlur} // Llama a handleBlur cuando el input pierde el foco
-                autoFocus={true} // El teclado aparece automáticamente
-                onSubmitEditing={handleBlur} // También funciona con la tecla "Enter"
+                onBlur={handleBlur} 
+                autoFocus={true} 
+                onSubmitEditing={handleBlur} 
               />
             ) : (
               <TouchableOpacity onPress={() => handlePressIngredient(ing)}>

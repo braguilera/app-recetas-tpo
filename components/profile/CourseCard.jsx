@@ -1,10 +1,10 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { AntDesign, FontAwesome, MaterialIcons } from "@expo/vector-icons";
-import RetrieveMediaFile from "components/utils/RetrieveMediaFile"; // Asegúrate de que la ruta sea correcta
+import { useNavigation } from '@react-navigation/native';
 
-const CourseCard = ({ course, isActive, onUnsubscribe, onPressCard }) => {
-    // Helper para formatear fechas
+const CourseCard = ({ course, isActive, onUnsubscribe }) => {
+    const navigation = useNavigation()
     const formatDate = (dateString) => {
         if (!dateString) return "N/A";
         const date = new Date(dateString);
@@ -15,7 +15,6 @@ const CourseCard = ({ course, isActive, onUnsubscribe, onPressCard }) => {
         });
     };
 
-    // Obtenemos el primer cronograma si existe
     const firstSchedule = course.cronogramaCursos && course.cronogramaCursos.length > 0
         ? course.cronogramaCursos[0]
         : null;
@@ -24,20 +23,9 @@ const CourseCard = ({ course, isActive, onUnsubscribe, onPressCard }) => {
         <TouchableOpacity
             key={course.idCurso}
             className="bg-white rounded-xl mb-4 overflow-hidden border border-gray-100 shadow-sm"
-            onPress={onPressCard} // Usa la prop onPressCard para la navegación
+            onPress={() => navigation.navigate("MyCourses", { scheduleId: course.cronogramaCursos[0].idCronograma, courseId:course.idCurso })} // Usa la prop onPressCard para la navegación
         >
             <View className="flex-row">
-                <View className="w-28 h-28 p-2 relative">
-                    {/* Asumiendo que course.fotoPrincipal puede existir para cursos */}
-                    {course.fotoPrincipal ? (
-                        <RetrieveMediaFile imageUrl={course.fotoPrincipal} />
-                    ) : (
-                        <Image
-                            source={{ uri: `https://placehold.co/112x112/E5E7EB/4B5563?text=Curso` }}
-                            className="w-full h-full rounded-md object-cover"
-                        />
-                    )}
-                </View>
                 <View className="flex-1 p-4">
                     <View className="flex-row justify-between items-center mb-1">
                         <Text className="text-lg font-bold text-gray-800 flex-1">{course.nombreCurso}</Text>
@@ -74,7 +62,7 @@ const CourseCard = ({ course, isActive, onUnsubscribe, onPressCard }) => {
                         </View>
                     )}
 
-                    {/* Mostrar Duración (clases totales) */}
+                    {/* Clases totales */}
                     {course.duracion !== undefined && (
                         <View className="flex-row items-center mb-1">
                             <AntDesign name="book" size={14} color="#9CA3AF" />

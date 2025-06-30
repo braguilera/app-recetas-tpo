@@ -21,11 +21,11 @@ const Register = () => {
   const insets = useSafeAreaInsets();
 
   const [email, setEmail] = useState("");
-  const [username, setUsername] = useState(""); // Alias
+  const [username, setUsername] = useState(""); 
 
   const [aliasSuggestions, setAliasSuggestions] = useState([]);
   const [isAliasAvailable, setIsAliasAvailable] = useState(null);
-  const [isEmailAvailable, setIsEmailAvailable] = useState(null); // Esto debe ser null al inicio, no false
+  const [isEmailAvailable, setIsEmailAvailable] = useState(null);
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("Cargando...");
 
@@ -128,10 +128,9 @@ const Register = () => {
       setIsEmailAvailable(null);
       return;
     }
-    // Validar formato de email antes de enviar la solicitud
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email.trim())) {
-      setIsEmailAvailable(null); // O podrías establecer un estado de error de formato
+      setIsEmailAvailable(null); 
       return;
     }
 
@@ -163,9 +162,8 @@ const Register = () => {
     }
   };
 
-  // Función para navegar a la pantalla de recuperar contraseña
   const navigateToForgotPassword = () => {
-    navigation.navigate("ForgotPassword"); // Asegúrate de que "ForgotPassword" es el nombre correcto de la ruta
+    navigation.navigate("ForgotPassword"); 
   };
 
   return (

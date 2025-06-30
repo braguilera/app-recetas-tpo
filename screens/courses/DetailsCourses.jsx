@@ -1,77 +1,87 @@
-import { ScrollView, Text, View, TouchableOpacity, Image, SafeAreaView } from "react-native"
-import { useNavigation, useRoute } from "@react-navigation/native"
-import { AntDesign, FontAwesome, MaterialIcons, FontAwesome5 } from "@expo/vector-icons"
-import { useEffect, useState } from "react"
-// Asumo que getDatosWithAuth está disponible globalmente o se importa desde 'api/crud'
+import { ScrollView, Text, View, TouchableOpacity, SafeAreaView, ActivityIndicator } from "react-native";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { AntDesign, MaterialIcons } from "@expo/vector-icons";
+import { useEffect, useState } from "react";
 import { getDatosWithAuth } from "api/crud";
 
-
 const DetailsCourses = () => {
-  const navigation = useNavigation()
-  const route = useRoute()
-  const { courseId } = route.params || {}
+  const navigation = useNavigation();
+  const route = useRoute();
+  const { courseId } = route.params || {};
 
-  const [course, setCourse] = useState({})
+  const [course, setCourse] = useState(null); 
+  const [loading, setLoading] = useState(true); 
 
-  const fetchCourseDetails = async () => { // Renombrado para mayor claridad
+  const fetchCourseDetails = async () => {
+    setLoading(true); 
     try {
-      const data = await getDatosWithAuth(`course/${courseId}`); // Endpoint para obtener curso por ID
+      const data = await getDatosWithAuth(`course/${courseId}`);
       setCourse(data);
     } catch (error) {
-      console.error("Error fetching course details:", error.message); // Usar console.error para errores
-      // Puedes añadir un Alert o un mensaje de error en la UI aquí
+      console.error("Error fetching course details:", error.message);
+    } finally {
+      setLoading(false); 
     }
   };
 
   useEffect(() => {
-    if (courseId) { // Asegurarse de que hay un ID de curso antes de hacer la llamada
+    if (courseId) {
       fetchCourseDetails();
+    } else {
+        setLoading(false); 
     }
-  }, [courseId]); // Dependencia en courseId para recargar si cambia
-
+  }, [courseId]);
 
   const formatPrice = (price) => {
-    // Manejar casos donde el precio podría ser undefined o null antes de formatear
     if (typeof price !== 'number' || isNaN(price)) {
-      return "$0"; // O algún valor por defecto
+      return "$0";
     }
     return `$${price.toLocaleString("es-AR", {
       minimumFractionDigits: 0,
       maximumFractionDigits: 2,
     })}`;
-  }
+  };
 
-  // Se asume que promociones dentro de cronogramaCursos no existe en el backend actual
-  // Esta función ahora será más robusta para manejar la ausencia de promociones
   const getDiscount = (promocion) => {
-    // Si la promoción no es un número o no es válida, retorna 0
     const parsed = parseFloat(promocion);
     return isNaN(parsed) ? 0 : parsed;
   };
 
   const formatDate = (dateString) => {
     if (!dateString) return "Fecha no disponible";
-    const date = new Date(dateString)
-    // Asegurarse de que la fecha sea válida antes de formatear
+    const date = new Date(dateString);
     if (isNaN(date.getTime())) {
       return "Fecha inválida";
     }
     return date.toLocaleDateString("es-ES", {
       day: "numeric",
       month: "short",
-    })
+    });
+  };
+
+  if (loading) {
+    return (
+      <SafeAreaView className="flex-1 justify-center items-center bg-white">
+        <ActivityIndicator size="large" color="#F59E0B" />
+        <Text className="mt-4 text-gray-600">Cargando detalles del curso...</Text>
+      </SafeAreaView>
+    );
   }
 
-  // Usar course.precio directamente para el precio original del curso
+  if (!course) {
+    return (
+        <SafeAreaView className="flex-1 justify-center items-center bg-white p-4">
+            <TouchableOpacity className="absolute top-16 left-4 p-2 rounded-full bg-amber-400" onPress={() => navigation.goBack()}>
+                <AntDesign name="arrowleft" size={24} color="#fff" />
+            </TouchableOpacity>
+            <Text className="text-xl font-bold text-red-500">Error</Text>
+            <Text className="text-gray-600 mt-2 text-center">No se pudieron cargar los detalles del curso. Por favor, intenta de nuevo.</Text>
+        </SafeAreaView>
+    );
+  }
+
   const originalPrice = course.precio;
-
-  // Ya no se divide el contenido, se usa directamente como una cadena
-  // const learningContents = course.contenidos ? course.contenidos.split(',').map(item => item.trim()) : [];
-  // Requerimientos es un solo string, se usa directamente
-
-  // Asegurarse de que cronogramaCursos sea un array antes de mapear
   const courseSchedules = course.cronogramaCursos || [];
-
 
   return (
     <SafeAreaView className="flex-1 bg-white">
@@ -93,14 +103,11 @@ const DetailsCourses = () => {
               )}
               <Text className="text-xs font-medium text-amber-500 ml-1 capitalize">{course.modalidad}</Text>
             </View>
-            {/* Si necesitas mostrar el nombre de la sede aquí, tendrías que elegir la primera o manejarlo de otra forma */}
-            {/* Eliminada la lógica hardcodeada de academias */}
-            <Text className="text-sm text-gray-600">
-              {course.descripcion} {/* Muestra la descripción aquí, que es general del curso */}
+            <Text className="text-sm text-gray-600 mt-2">
+              {course.descripcion}
             </Text>
           </View>
 
-          {/* Precio original del curso (general, no por sede) */}
           <View className="flex-row items-center mt-4">
             <Text className="text-2xl font-bold text-amber-500 ml-2">{formatPrice(originalPrice)}</Text>
           </View>
@@ -110,8 +117,8 @@ const DetailsCourses = () => {
           <View>
             <View className="bg-gray-50 rounded-xl p-4 mb-4">
               <View className="flex-row items-center mb-3">
-                <AntDesign name="clockcircleo" size={20} color="#F59E0B" />
-                <Text className="text-gray-700 font-medium ml-2">{course.duracion} horas</Text>
+                <AntDesign name="book" size={20} color="#F59E0B" />
+                <Text className="text-gray-700 font-medium ml-2">{course.duracion} clases</Text>
               </View>
 
               <View className="flex-row items-center">
@@ -126,7 +133,6 @@ const DetailsCourses = () => {
 
             <Text className="text-lg font-bold text-gray-800 mb-3">Lo que aprenderás</Text>
             <View className="bg-gray-50 rounded-xl p-4 mb-6">
-              {/* Modificado para mostrar el contenido como un párrafo */}
               {course.contenidos ? (
                 <Text className="text-gray-700">{course.contenidos}</Text>
               ) : (
@@ -146,14 +152,11 @@ const DetailsCourses = () => {
             </View>
           </View>
 
-          {/* Listado de Cronogramas de Cursos (sedes/fechas específicas) */}
           {courseSchedules.length > 0 && (
             <View>
               <Text className="text-lg font-bold text-gray-800 mb-3">Fechas y Sedes Disponibles</Text>
               {courseSchedules.map((schedule) => {
-                // Asumo que 'promociones' no viene en cada objeto de cronograma
-                // Por lo tanto, no se aplica descuento por sede directamente de la API
-                const discount = getDiscount(schedule.promociones); // Esto siempre será 0 si promociones no existe
+                const discount = getDiscount(schedule.promociones);
                 const discountedPrice = originalPrice * (1 - discount / 100);
 
                 return (
@@ -168,20 +171,6 @@ const DetailsCourses = () => {
                     </View>
 
                     <View className="p-4">
-                      {/* Direccion y Telefono no están en el objeto cronogramaCursos, se eliminan */}
-                      {/*
-                      <View className="flex-row items-start mb-3">
-                        <MaterialIcons name="location-on" size={18} color="#9CA3AF" className="mt-1" />
-                        <Text className="text-gray-700 ml-2 flex-1">{schedule.direccion}</Text>
-                      </View>
-                      {schedule.telefono !== "N/A" && (
-                        <View className="flex-row items-center mb-3">
-                          <FontAwesome name="phone" size={16} color="#9CA3AF" />
-                          <Text className="text-gray-700 ml-2">{schedule.telefono}</Text>
-                        </View>
-                      )}
-                      */}
-
                       <View className="flex-row items-center mb-3">
                         <AntDesign name="calendar" size={16} color="#9CA3AF" />
                         <Text className="text-gray-700 ml-2">
@@ -189,7 +178,6 @@ const DetailsCourses = () => {
                         </Text>
                       </View>
 
-                      {/* Lógica de precio para cada sede/cronograma */}
                       {discount > 0 ? (
                         <View className="mt-2 bg-amber-50 p-3 rounded-lg">
                           <View className="flex-row items-center">
@@ -240,4 +228,4 @@ const DetailsCourses = () => {
   )
 }
 
-export default DetailsCourses
+export default DetailsCourses;

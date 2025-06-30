@@ -1,9 +1,8 @@
-// components/RecipeHeader.js
 import React from 'react';
 import { View, TouchableOpacity, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { AntDesign } from '@expo/vector-icons';
-import RetrieveMediaFile from '../../utils/RetrieveMediaFile'; // Asegúrate de que la ruta sea correcta
+import RetrieveMediaFile from '../../utils/RetrieveMediaFile'; 
 
 const RecipeHeader = ({ imageUrl, recipeType, isFavorite, logeado, onToggleFavorite }) => {
   const navigation = useNavigation();

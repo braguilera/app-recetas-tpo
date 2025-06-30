@@ -1,12 +1,14 @@
 import { API_CONFIG } from './config';
 import AsyncStorage from '@react-native-async-storage/async-storage'; 
 
+//Header sin autorización
 const getHeaders = async () => {
     return {
         'Content-Type': 'application/json',
     };
 };
 
+//Header con autorización
 const getHeadersWithAuth = async () => {
     const token = await AsyncStorage.getItem('token');
     const headers = {
@@ -18,6 +20,7 @@ const getHeadersWithAuth = async () => {
     return headers;
 };
 
+// Manejo de respuestas
 const handleResponse = async (response, errorMessage) => {
     if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -75,7 +78,7 @@ export const getRecipesPaginated = async (params = {}, errorMessage = 'Error al 
     }
 };
 
-// GET 
+// GET con Query Params
 export const getDatosConQueryParams = async (endpoint, params = {}, errorMessage = 'Error al obtener datos') => {
     try {
         const queryParams = new URLSearchParams(params);
@@ -117,7 +120,7 @@ export const putDatos = async (endpoint, errorMessage = 'Error al actualizar rec
     }
 };
 
-// --- FUNCIONES CON AUTORIZACIÓN (PRIVADAS) ---
+// --- FUNCIONES CON AUTORIZACIÓN ---
 
 // GET
 export const getDatosWithAuth = async (endpoint, errorMessage = 'Error al obtener datos (auth)') => {
@@ -227,7 +230,7 @@ export const putDatosWithAuth = async (endpoint, data, errorMessage = 'Error al 
 
 
 
-// DELETE with authentication (now supports body)
+// DELETE con body o sin body
 export const deleteDatosWithAuth = async (endpoint, errorMessage = 'Error deleting data (auth)', body = null, token = null) => {
     try {
         const headers = await getHeadersWithAuth(token);

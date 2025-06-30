@@ -4,15 +4,14 @@ import { Modal, View, Text, TouchableOpacity, ScrollView } from 'react-native';
 const RefundOptionsModal = ({
     visible,
     onClose,
-    courseDetails, // Full course object passed here
-    onConfirmRefund, // Callback (medioDevolucion) => {}
+    courseDetails, 
+    onConfirmRefund,
 }) => {
 
     if (!courseDetails) {
-        return null; // Don't render if no course details
+        return null; 
     }
 
-    // Helper functions for date and price formatting (can be reused from Profile/BuyCourse)
     const formatDate = (dateString) => {
         if (!dateString) return "N/A";
         const date = new Date(dateString);
@@ -33,7 +32,6 @@ const RefundOptionsModal = ({
         })}`;
     };
 
-    // Determine the relevant schedule (assuming the first one for simplicity if multiple)
     const cronograma = courseDetails.cronogramaCursos && courseDetails.cronogramaCursos.length > 0
         ? courseDetails.cronogramaCursos[0]
         : null;
@@ -92,7 +90,6 @@ const RefundOptionsModal = ({
                         <TouchableOpacity
                             className="bg-green-500 px-4 py-2 rounded-lg flex-1 mr-2"
                             onPress={() => onConfirmRefund('tarjeta')}
-                            // Siempre habilitado aquí, la lógica de reembolso se maneja después
                         >
                             <Text className="text-white text-center">Reembolsar en Tarjeta</Text>
                         </TouchableOpacity>
@@ -100,7 +97,6 @@ const RefundOptionsModal = ({
                         <TouchableOpacity
                             className="bg-blue-500 px-4 py-2 rounded-lg flex-1"
                             onPress={() => onConfirmRefund('cuenta')}
-                            // Siempre habilitado aquí, la lógica de reembolso se maneja después
                         >
                             <Text className="text-white text-center">Reembolsar en Cuenta</Text>
                         </TouchableOpacity>

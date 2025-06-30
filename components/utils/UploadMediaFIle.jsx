@@ -1,6 +1,6 @@
 import { View, Text, TouchableOpacity, Alert, Image, ActivityIndicator } from "react-native";
 import * as ImagePicker from 'expo-image-picker';
-import { firebase } from '../../config'; // Assuming firebase is correctly configured
+import { firebase } from '../../config';
 import React, { useState, forwardRef, useImperativeHandle, useEffect } from "react";
 import { AntDesign } from "@expo/vector-icons";
 
@@ -8,18 +8,16 @@ const UploadMediaFile = forwardRef(({ onUploadComplete, initialImageUri, onImage
     const [imageUri, setImageUri] = useState(initialImageUri);
     const [uploading, setUploading] = useState(false);
     const [uploadedMediaInfo, setUploadedMediaInfo] = useState(null);
-    const [isDirty, setIsDirty] = useState(false); // New state to track changes
+    const [isDirty, setIsDirty] = useState(false);
 
     useEffect(() => {
         setImageUri(initialImageUri);
         if (initialImageUri && initialImageUri.startsWith('http')) {
             const uniqueFilenameFromUrl = `media/${initialImageUri.split('/').pop().split('?')[0]}`;
             setUploadedMediaInfo({ url: initialImageUri, path: uniqueFilenameFromUrl });
-            setIsDirty(false); // If it's an initial remote URL, no immediate changes
+            setIsDirty(false); 
         } else {
             setUploadedMediaInfo(null);
-            // If initialImageUri is null or not a remote URL, it might be dirty if it was just cleared
-            // We'll rely on pickImage/clearImage for setting isDirty for local changes
         }
     }, [initialImageUri]);
 
@@ -30,13 +28,10 @@ const UploadMediaFile = forwardRef(({ onUploadComplete, initialImageUri, onImage
                 return null;
             }
             if (!imageUri) {
-                // If there's no image and it's not marked as dirty, nothing to upload
-                // If it was cleared, it means no image to send, but we still return null
                 console.log("No hay archivo para subir.");
                 return null;
             }
 
-            // If the image is already a remote URL and no new changes were made, return its info
             if (uploadedMediaInfo && uploadedMediaInfo.url && uploadedMediaInfo.path && !isDirty) {
                 console.log("La imagen ya es una URL remota y no hay cambios, no se requiere re-subida.");
                 if (onUploadComplete) {
@@ -45,19 +40,18 @@ const UploadMediaFile = forwardRef(({ onUploadComplete, initialImageUri, onImage
                 return uploadedMediaInfo;
             }
 
-            // Otherwise, perform the upload
             const result = await performUpload();
             if (result) {
-                setIsDirty(false); // Reset dirty state after successful upload
+                setIsDirty(false); 
             }
             return result;
         },
         getImageUri: () => imageUri,
-        hasChanges: () => isDirty, // Expose the hasChanges method
-        clearImage: () => { // Expose a method to clear the image
+        hasChanges: () => isDirty, 
+        clearImage: () => {
             setImageUri(null);
             setUploadedMediaInfo(null);
-            setIsDirty(true); // Mark as dirty because content was removed
+            setIsDirty(true); 
             if (onImageChange) onImageChange(null);
         }
     }));
@@ -73,9 +67,9 @@ const UploadMediaFile = forwardRef(({ onUploadComplete, initialImageUri, onImage
         if (!result.canceled && result.assets && result.assets.length > 0) {
             const selectedUri = result.assets[0].uri;
             setImageUri(selectedUri);
-            setUploadedMediaInfo(null); // Clear previous uploaded info
-            setIsDirty(true); // A new image was picked, so it's dirty
-            if (onImageChange) { // Notify parent about image change
+            setUploadedMediaInfo(null); 
+            setIsDirty(true);
+            if (onImageChange) { 
                 onImageChange(selectedUri);
             }
             console.log("Imagen seleccionada URI:", selectedUri);
@@ -98,8 +92,8 @@ const UploadMediaFile = forwardRef(({ onUploadComplete, initialImageUri, onImage
                     onPress: () => {
                         setImageUri(null);
                         setUploadedMediaInfo(null);
-                        setIsDirty(true); // Mark as dirty because content was removed
-                        if (onImageChange) onImageChange(null); // Notify parent
+                        setIsDirty(true);
+                        if (onImageChange) onImageChange(null);
                     },
                     style: "destructive"
                 }
@@ -163,7 +157,7 @@ const UploadMediaFile = forwardRef(({ onUploadComplete, initialImageUri, onImage
                 onPress={pickImage}
                 disabled={uploading}
             >
-                {imageUri ? ( // Use imageUri directly for display
+                {imageUri ? ( 
                     <Image source={{ uri: imageUri }} className="w-full h-full rounded-lg resize-contain" />
                 ) : (
                     <View className="items-center">
@@ -173,7 +167,7 @@ const UploadMediaFile = forwardRef(({ onUploadComplete, initialImageUri, onImage
                 )}
             </TouchableOpacity>
 
-            {imageUri && ( // Show clear button if an image is selected
+            {imageUri && ( 
                 <TouchableOpacity
                     onPress={handleClearImage}
                     className="absolute top-2 right-2 bg-red-500 p-1 rounded-full z-10"

@@ -1,4 +1,3 @@
-// components/CommentList.js
 import React from 'react';
 import { View, Text } from 'react-native';
 
@@ -7,7 +6,7 @@ const CommentList = ({ comments, logeado }) => {
     return (
       <View className="items-center justify-center p-10">
         <Text className="text-gray-400 text-base italic text-center">
-          🍽️ Aún no hay calificaciones para esta receta.
+          Aún no hay calificaciones para esta receta.
           {logeado && (
             <Text className="text-amber-500">
               {" "}
@@ -23,7 +22,7 @@ const CommentList = ({ comments, logeado }) => {
     <View className="mb-8">
       {comments.map((r, i) => (
         <View
-          key={i} // Idealmente usar r.id si existe y es único
+          key={i} 
           className={`mb-4 p-4 rounded-xl shadow-sm ${
             i % 2 === 0 ? "bg-white" : "bg-gray-50"
           }`}

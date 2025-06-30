@@ -1,4 +1,3 @@
-// screens/Splash.js
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Animated, Easing, StyleSheet } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
@@ -12,13 +11,9 @@ const Splash = () => {
   const opacityPulseAnim = useRef(new Animated.Value(1)).current;
 
   const [animationCompleted, setAnimationCompleted] = useState(false);
-  // No necesitamos un estado separado para networkDetectionComplete aquí,
-  // ya que isConnected !== null ya nos dice que se detectó.
-
   const { isConnected, connectionType, cellularGeneration } = useNetworkDetection();
 
   useEffect(() => {
-    // Iniciar animaciones
     Animated.timing(fadeAnim, {
       toValue: 1,
       duration: 1000,
@@ -57,8 +52,7 @@ const Splash = () => {
       ])
     ).start();
 
-    // Establecer animationCompleted después de la duración mínima deseada del splash
-    const minSplashDisplayTime = 3000; // 3 segundos para que el usuario vea el splash
+    const minSplashDisplayTime = 3000; 
     const animationTimer = setTimeout(() => {
       setAnimationCompleted(true);
     }, minSplashDisplayTime);
@@ -70,9 +64,7 @@ const Splash = () => {
     };
   }, [fadeAnim, scalePulseAnim, opacityPulseAnim]);
 
-  // Nuevo useEffect para manejar la navegación solo cuando ambos están listos
   useEffect(() => {
-    // Solo navegamos si la animación terminó Y tenemos un estado de conexión definitivo
     if (animationCompleted && isConnected !== null) {
       console.log(`[Splash - Navigation] Animación completa y conexión detectada: isConnected=${isConnected}, Type=${connectionType}, Gen=${cellularGeneration || 'N/A'}`);
       if (isConnected) {
@@ -81,7 +73,7 @@ const Splash = () => {
         navigation.replace('NoConexion');
       }
     }
-  }, [animationCompleted, isConnected, navigation, connectionType, cellularGeneration]); // Incluir todas las dependencias usadas
+  }, [animationCompleted, isConnected, navigation, connectionType, cellularGeneration]);
 
   const pulseScale = scalePulseAnim.interpolate({
     inputRange: [0, 1],
@@ -95,7 +87,6 @@ const Splash = () => {
 
   return (
     <View className="bg-[#FEF3E2] justify-center items-center flex-1">
-      {/* Tus animaciones y logo */}
       <Animated.View
         className="absolute bg-amber-300 rounded-full"
         style={{

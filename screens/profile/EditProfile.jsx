@@ -26,7 +26,6 @@ const EditProfile = () => {
   const { userId, username, firstName, lastName, email, isStudent, token, setIsStudentStatus } =
     useContext(Contexto);
 
-  // Estados inicializados con los datos del contexto
   const [profileFirstName, setProfileFirstName] = useState(firstName || "");
   const [profileLastName, setProfileLastName] = useState(lastName || "");
   const [profileNickname, setProfileNickname] = useState(username || "");
@@ -35,7 +34,6 @@ const EditProfile = () => {
 
   const [isStudentUser, setIsStudentUser] = useState(isStudent);
 
-  // ESTADOS PARA DATOS ESPECÍFICOS DEL ESTUDIANTE
   const [studentCardNumber, setStudentCardNumber] = useState("");
   const [studentDni, setStudentDni] = useState("");
   const [studentDniFrontImageUri, setStudentDniFrontImageUri] = useState(null);
@@ -43,25 +41,21 @@ const EditProfile = () => {
   const [studentTramite, setStudentTramite] = useState("");
   const [studentCuentaCorriente, setStudentCuentaCorriente] = useState(0);
 
-  // Estados para contraseñas
   const [newPassword, setNewPassword] = useState("");
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
 
-  // Estados para el popup de mejora a estudiante
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeCardNumber, setUpgradeCardNumber] = useState("");
   const [upgradeDni, setUpgradeDni] = useState("");
   const [upgradeDniFrontImageUri, setUpgradeDniFrontImageUri] = useState(null);
   const [upgradeDniBackImageUri, setUpgradeDniBackImageUri] = useState(null);
 
-  // Referencias para los componentes UploadMediaFile
   const dniFrontUploadRef = useRef(null);
   const dniBackUploadRef = useRef(null);
   const tempAvatarUploadRef = useRef(null);
 
-  // Estados de UI/UX
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("");
   const [generalError, setGeneralError] = useState("");
@@ -263,14 +257,7 @@ const EditProfile = () => {
       let finalAvatarPath = profileAvatar;
 
       if (tempAvatarUploadRef.current && tempAvatarUploadRef.current.hasChanges()) {
-        // Lógica de subida futura del avatar
-        // const uploadResult = await tempAvatarUploadRef.current.upload();
-        // if (uploadResult && uploadResult.path) {
-        //   finalAvatarPath = uploadResult.path;
-        // } else {
-        //   throw new Error("No se pudo subir la nueva imagen de perfil.");
-        // }
-         Alert.alert("Información", "La funcionalidad de cambio de avatar no está habilitada completamente aún.", [{ text: "OK", onPress: () => {
+        Alert.alert("Información", "La funcionalidad de cambio de avatar no está habilitada completamente aún.", [{ text: "OK", onPress: () => {
           setShowAvatarChangeModal(false);
           setTempAvatarUri(null);
         }}]);
@@ -465,7 +452,6 @@ const EditProfile = () => {
           </View>
         </View>
 
-        {/* Sección de Datos de Estudiante - MOVIDA AL FINAL */}
         {isStudentUser && (
           <View>
             <View className="space-y-4">
@@ -527,7 +513,6 @@ const EditProfile = () => {
         <View className="h-12" />
       </ScrollView>
 
-      {/* Modal para Mejorar a Estudiante */}
       <Modal
         animationType="slide"
         transparent={true}
@@ -634,7 +619,6 @@ const EditProfile = () => {
         </Pressable>
       </Modal>
 
-      {/* Modal para Cambiar Avatar */}
       <Modal
         animationType="fade"
         transparent={true}

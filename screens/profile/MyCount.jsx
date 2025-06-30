@@ -1,12 +1,10 @@
-"use client"
-
 import React, { useState, useEffect, useContext, useCallback } from "react"
 import { SafeAreaView, ScrollView, Text, View, TouchableOpacity, ActivityIndicator, Alert, StatusBar } from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { AntDesign } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { getDatosWithAuth } from "api/crud" // Asegúrate de que esta ruta sea correcta
-import { Contexto } from "contexto/Provider" // Asegúrate de que esta ruta sea correcta
+import { getDatosWithAuth } from "api/crud" 
+import { Contexto } from "contexto/Provider"
 
 const MyCount = () => {
     const navigation = useNavigation()
@@ -18,7 +16,6 @@ const MyCount = () => {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(null)
 
-    // Función para formatear precios
     const formatPrice = (price) => {
         if (typeof price !== 'number' || isNaN(price)) {
             return "$0";
@@ -29,14 +26,12 @@ const MyCount = () => {
         })}`;
     };
 
-    // Función para formatear fechas
     const formatDate = (dateString) => {
         if (!dateString) return "N/A";
         const date = new Date(dateString);
         if (isNaN(date.getTime())) {
             return "Fecha inválida";
         }
-        // Formato DD/MM/YYYY
         return date.toLocaleDateString("es-ES", {
             day: "2-digit",
             month: "2-digit",
@@ -44,7 +39,6 @@ const MyCount = () => {
         });
     };
 
-    // Función para cargar los pagos
     const fetchPayments = useCallback(async () => {
         if (!userId || !token) {
             setError("No se pudo cargar el historial de pagos: ID de usuario o token no disponibles.");
@@ -61,10 +55,8 @@ const MyCount = () => {
         }
     }, [userId, token]);
 
-    // Función para cargar el saldo de la cuenta
     const fetchAccountBalance = useCallback(async () => {
         if (!userId || !token) {
-            // Error ya manejado en fetchPayments, no es necesario repetir la alerta
             return;
         }
         try {
@@ -72,7 +64,6 @@ const MyCount = () => {
             setAccountBalance(studentData.cuentaCorriente || 0);
         } catch (err) {
             console.error("Error fetching account balance:", err);
-            // No mostrar un error adicional si ya hay uno por pagos
         }
     }, [userId, token]);
 
@@ -137,7 +128,6 @@ const MyCount = () => {
                     <Text className="text-gray-500 text-center mt-8">No tienes pagos de cursos registrados aún.</Text>
                 ) : (
                     <View className="border border-amber-200 rounded-lg overflow-hidden shadow-md">
-                        {/* Table Header */}
                         <View className="flex-row bg-amber-200 p-3 border-b border-amber-300">
                             <Text className="flex-1 font-bold text-amber-800 text-center">Fecha</Text>
                             <Text className="flex-1 font-bold text-amber-800 text-center">Curso</Text>
@@ -145,7 +135,6 @@ const MyCount = () => {
                             <Text className="flex-0.7 font-bold text-amber-800 text-right pr-2">Monto</Text>
                         </View>
 
-                        {/* Table Rows */}
                         {payments.map((payment, index) => (
                             <View
                                 key={index}

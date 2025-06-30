@@ -229,8 +229,8 @@ const HomeRecipes = () => {
               onPress={() => navigation.navigate("ProfileStack", { screen: "ProfileScreen" })}
             >
               <UserAvatar
-                sizeClasses="w-12 h-12" // Ajusta el tamaño según la necesidad de este componente
-                textSizeClasses="text-xl" // Ajusta el tamaño del texto
+                sizeClasses="w-12 h-12" 
+                textSizeClasses="text-xl"
               />
             </TouchableOpacity>
           ) : (
@@ -504,7 +504,7 @@ const HomeRecipes = () => {
                 </View>
               </View>
 
-              {/* MODIFICADO: Sort Alphabetically by User Name */}
+              {/*Sort Alphabetically by User Name */}
               <View className="mb-4">
                 <Text className="font-semibold text-lg text-gray-800 mb-2">Ordenar por autor</Text>
                 <Text className="text-sm text-gray-600 mb-3">Organiza las recetas por el nombre del autor:</Text>

@@ -27,7 +27,6 @@ const VerifyCode = () => {
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Campos específicos de estudiante
   const [cardNumber, setCardNumber] = useState("");
   const dniFrontUploadRef = useRef(null);
   const dniBackUploadRef = useRef(null);
@@ -38,28 +37,25 @@ const VerifyCode = () => {
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState("Verificando...");
 
-  // --- ESTADOS PARA MENSAJES DE ERROR ---
   const [generalError, setGeneralError] = useState("");
-  const [fieldErrors, setFieldErrors] = useState({}); // Para errores específicos de campos
+  const [fieldErrors, setFieldErrors] = useState({}); 
 
   const codeInputs = useRef([]);
 
   const isRegisterStep2 = type === "registerStep2";
-  // La variable que determina si mostrar los campos de estudiante ahora usa 'routeIsStudentRegister'
   const shouldShowStudentFields = isRegisterStep2 && routeIsStudentRegister;
 
   useEffect(() => {
     codeInputs.current[0]?.focus();
   }, []);
 
-  // Función para resetear errores al cambiar de campo o al intentar de nuevo
   const clearErrors = () => {
     setGeneralError("");
     setFieldErrors({});
   };
 
   const handleCodeChange = (value, index) => {
-    clearErrors(); // Limpia errores al empezar a escribir
+    clearErrors(); 
     const newCode = [...code];
     newCode[index] = value.slice(-1);
     setCode(newCode);
@@ -76,7 +72,7 @@ const VerifyCode = () => {
   };
 
   const handleResendCode = async () => {
-    clearErrors(); // Limpia errores antes de reenviar
+    clearErrors();
     setLoadingMessage("Reenviando código...");
     setLoading(true);
     try {
@@ -131,7 +127,6 @@ const VerifyCode = () => {
     if (!rePassword) errors.rePassword = "Confirma tu contraseña.";
     if (password !== rePassword) errors.rePassword = "Las contraseñas no coinciden.";
 
-    // Usamos 'shouldShowStudentFields' aquí para la validación
     if (shouldShowStudentFields) {
       if (!cardNumber) errors.cardNumber = "El número de tarjeta es obligatorio.";
       if (!dni) errors.dni = "El DNI es obligatorio.";
@@ -148,7 +143,6 @@ const VerifyCode = () => {
     let finalDniBackPath = null;
 
     try {
-      // Usamos 'shouldShowStudentFields' para la subida de imágenes
       if (shouldShowStudentFields) {
         setLoadingMessage("Cargando...");
         if (dniFrontUploadRef.current) {
@@ -201,7 +195,6 @@ const VerifyCode = () => {
       let endpoint = "";
       let requestBody = {};
 
-      // Determinamos el endpoint y el body basado en 'shouldShowStudentFields'
       if (shouldShowStudentFields) {
         endpoint = "register/step2/student";
         requestBody = {
@@ -240,7 +233,7 @@ const VerifyCode = () => {
   };
 
   const handleSubmit = async () => {
-    clearErrors(); // Siempre limpia los errores al inicio de un nuevo intento
+    clearErrors(); 
     const codeString = code.join("");
 
     if (codeString.length !== 5) {
@@ -270,7 +263,6 @@ const VerifyCode = () => {
   };
 
   const getTitle = () => {
-    // Usamos 'shouldShowStudentFields' para el título
     if (isRegisterStep2) {
       return shouldShowStudentFields ? "Registro de Estudiante" : "Registro";
     }
@@ -287,7 +279,6 @@ const VerifyCode = () => {
   };
 
   const getButtonText = () => {
-    // Usamos 'shouldShowStudentFields' para el texto del botón
     if (isRegisterStep2) {
       return shouldShowStudentFields ? "Finalizar Registro Estudiante" : "Finalizar Registro";
     }
@@ -343,7 +334,7 @@ const VerifyCode = () => {
               />
             ))}
           </View>
-          {fieldErrors.code && <Text style={styles.errorText}>{fieldErrors.code}</Text>}
+          {fieldErrors.code && <Text className="text-red-500 text-sm mt-2 mb-4 ml-5">{fieldErrors.code}</Text>}
         </View>
 
         {generalError ? (
@@ -353,7 +344,7 @@ const VerifyCode = () => {
           </View>
         ) : null}
 
-        {isRegisterStep2 && ( // Este bloque de campos de registro SIEMPRE se muestra si es registerStep2
+        {isRegisterStep2 && ( 
           <View className="mt-4">
             <Text className="text-gray-700 font-medium mb-2">Nombre</Text>
             <TextInput
@@ -364,7 +355,7 @@ const VerifyCode = () => {
               onChangeText={(text) => { setFirstName(text); clearErrors(); }}
               editable={!loading}
             />
-            {fieldErrors.firstName && <Text style={styles.errorText}>{fieldErrors.firstName}</Text>}
+            {fieldErrors.firstName && <Text className="text-red-500 text-sm mt-2 mb-4 ml-5">{fieldErrors.firstName}</Text>}
 
             <Text className="text-gray-700 font-medium mb-2 mt-3">Apellido</Text>
             <TextInput
@@ -375,7 +366,7 @@ const VerifyCode = () => {
               onChangeText={(text) => { setLastName(text); clearErrors(); }}
               editable={!loading}
             />
-            {fieldErrors.lastName && <Text style={styles.errorText}>{fieldErrors.lastName}</Text>}
+            {fieldErrors.lastName && <Text className="text-red-500 text-sm mt-2 mb-4 ml-5">{fieldErrors.lastName}</Text>}
 
             <Text className="text-gray-700 font-medium mb-2 mt-3">Contraseña</Text>
             <TextInput
@@ -387,7 +378,7 @@ const VerifyCode = () => {
               secureTextEntry
               editable={!loading}
             />
-            {fieldErrors.password && <Text style={styles.errorText}>{fieldErrors.password}</Text>}
+            {fieldErrors.password && <Text className="text-red-500 text-sm mt-2 mb-4 ml-5">{fieldErrors.password}</Text>}
 
             <Text className="text-gray-700 font-medium mb-2 mt-3">Repetir Contraseña</Text>
             <TextInput
@@ -399,9 +390,8 @@ const VerifyCode = () => {
               secureTextEntry
               editable={!loading}
             />
-            {fieldErrors.rePassword && <Text style={styles.errorText}>{fieldErrors.rePassword}</Text>}
+            {fieldErrors.rePassword && <Text className="text-red-500 text-sm mt-2 mb-4 ml-5">{fieldErrors.rePassword}</Text>}
 
-            {/* Este bloque de campos específicos de estudiante SOLO se muestra si shouldShowStudentFields es true */}
             {shouldShowStudentFields && (
               <View>
                 <Text className="text-gray-700 font-medium mb-2 mt-3">
@@ -417,7 +407,7 @@ const VerifyCode = () => {
                   keyboardType="numeric"
                   editable={!loading}
                 />
-                {fieldErrors.cardNumber && <Text style={styles.errorText}>{fieldErrors.cardNumber}</Text>}
+                {fieldErrors.cardNumber && <Text className="text-red-500 text-sm mt-2 mb-4 ml-5">{fieldErrors.cardNumber}</Text>}
 
                 <Text className="text-gray-700 font-medium mb-2 mt-3">DNI Frente</Text>
                 <UploadMediaFile
@@ -425,7 +415,7 @@ const VerifyCode = () => {
                   initialImageUri={dniFrontImageUri}
                   onImageChange={(uri) => { setDniFrontImageUri(uri); clearErrors(); }}
                 />
-                {fieldErrors.dniFrontImage && <Text style={styles.errorText}>{fieldErrors.dniFrontImage}</Text>}
+                {fieldErrors.dniFrontImage && <Text className="text-red-500 text-sm mt-2 mb-4 ml-5">{fieldErrors.dniFrontImage}</Text>}
 
                 <Text className="text-gray-700 font-medium mb-2 mt-4">DNI Dorso</Text>
                 <UploadMediaFile
@@ -433,7 +423,7 @@ const VerifyCode = () => {
                   initialImageUri={dniBackImageUri}
                   onImageChange={(uri) => { setDniBackImageUri(uri); clearErrors(); }}
                 />
-                {fieldErrors.dniBackImage && <Text style={styles.errorText}>{fieldErrors.dniBackImage}</Text>}
+                {fieldErrors.dniBackImage && <Text className="text-red-500 text-sm mt-2 mb-4 ml-5">{fieldErrors.dniBackImage}</Text>}
 
                 <Text className="text-gray-700 font-medium mb-2 mt-4">DNI</Text>
                 <TextInput
@@ -446,7 +436,7 @@ const VerifyCode = () => {
                   keyboardType="numeric"
                   editable={!loading}
                 />
-                {fieldErrors.dni && <Text style={styles.errorText}>{fieldErrors.dni}</Text>}
+                {fieldErrors.dni && <Text className="text-red-500 text-sm mt-2 mb-4 ml-5">{fieldErrors.dni}</Text>}
               </View>
             )}
           </View>
@@ -469,7 +459,7 @@ const VerifyCode = () => {
                   <Ionicons name={showNewPassword ? "eye-off" : "eye"} size={20} color="#9CA3AF" />
                 </TouchableOpacity>
               </View>
-              {fieldErrors.newPassword && <Text style={styles.errorText}>{fieldErrors.newPassword}</Text>}
+              {fieldErrors.newPassword && <Text className="text-red-500 text-sm mt-2 mb-4 ml-5">{fieldErrors.newPassword}</Text>}
             </View>
 
             <View className="mb-8">
@@ -515,15 +505,5 @@ const VerifyCode = () => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  errorText: {
-    color: '#EF4444', // red-500
-    fontSize: 12,
-    marginTop: 2,
-    marginBottom: 4,
-    marginLeft: 5,
-  },
-});
 
 export default VerifyCode;

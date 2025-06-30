@@ -15,7 +15,6 @@ const NoConexion = () => {
         [
           {
             text: "OK",
-            // Corregido: Reinicia la navegación al Stack principal de la App
             onPress: () => navigation.reset({
               index: 0,
               routes: [{ name: 'MainTabs' }],

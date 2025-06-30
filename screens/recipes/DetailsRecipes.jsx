@@ -13,7 +13,6 @@ import { deleteDatosWithAuth, getDatosWithAuth, postDatosWithAuth } from "api/cr
 import { Contexto } from "../../contexto/Provider";
 import RetrieveMediaFile from "../../components/utils/RetrieveMediaFile";
 
-// Importa los componentes reutilizables
 import RecipeHeader from "../../components/recipes/details/RecipeHeader";
 import RecipeInfoOverview from "../../components/recipes/details/RecipeInfoOverview";
 import TabNavigation from "../../components/recipes/details/TabNavigation";
@@ -40,8 +39,7 @@ const DetailsRecipes = () => {
   const [isCurrentModifiedVersionSaved, setIsCurrentModifiedVersionSaved] = useState(false);
   const [currentModifiedId, setCurrentModifiedId] = useState(null);
 
-  // Determina si la receta ha sido modificada (la cantidad de personas es la clave)
-  const isRecipeModified = peopleCount !== originalPeopleCount;
+  const isRecipeModified = Math.abs(peopleCount - originalPeopleCount) > 0.001;
 
   const [newComment, setNewComment] = useState({
     usuario: userId,
@@ -105,7 +103,7 @@ const DetailsRecipes = () => {
       if (newQuantity % 1 === 0) {
         formattedQuantity = newQuantity.toFixed(0);
       } else {
-        formattedQuantity = newQuantity.toFixed(2);
+        formattedQuantity = newQuantity.toFixed(2).replace('.', ',');
       }
 
       return {
@@ -116,32 +114,53 @@ const DetailsRecipes = () => {
   }, [recipe.usedIngredients, originalPeopleCount]);
 
   const handleIngredientUpdate = useCallback((ingredientId, newValueStr) => {
-      const newValue = parseFloat(newValueStr.replace(',', '.'));
+    const newValue = parseFloat(newValueStr.replace(',', '.'));
 
-      if (isNaN(newValue) || newValue <= 0) {
-          console.log("Valor inválido.");
-          return;
+    if (isNaN(newValue) || newValue < 0) {
+      Alert.alert("Valor inválido", "Por favor, introduce un número válido.");
+      return;
+    }
+    
+    if (newValue === 0) {
+      Alert.alert("Cantidad no permitida", "La cantidad de un ingrediente no puede ser cero.");
+      return;
+    }
+
+    const originalIngredient = recipe.usedIngredients?.find(
+      (ing) => ing.idUtilizado === ingredientId
+    );
+    if (!originalIngredient) return;
+
+    const originalQuantity = parseFloat(originalIngredient.cantidad);
+    if (isNaN(originalQuantity) || originalQuantity === 0) return;
+
+    const scalingFactor = newValue / originalQuantity;
+
+    const newAdjustedIngredients = (recipe.usedIngredients || []).map(ing => {
+      const oQty = parseFloat(ing.cantidad);
+      if (isNaN(oQty)) return ing;
+
+      const nQty = oQty * scalingFactor;
+      let formattedQuantity;
+      if (nQty % 1 === 0) {
+        formattedQuantity = nQty.toFixed(0);
+      } else {
+        formattedQuantity = nQty.toFixed(2);
       }
+      return { ...ing, cantidad: formattedQuantity };
+    });
+    
+    const proportionalPeople = originalPeopleCount * scalingFactor;
+    const roundedPeople = Math.max(1, Math.round(proportionalPeople));
 
-      const originalIngredient = recipe.usedIngredients?.find(
-          (ing) => ing.idUtilizado === ingredientId
-      );
-
-      if (!originalIngredient) return;
-
-      const originalQuantity = parseFloat(originalIngredient.cantidad);
-      if (isNaN(originalQuantity) || originalQuantity === 0) return;
-
-      const scalingFactor = newValue / originalQuantity;
-      const newPeopleCount = originalPeopleCount * scalingFactor;
-      
-      setPeopleCount(newPeopleCount);
+    setPeopleCount(roundedPeople);
+    setAdjustedIngredients(newAdjustedIngredients);
 
   }, [recipe.usedIngredients, originalPeopleCount]);
 
 
   const handleComment = async () => {
-    if (!newComment.calificacion) {
+   if (!newComment.calificacion) {
       Alert.alert("Error", "Por favor, selecciona una calificación.");
       return;
     }
@@ -177,23 +196,12 @@ const DetailsRecipes = () => {
   useEffect(() => {
     fetchRecipe();
     if (logeado && userId && recipeId) {
-      setNewComment((prev) => ({
-        ...prev,
-        usuario: userId,
-        receta: recipeId,
-      }));
+      setNewComment((prev) => ({ ...prev, usuario: userId, receta: recipeId }));
       verifyFavorite();
     } else {
       setIsFavorite(false);
     }
   }, [logeado, userId, recipeId, verifyFavorite, modifiedData]);
-
-  useEffect(() => {
-    if (recipe.usedIngredients && originalPeopleCount > 0) {
-      const newAdjustedIngredients = calculateAdjustedQuantities(peopleCount);
-      setAdjustedIngredients(newAdjustedIngredients);
-    }
-  }, [peopleCount, recipe.usedIngredients, calculateAdjustedQuantities]);
 
   useEffect(() => {
     if (!recipeId) return;
@@ -205,23 +213,32 @@ const DetailsRecipes = () => {
 
     setIsCurrentModifiedVersionSaved(!!found);
     setCurrentModifiedId(found ? found.modifiedId : null);
-  }, [modifiedRecipes, recipeId, peopleCount]);
+  }, [modifiedRecipes, recipeId, peopleCount, adjustedIngredients]);
 
   const increasePeople = useCallback(() => {
-    if (peopleCount < 10) {
-        setPeopleCount(prevCount => prevCount + 1);
+    const currentPeople = Math.round(peopleCount);
+    if (currentPeople < 10) {
+      const newCount = currentPeople + 1;
+      setPeopleCount(newCount);
+      const newIngredients = calculateAdjustedQuantities(newCount);
+      setAdjustedIngredients(newIngredients);
     }
-  }, [peopleCount]);
+  }, [peopleCount, calculateAdjustedQuantities]);
 
   const decreasePeople = useCallback(() => {
-      if (peopleCount > 1) {
-        setPeopleCount(prevCount => prevCount - 1);
+    const currentPeople = Math.round(peopleCount);
+    if (currentPeople > 1) {
+      const newCount = currentPeople - 1;
+      setPeopleCount(newCount);
+      const newIngredients = calculateAdjustedQuantities(newCount);
+      setAdjustedIngredients(newIngredients);
     }
-  }, [peopleCount]);
+  }, [peopleCount, calculateAdjustedQuantities]);
 
   const resetPeopleAndIngredients = useCallback(() => {
     setPeopleCount(originalPeopleCount);
-  }, [originalPeopleCount]);
+    setAdjustedIngredients(recipe.usedIngredients || []);
+  }, [originalPeopleCount, recipe.usedIngredients]);
 
   const addToFavorite = async () => {
     try {
