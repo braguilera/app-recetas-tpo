@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, Button, Alert } from 'react-native';
+import { View, Text, Alert, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import NetInfo from '@react-native-community/netinfo'; 
+import NetInfo from '@react-native-community/netinfo';
 
 const NoConexion = () => {
   const navigation = useNavigation();
@@ -9,51 +9,42 @@ const NoConexion = () => {
   const handleRetryConnection = async () => {
     const state = await NetInfo.fetch();
     if (state.isConnected) {
-      Alert.alert("¡Conectado!", "Ya tienes conexión a internet.", [
-        { text: "OK", onPress: () => navigation.replace('HomeRecipes') }
-      ]);
+      Alert.alert(
+        "¡Conectado!",
+        "Ya tienes conexión a internet.",
+        [
+          {
+            text: "OK",
+            // Corregido: Reinicia la navegación al Stack principal de la App
+            onPress: () => navigation.reset({
+              index: 0,
+              routes: [{ name: 'MainTabs' }],
+            })
+          }
+        ]
+      );
     } else {
       Alert.alert("Sin conexión", "Aún no tienes conexión a internet. Por favor, verifica tu configuración.");
     }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.icon}>⚠️</Text>
-      <Text style={styles.title}>Sin Conexión a Internet</Text>
-      <Text style={styles.message}>
+    <View className="flex-1 justify-center items-center bg-amber-50 p-5">
+      <Text className="text-8xl mb-5">⚠️</Text>
+      <Text className="text-2xl font-bold text-gray-800 mb-2 text-center">
+        Sin Conexión a Internet
+      </Text>
+      <Text className="text-base text-gray-600 text-center mb-8">
         Parece que no estás conectado a internet. Por favor, verifica tu conexión y vuelve a intentarlo.
       </Text>
-      <Button title="Reintentar Conexión" onPress={handleRetryConnection} color="#FFA726" />
+      <TouchableOpacity
+        onPress={handleRetryConnection}
+        className="bg-amber-500 px-8 py-3 rounded-full shadow-lg"
+      >
+        <Text className="text-white font-bold text-base">Reintentar Conexión</Text>
+      </TouchableOpacity>
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#FEF3E2',
-    padding: 20,
-  },
-  icon: {
-    fontSize: 80,
-    marginBottom: 20,
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  message: {
-    fontSize: 16,
-    color: '#555',
-    textAlign: 'center',
-    marginBottom: 30,
-  },
-});
 
 export default NoConexion;

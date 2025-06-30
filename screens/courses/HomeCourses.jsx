@@ -5,9 +5,9 @@ import { ScrollView, Text, View, TouchableOpacity, Image, TextInput, StatusBar, 
 import { useNavigation } from "@react-navigation/native"
 import { AntDesign, Ionicons, MaterialIcons, FontAwesome5, Entypo, MaterialCommunityIcons } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { getDatosWithAuth, getCoursesPaginatedWithAuth } from "../../api/crud"; 
+import { getDatosWithAuth, getCoursesPaginatedWithAuth } from "../../api/crud";
 import { Contexto } from "contexto/Provider"
-import CourseCardHome from "../../components/courses/CourseCardHome"; // Asumo que tendrás un componente CourseCardHome
+import CourseCardHome from "../../components/courses/CourseCardHome";
 import UserAvatar from "components/common/UserAvatar"
 
 const HomeCourses = () => {
@@ -17,30 +17,30 @@ const HomeCourses = () => {
   const insets = useSafeAreaInsets()
 
   // Estados para la paginación y lista de cursos
-  const [courseList, setCourseList] = useState({}); // Similar a recipeList, contendrá content, totalPages, etc.
+  const [courseList, setCourseList] = useState({});
   const [currentPage, setCurrentPage] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  // Estados para los filtros (similares a los de recetas)
-  const [showFilter, setShowFilter] = useState(false); // Para mostrar/ocultar el drawer de filtros
-  const [searchCourseName, setSearchCourseName] = useState(""); // Para el nombre del curso
-  const [searchSedeId, setSearchSedeId] = useState(""); // Para el ID de la sede
-  const [activeFilterModalidad, setActiveFilterModalidad] = useState("Todo"); // Para la modalidad del curso
+  // Estados para los filtros
+  const [showFilter, setShowFilter] = useState(false);
+  const [searchCourseName, setSearchCourseName] = useState("");
+  const [searchSedeId, setSearchSedeId] = useState("");
+  const [activeFilterModalidad, setActiveFilterModalidad] = useState("Todo");
 
-  // Estados para el ordenamiento (similares a los de recetas)
-  const [sortType, setSortType] = useState(""); // Ej: "idCurso", "nombreCurso", "precio"
-  const [directionType, setDirectionType] = useState(""); // "asc" o "desc"
+  // Estados para el ordenamiento
+  const [sortType, setSortType] = useState(""); // Por defecto: "nombreCurso"
+  const [directionType, setDirectionType] = useState(""); // Por defecto: "asc"
 
-  const pageSize = 5; // Puedes ajustar el tamaño de página para cursos
+  const pageSize = 5;
 
   // Opciones de filtro para modalidad
   const filterOptions = ["Todo", "Presencial", "Remoto", "Virtual"];
 
-  // Función para obtener los números de paginación (copiada de HomeRecipes)
+  // Función para obtener los números de paginación
   const getPaginationNumbers = () => {
     const totalPages = courseList.totalPages || 1;
     const current = currentPage;
-    const maxVisible = 1; // Para mantenerlo compacto, puedes ajustar este valor
+    const maxVisible = 1;
 
     if (totalPages <= maxVisible + 2) {
       return Array.from({ length: totalPages }, (_, i) => i);
@@ -71,7 +71,7 @@ const HomeCourses = () => {
     return numbers;
   };
 
-  // Función para hacer el fetch de cursos (similar a fetchRecipes)
+  // Función para hacer el fetch de cursos
   const fetchCourses = useCallback(async (page = 0, reset = false) => {
     if (loading) return;
 
@@ -80,36 +80,31 @@ const HomeCourses = () => {
       let modalidadParam = undefined;
       if (activeFilterModalidad === "Presencial") {
         modalidadParam = "presencial";
-      } else if ( activeFilterModalidad === "Virtual") {
-        modalidadParam = "virtual"; 
-      } else if ( activeFilterModalidad === "Remoto") {
-        modalidadParam = "remoto"; 
+      } else if (activeFilterModalidad === "Virtual") {
+        modalidadParam = "virtual";
+      } else if (activeFilterModalidad === "Remoto") {
+        modalidadParam = "remoto";
       }
 
       const params = {
         page: page,
         size: pageSize,
-        sort: sortType, // Aquí se mapea 'sort' a 'sortBy' de HomeRecipes
-        direction: directionType, // Y 'direction' a 'direction'
+        sortBy: sortType, // CORREGIDO: 'sortBy' en lugar de 'sort' para coincidir con la API
+        direction: directionType,
         nombreCurso: searchCourseName !== "" ? searchCourseName : undefined,
         idSede: searchSedeId !== "" ? searchSedeId : undefined,
         modalidad: modalidadParam,
       };
 
       const data = await getCoursesPaginatedWithAuth(params, 'Error al cargar cursos');
-      
+
       if (reset) {
         setCourseList(data);
       } else {
-        // En tu fetchRecipes, la paginación agregaba al content existente.
-        // Aquí, para la paginación con números, generalmente se reemplaza el contenido.
-        // Si quieres el efecto de "cargar más" con los números, descomenta la siguiente línea y comenta la de arriba.
         setCourseList(prevData => ({
           ...data,
           content: [...(prevData.content || []), ...data.content]
         }));
-        // Si quieres que cada cambio de página reemplace la lista completamente:
-        // setCourseList(data);
       }
 
       setCurrentPage(page);
@@ -121,7 +116,7 @@ const HomeCourses = () => {
     }
   }, [loading, pageSize, sortType, directionType, searchCourseName, searchSedeId, activeFilterModalidad]);
 
-  // Función para refrescar los cursos (similar a refreshRecipes)
+  // Función para refrescar los cursos
   const refreshCourses = () => {
     setCurrentPage(0);
     fetchCourses(0, true);
@@ -144,25 +139,22 @@ const HomeCourses = () => {
 
   // Hooks de efecto para cargar datos y aplicar filtros
   useEffect(() => {
-    fetchCourses(0, true); // Carga inicial de cursos
-  }, []); // Se ejecuta una vez al montar el componente
+    fetchCourses(0, true);
+  }, []);
 
-  // Efectos para refetch cuando cambian los filtros de búsqueda
   useEffect(() => {
     const timeoutId = setTimeout(() => {
       setCurrentPage(0);
       fetchCourses(0, true);
-    }, 300); // Debounce para el input de texto
+    }, 300);
     return () => clearTimeout(timeoutId);
   }, [searchCourseName, searchSedeId]);
 
-  // Efecto para refetch cuando cambia el filtro de modalidad
   useEffect(() => {
     setCurrentPage(0);
     fetchCourses(0, true);
   }, [activeFilterModalidad]);
 
-  // Efecto para refetch cuando cambia el ordenamiento
   useEffect(() => {
     setCurrentPage(0);
     fetchCourses(0, true);
@@ -172,7 +164,6 @@ const HomeCourses = () => {
     return `${price.toLocaleString()}`;
   };
 
-  // Adaptadas de la implementación anterior
   const getCourseDuration = (course) => {
     return course.duracion ? `${course.duracion} horas` : "Duración no especificada";
   };
@@ -210,8 +201,8 @@ const HomeCourses = () => {
               onPress={() => navigation.navigate("ProfileStack", { screen: "ProfileScreen" })}
             >
               <UserAvatar
-                  sizeClasses="w-12 h-12" // Ajusta el tamaño según la necesidad de este componente
-                  textSizeClasses="text-xl" // Ajusta el tamaño del texto
+                sizeClasses="w-12 h-12"
+                textSizeClasses="text-xl"
               />
             </TouchableOpacity>
           ) : (
@@ -252,9 +243,7 @@ const HomeCourses = () => {
               accessibilityLabel="Buscar cursos"
               value={searchCourseName}
               onChangeText={setSearchCourseName}
-              // No es necesario llamar fetchCourses aquí, el useEffect lo maneja con debounce
             />
-            {/* Botón para abrir filtros avanzados (similar a recipes) */}
             {logeado &&
               <TouchableOpacity onPress={() => setShowFilter(true)}>
                 <View className="bg-amber-400 p-1 rounded">
@@ -269,10 +258,9 @@ const HomeCourses = () => {
             {filterOptions.map((option) => (
               <TouchableOpacity
                 key={option}
-                className={`mr-2 px-3 py-2 rounded-full flex-row items-center ${
-                  activeFilterModalidad === option ? "bg-amber-400" : "bg-white border border-gray-200"
-                }`}
-                onPress={() => setActiveFilterModalidad(option)} // El useEffect lo maneja
+                className={`mr-2 px-3 py-2 rounded-full flex-row items-center ${activeFilterModalidad === option ? "bg-amber-400" : "bg-white border border-gray-200"
+                  }`}
+                onPress={() => setActiveFilterModalidad(option)}
                 accessibilityLabel={`Filtrar por ${option}`}
                 accessibilityState={{ selected: activeFilterModalidad === option }}
               >
@@ -303,11 +291,10 @@ const HomeCourses = () => {
                 <TouchableOpacity
                   onPress={() => fetchCourses(currentPage - 1, true)}
                   disabled={currentPage === 0 || loading}
-                  className={`w-8 h-8 rounded-md items-center justify-center mr-1 ${
-                    currentPage === 0 || loading
+                  className={`w-8 h-8 rounded-md items-center justify-center mr-1 ${currentPage === 0 || loading
                       ? "hidden"
                       : "bg-gray-50 hover:bg-gray-100"
-                  }`}
+                    }`}
                 >
                   <AntDesign
                     name="left"
@@ -325,17 +312,15 @@ const HomeCourses = () => {
                       <TouchableOpacity
                         onPress={() => fetchCourses(item, true)}
                         disabled={loading}
-                        className={`w-8 h-8 rounded-md items-center justify-center mx-0.5 ${
-                          currentPage === item
+                        className={`w-8 h-8 rounded-md items-center justify-center mx-0.5 ${currentPage === item
                             ? "bg-amber-400"
                             : "bg-gray-50 hover:bg-gray-100"
-                        }`}
+                          }`}
                       >
-                        <Text className={`text-sm font-medium ${
-                          currentPage === item
+                        <Text className={`text-sm font-medium ${currentPage === item
                             ? "text-white"
                             : "text-gray-700"
-                        }`}>
+                          }`}>
                           {item + 1}
                         </Text>
                       </TouchableOpacity>
@@ -345,11 +330,10 @@ const HomeCourses = () => {
                 <TouchableOpacity
                   onPress={() => fetchCourses(currentPage + 1, true)}
                   disabled={courseList.last || loading}
-                  className={`w-8 h-8 rounded-md items-center justify-center ml-1 ${
-                    courseList.last || loading
+                  className={`w-8 h-8 rounded-md items-center justify-center ml-1 ${courseList.last || loading
                       ? "hidden"
                       : "bg-gray-50 hover:bg-gray-100"
-                  }`}
+                    }`}
                 >
                   <AntDesign
                     name="right"
@@ -378,35 +362,6 @@ const HomeCourses = () => {
                 </TouchableOpacity>
               </View>
 
-              {/* Sort by Course ID (Newest/Oldest) */}
-              <View className="mb-4">
-                <Text className="font-semibold text-lg text-gray-800 mb-2">Ordenar por fecha de creación</Text>
-                <Text className="text-sm text-gray-600 mb-3">Organiza los cursos de los más recientes a los más antiguos, o viceversa:</Text>
-
-                <View className="flex-row items-center rounded-lg px-3 py-3">
-                  <TouchableOpacity
-                    onPress={() => { setSortType("idCurso"); setDirectionType("asc"); }}
-                    className={`flex-1 mr-2 px-4 py-2 rounded-full flex-row items-center justify-center ${
-                      sortType === "idCurso" && directionType === "asc" ? "bg-blue-500" : "bg-white border border-gray-200"
-                    }`}
-                  >
-                    <Text className={`text-sm ${sortType === "idCurso" && directionType === "asc" ? "text-white font-medium" : "text-gray-700"}`}>
-                      Más antiguos
-                    </Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    onPress={() => { setSortType("idCurso"); setDirectionType("desc"); }}
-                    className={`flex-1 px-4 py-2 rounded-full flex-row items-center justify-center ${
-                      sortType === "idCurso" && directionType === "desc" ? "bg-green-500" : "bg-white border border-gray-200"
-                    }`}
-                  >
-                    <Text className={`text-sm ${sortType === "idCurso" && directionType === "desc" ? "text-white font-medium" : "text-gray-700"}`}>
-                      Más nuevos
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-
               {/* Sort by Course Name (Alphabetical) */}
               <View className="mb-4">
                 <Text className="font-semibold text-lg text-gray-800 mb-2">Ordenar alfabéticamente</Text>
@@ -415,9 +370,8 @@ const HomeCourses = () => {
                 <View className="flex-row items-center rounded-lg px-3 py-3">
                   <TouchableOpacity
                     onPress={() => { setSortType("nombreCurso"); setDirectionType("asc"); }}
-                    className={`flex-1 mr-2 px-4 py-2 rounded-full flex-row items-center justify-center ${
-                      sortType === "nombreCurso" && directionType === "asc" ? "bg-purple-500" : "bg-white border border-gray-200"
-                    }`}
+                    className={`flex-1 mr-2 px-4 py-2 rounded-full flex-row items-center justify-center ${sortType === "nombreCurso" && directionType === "asc" ? "bg-purple-500" : "bg-white border border-gray-200"
+                      }`}
                   >
                     <MaterialCommunityIcons
                       name="sort-alphabetical-descending-variant"
@@ -431,9 +385,8 @@ const HomeCourses = () => {
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => { setSortType("nombreCurso"); setDirectionType("desc"); }}
-                    className={`flex-1 px-4 py-2 rounded-full flex-row items-center justify-center ${
-                      sortType === "nombreCurso" && directionType === "desc" ? "bg-red-500" : "bg-white border border-gray-200"
-                    }`}
+                    className={`flex-1 px-4 py-2 rounded-full flex-row items-center justify-center ${sortType === "nombreCurso" && directionType === "desc" ? "bg-red-500" : "bg-white border border-gray-200"
+                      }`}
                   >
                     <MaterialCommunityIcons
                       name="sort-alphabetical-ascending-variant"
@@ -451,39 +404,8 @@ const HomeCourses = () => {
                   className="w-full bg-gray-100 py-3 rounded-lg my-3 flex-row items-center justify-center"
                 >
                   <MaterialCommunityIcons name="sort-variant-remove" size={20} color="#6B7280" style={{ marginRight: 5 }} />
-                  <Text className="text-center text-gray-700 font-medium">Restablecer ordenamientos</Text>
+                  <Text className="text-center text-gray-700 font-medium">Restablecer ordenamiento</Text>
                 </TouchableOpacity>
-              </View>
-
-              {/* Search by Sede ID */}
-              <View className="mb-8">
-                <Text className="font-semibold text-lg text-gray-800 ">Filtrar por ID de Sede</Text>
-                <Text className="text-sm text-gray-600 mb-3">Encuentra cursos dictados en una sede específica (ej: 1, 2):</Text>
-
-                <View className="flex-row items-center bg-gray-50 rounded-lg border border-gray-200 px-3 py-3">
-                  <FontAwesome5 name="building" size={18} color="#9CA3AF" />
-                  <TextInput
-                    placeholder="ID de Sede..."
-                    className="flex-1 ml-3 text-gray-800"
-                    accessibilityLabel="Filtrar por ID de Sede"
-                    value={searchSedeId}
-                    onChangeText={setSearchSedeId}
-                    keyboardType="numeric"
-                  />
-                  {searchSedeId.length > 0 && (
-                    <TouchableOpacity onPress={() => setSearchSedeId("")}>
-                      <Entypo name="cross" size={18} color="#9CA3AF" />
-                    </TouchableOpacity>
-                  )}
-                </View>
-
-                {searchSedeId.length > 0 && (
-                  <View className="mt-2 bg-amber-50 border border-amber-200 rounded-lg p-3">
-                    <Text className="text-sm text-amber-800">
-                      Buscando cursos en Sede ID: <Text className="font-semibold">"{searchSedeId}"</Text>
-                    </Text>
-                  </View>
-                )}
               </View>
 
               {/* Apply/Clear Filters Buttons */}

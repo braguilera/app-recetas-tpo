@@ -31,7 +31,7 @@ const HomeRecipes = () => {
   const [searchRating, setSearchRating] = useState("");
 
   const [sortType, setSortType] = useState("");
-  const [directionType, setDirectionType] = useState(""); 
+  const [directionType, setDirectionType] = useState("");
 
   const pageSize = 2;
 
@@ -77,8 +77,8 @@ const HomeRecipes = () => {
       const params = {
         page: page,
         size: pageSize,
-        sortBy: sortType,     
-        direction: directionType, 
+        sortBy: sortType,
+        direction: directionType,
         name: nameReceta,
         userName: userNameReceta,
         minAverageRating: searchRating,
@@ -86,7 +86,7 @@ const HomeRecipes = () => {
         excludeIngredientId: excludedIngredients,
         tipoRecetaId: typeRecipe,
       };
-      
+
       const data = await getRecipesPaginatedWithAuth(params, 'Error al cargar recetas');
       if (reset) {
         setRecipeList(data);
@@ -148,8 +148,8 @@ const HomeRecipes = () => {
     setSearchRating("");
     setTypeRecipe("");
     setActiveFilter("");
-    setSortType("");      
-    setDirectionType(""); 
+    setSortType("");
+    setDirectionType("");
   };
 
   const resetSorting = () => {
@@ -229,8 +229,8 @@ const HomeRecipes = () => {
               onPress={() => navigation.navigate("ProfileStack", { screen: "ProfileScreen" })}
             >
               <UserAvatar
-                  sizeClasses="w-12 h-12" // Ajusta el tamaño según la necesidad de este componente
-                  textSizeClasses="text-xl" // Ajusta el tamaño del texto
+                sizeClasses="w-12 h-12" // Ajusta el tamaño según la necesidad de este componente
+                textSizeClasses="text-xl" // Ajusta el tamaño del texto
               />
             </TouchableOpacity>
           ) : (
@@ -265,14 +265,6 @@ const HomeRecipes = () => {
             )}
           />
 
-          {/* <View className="flex-row justify-center">
-            {[0, 1, 2].map((index) => (
-              <View
-                key={index}
-                className={`h-2 w-2 rounded-full mx-1 ${index === 0 ? "bg-amber-400" : "bg-gray-300"}`}
-              />
-            ))}
-          </View> */}
         </View>
 
         {/* Recipe Collection */}
@@ -316,9 +308,8 @@ const HomeRecipes = () => {
             <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
               <TouchableOpacity
                 key={"Todo"}
-                className={`mr-2 px-3 py-2 rounded-full flex-row items-center ${
-                  activeFilter === "" ? "bg-amber-400" : "bg-white border border-gray-200"
-                }`}
+                className={`mr-2 px-3 py-2 rounded-full flex-row items-center ${activeFilter === "" ? "bg-amber-400" : "bg-white border border-gray-200"
+                  }`}
                 onPress={() => (setActiveFilter(""), setTypeRecipe(""))}
                 accessibilityLabel={`Filtrar por todo`}
                 accessibilityState={{ selected: activeFilter === "" }}
@@ -330,9 +321,8 @@ const HomeRecipes = () => {
               {allTypes.map((types, index) => (
                 <TouchableOpacity
                   key={index}
-                  className={`mr-2 px-3 py-2 rounded-full flex-row items-center ${
-                    activeFilter === types.id ? "bg-amber-400" : "bg-white border border-gray-200"
-                  }`}
+                  className={`mr-2 px-3 py-2 rounded-full flex-row items-center ${activeFilter === types.id ? "bg-amber-400" : "bg-white border border-gray-200"
+                    }`}
                   onPress={() => (setActiveFilter(types.id), setTypeRecipe(types.id))}
                   accessibilityLabel={`Filtrar por ${types}`}
                   accessibilityState={{ selected: activeFilter === types.id }}
@@ -365,11 +355,10 @@ const HomeRecipes = () => {
                 <TouchableOpacity
                   onPress={() => fetchRecipes(currentPage - 1, true)}
                   disabled={currentPage === 0 || loading}
-                  className={`w-8 h-8 rounded-md items-center justify-center mr-1 ${
-                    currentPage === 0 || loading
+                  className={`w-8 h-8 rounded-md items-center justify-center mr-1 ${currentPage === 0 || loading
                       ? "hidden"
                       : "bg-gray-50 hover:bg-gray-100"
-                  }`}
+                    }`}
                 >
                   <AntDesign
                     name="left"
@@ -387,17 +376,15 @@ const HomeRecipes = () => {
                       <TouchableOpacity
                         onPress={() => fetchRecipes(item, true)}
                         disabled={loading}
-                        className={`w-8 h-8 rounded-md items-center justify-center mx-0.5 ${
-                          currentPage === item
+                        className={`w-8 h-8 rounded-md items-center justify-center mx-0.5 ${currentPage === item
                             ? "bg-amber-400"
                             : "bg-gray-50 hover:bg-gray-100"
-                        }`}
+                          }`}
                       >
-                        <Text className={`text-sm font-medium ${
-                          currentPage === item
+                        <Text className={`text-sm font-medium ${currentPage === item
                             ? "text-white"
                             : "text-gray-700"
-                        }`}>
+                          }`}>
                           {item + 1}
                         </Text>
                       </TouchableOpacity>
@@ -407,11 +394,10 @@ const HomeRecipes = () => {
                 <TouchableOpacity
                   onPress={() => fetchRecipes(currentPage + 1, true)}
                   disabled={recipeList.last || loading}
-                  className={`w-8 h-8 rounded-md items-center justify-center ml-1 ${
-                    recipeList.last || loading
+                  className={`w-8 h-8 rounded-md items-center justify-center ml-1 ${recipeList.last || loading
                       ? "hidden"
                       : "bg-gray-50 hover:bg-gray-100"
-                  }`}
+                    }`}
                 >
                   <AntDesign
                     name="right"
@@ -460,9 +446,8 @@ const HomeRecipes = () => {
                 <View className="flex-row items-center rounded-lg px-3 py-3">
                   <TouchableOpacity
                     onPress={() => { setSortType("idReceta"); setDirectionType("asc"); }}
-                    className={`flex-1 mr-2 px-4 py-2 rounded-full flex-row items-center justify-center ${
-                      sortType === "idReceta" && directionType === "asc" ? "bg-blue-500" : "bg-white border border-gray-200"
-                    }`}
+                    className={`flex-1 mr-2 px-4 py-2 rounded-full flex-row items-center justify-center ${sortType === "idReceta" && directionType === "asc" ? "bg-blue-500" : "bg-white border border-gray-200"
+                      }`}
                   >
                     <Text className={`text-sm ${sortType === "idReceta" && directionType === "asc" ? "text-white font-medium" : "text-gray-700"}`}>
                       Más antiguas
@@ -470,9 +455,8 @@ const HomeRecipes = () => {
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => { setSortType("idReceta"); setDirectionType("desc"); }}
-                    className={`flex-1 px-4 py-2 rounded-full flex-row items-center justify-center ${
-                      sortType === "idReceta" && directionType === "desc" ? "bg-green-500" : "bg-white border border-gray-200"
-                    }`}
+                    className={`flex-1 px-4 py-2 rounded-full flex-row items-center justify-center ${sortType === "idReceta" && directionType === "desc" ? "bg-green-500" : "bg-white border border-gray-200"
+                      }`}
                   >
                     <Text className={`text-sm ${sortType === "idReceta" && directionType === "desc" ? "text-white font-medium" : "text-gray-700"}`}>
                       Más nuevas
@@ -489,9 +473,8 @@ const HomeRecipes = () => {
                 <View className="flex-row items-center rounded-lg px-3 py-3">
                   <TouchableOpacity
                     onPress={() => { setSortType(""); setDirectionType("asc"); }}
-                    className={`flex-1 mr-2 px-4 py-2 rounded-full flex-row items-center justify-center ${
-                      sortType === "" && directionType === "asc" ? "bg-purple-500" : "bg-white border border-gray-200"
-                    }`}
+                    className={`flex-1 mr-2 px-4 py-2 rounded-full flex-row items-center justify-center ${sortType === "" && directionType === "asc" ? "bg-purple-500" : "bg-white border border-gray-200"
+                      }`}
                   >
                     <MaterialCommunityIcons
                       name="sort-alphabetical-descending-variant"
@@ -505,9 +488,8 @@ const HomeRecipes = () => {
                   </TouchableOpacity>
                   <TouchableOpacity
                     onPress={() => { setSortType(""); setDirectionType("desc"); }}
-                    className={`flex-1 px-4 py-2 rounded-full flex-row items-center justify-center ${
-                      sortType === "" && directionType === "desc" ? "bg-red-500" : "bg-white border border-gray-200"
-                    }`}
+                    className={`flex-1 px-4 py-2 rounded-full flex-row items-center justify-center ${sortType === "" && directionType === "desc" ? "bg-red-500" : "bg-white border border-gray-200"
+                      }`}
                   >
                     <MaterialCommunityIcons
                       name="sort-alphabetical-ascending-variant"
@@ -520,14 +502,55 @@ const HomeRecipes = () => {
                     </Text>
                   </TouchableOpacity>
                 </View>
-                <TouchableOpacity
-                  onPress={resetSorting}
-                  className="w-full bg-gray-100 py-3 rounded-lg my-3 flex-row items-center justify-center"
-                >
-                  <MaterialCommunityIcons name="sort-variant-remove" size={20} color="#6B7280" style={{ marginRight: 5 }} />
-                  <Text className="text-center text-gray-700 font-medium">Restablecer ordenamientos</Text>
-                </TouchableOpacity>
               </View>
+
+              {/* MODIFICADO: Sort Alphabetically by User Name */}
+              <View className="mb-4">
+                <Text className="font-semibold text-lg text-gray-800 mb-2">Ordenar por autor</Text>
+                <Text className="text-sm text-gray-600 mb-3">Organiza las recetas por el nombre del autor:</Text>
+
+                <View className="flex-row items-center rounded-lg px-3 py-3">
+                  <TouchableOpacity
+                    onPress={() => { setSortType("usuario"); setDirectionType("asc"); }}
+                    className={`flex-1 mr-2 px-4 py-2 rounded-full flex-row items-center justify-center ${sortType === "usuario" && directionType === "asc" ? "bg-cyan-500" : "bg-white border border-gray-200"
+                      }`}
+                  >
+                    <FontAwesome
+                      name="sort-alpha-asc"
+                      size={16}
+                      color={sortType === "usuario" && directionType === "asc" ? "white" : "#6B7280"}
+                      style={{ marginRight: 8 }}
+                    />
+                    <Text className={`text-sm ${sortType === "usuario" && directionType === "asc" ? "text-white font-medium" : "text-gray-700"}`}>
+                      Autor (A-Z)
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    onPress={() => { setSortType("usuario"); setDirectionType("desc"); }}
+                    className={`flex-1 px-4 py-2 rounded-full flex-row items-center justify-center ${sortType === "usuario" && directionType === "desc" ? "bg-teal-500" : "bg-white border border-gray-200"
+                      }`}
+                  >
+                    <FontAwesome
+                      name="sort-alpha-desc"
+                      size={16}
+                      color={sortType === "usuario" && directionType === "desc" ? "white" : "#6B7280"}
+                      style={{ marginRight: 8 }}
+                    />
+                    <Text className={`text-sm ${sortType === "usuario" && directionType === "desc" ? "text-white font-medium" : "text-gray-700"}`}>
+                      Autor (Z-A)
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+
+              <TouchableOpacity
+                onPress={resetSorting}
+                className="w-full bg-gray-100 py-3 rounded-lg my-3 flex-row items-center justify-center"
+              >
+                <MaterialCommunityIcons name="sort-variant-remove" size={20} color="#6B7280" style={{ marginRight: 5 }} />
+                <Text className="text-center text-gray-700 font-medium">Restablecer ordenamientos</Text>
+              </TouchableOpacity>
+
 
               {/* Search User */}
               <View className="mb-8">
@@ -580,7 +603,6 @@ const HomeRecipes = () => {
               />
 
               <View className="border-t border-gray-200 pt-6 pb-16">
-  
 
                 <View className="flex-row gap-8 space-x-3">
                   <TouchableOpacity
