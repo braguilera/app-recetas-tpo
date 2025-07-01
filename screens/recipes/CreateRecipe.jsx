@@ -1,9 +1,9 @@
 import { useEffect, useState, useRef, useContext } from "react"
-import {ScrollView, Text, View, TouchableOpacity, Image, TextInput, StatusBar, Alert, Switch, ActivityIndicator, StyleSheet} from "react-native"
+import {ScrollView, Text, View, TouchableOpacity, Image, TextInput, StatusBar, Alert, Switch, ActivityIndicator, StyleSheet, Modal} from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { AntDesign } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
-import { getDatos, getDatosWithAuth, postDatos, postDatosWithAuth } from "api/crud"
+import { getDatos, getDatosWithAuth, postDatos, postDatosWithAuth, putDatosWithAuth } from "api/crud"
 import { Picker } from '@react-native-picker/picker'
 import UploadMediaFile from "components/utils/UploadMediaFIle"
 import { Contexto } from "contexto/Provider"
@@ -26,7 +26,7 @@ const CreateRecipe = () => {
     const [allIngredients, setAllIngredients] = useState([])
     const [allUnits, setAllUnits] = useState([])
     const [loading, setLoading] = useState(false);
-    const [isRecipeNameAvailable, setIsRecipeAvailable] = useState(null);
+    const [isNameDuplicate, setIsNameDuplicate] = useState(false);
     const [datesRecipeRepite, setDatesRecipeRepite] = useState();
     const [ingredients, setIngredients] = useState([
         { ingredientId: "", ingredientName: "", amount: "", unitAmountId: "", observation: "", useSelectForIngredientName: true },
@@ -203,16 +203,20 @@ const CreateRecipe = () => {
         loadInitialData();
     }, []);
 
+    const hideModal = () => {
+        setModalState(prev => ({ ...prev, visible: false }));
+    }
+    
     const showConfirmationModal = (title, message, onConfirmAction) => {
         setModalState({
             visible: true,
             title,
             message,
             onConfirm: () => {
-                hideModal();
-                onConfirmAction();
+                hideModal(); 
+                onConfirmAction(); 
             },
-            onCancel: hideModal,
+            onCancel: hideModal, 
             confirmText: 'Confirmar',
             cancelText: 'Cancelar'
         });
@@ -222,7 +226,7 @@ const CreateRecipe = () => {
         const primaryAction = () => {
             hideModal();
             if (options.onClose) {
-                options.onClose();
+                options.onClose(); 
             }
         };
 
@@ -230,46 +234,52 @@ const CreateRecipe = () => {
             visible: true,
             title,
             message,
-            onConfirm: primaryAction,
-            onCancel: primaryAction,
-            confirmText: "Aceptar",
-            cancelText: "Cerrar",  
+            onConfirm: primaryAction, 
+            onCancel: primaryAction, 
+            confirmText: options.confirmText || "Aceptar",
+            cancelText: options.cancelText || "Cerrar",
         });
     };
     
-
     // Se asegura si existe una receta con el mismo nombre
     const checkRecipeName = async () => {
-        if (!recipeName.trim()) return;
+        if (!recipeName.trim()) {
+            setIsNameDuplicate(false); 
+            return;
+        };
+        console.log("Verificando nombre de receta:", recipeName);
         try {
             const data = await getDatosWithAuth(`recipe/check-name/${userId}/${recipeName}`);
             
-            const isDuplicate = data && data.idReceta;
-            setIsRecipeAvailable(!isDuplicate);
+            const isDuplicate = !!data.idReceta; 
+            setIsNameDuplicate(isDuplicate);
 
             if (isDuplicate) {
                 setExistingRecipeData(data);
                 setDuplicateModalVisible(true);
             } else {
                 setExistingRecipeData(null);
-                setRecipeIdToUpdate(null);
             }
+
         } catch (error) {
-            console.error("Error checking recipe name:", error.message);
+            console.error("Error checking recipe name:", error.message)
         }
-    };
+    }
 
-    // Opcion modificar, llena los campos con los datos de la receta existente
-    const handleModifyRecipe = () => {
-        if (!existingRecipeData) return;
-
+const handleModifyRecipe = () => {
+        if (!existingRecipeData) {
+            return;
+        }
         setRecipeIdToUpdate(existingRecipeData.idReceta);
-
         setRecipeName(existingRecipeData.nombreReceta);
         setRecipeDescription(existingRecipeData.descripcionReceta);
         setPortions(String(existingRecipeData.porciones));
         setPeopleCount(String(existingRecipeData.cantidadPersonas));
-        setSelectedTypeRecipe(existingRecipeData.tipoReceta.idTipoReceta); 
+        
+        const foundType = allTypeRecipe.find(t => t.name === existingRecipeData.tipoRecetaDescripcion);
+        if (foundType) {
+            setSelectedTypeRecipe(foundType.id);
+        }
 
         setRecipeImage(existingRecipeData.fotoPrincipal);
 
@@ -277,27 +287,30 @@ const CreateRecipe = () => {
             ingredientId: ing.ingrediente.idIngrediente,
             ingredientName: ing.ingrediente.nombre,
             amount: String(ing.cantidad),
-            unitAmountId: ing.unidad.idUnidad,
+            unitAmountId: ing.unidad.id,
             observation: ing.observaciones || "",
-            useSelectForIngredientName: true, 
+            useSelectForIngredientName: true,
         }));
-        setIngredients(formattedIngredients);
+        setIngredients(formattedIngredients.length > 0 ? formattedIngredients : []);
 
         const formattedSteps = existingRecipeData.steps.map(step => ({
             number: step.stepNumber,
             description: step.description,
-            multimediaList: step.multimediaList.length > 0
+            multimediaList: (step.multimediaList && step.multimediaList.length > 0)
                 ? step.multimediaList.map(media => ({
-                    tipoContenido: media.tipoContenido,
-                    extension: media.extension,
-                    urlContenido: media.urlContenido, 
+                    ...media,
+                    urlContenido: media.urlContenido,
                 }))
-                : [{ tipoContenido: "foto", extension: "jpg", urlContenido: null }], 
+                : [{ tipoContenido: "foto", extension: "jpg", urlContenido: null }],
         }));
-        setSteps(formattedSteps);
+        setSteps(formattedSteps.length > 0 ? formattedSteps : []);
         
         setDuplicateModalVisible(false);
-    };
+        showInfoModal(
+            "Modo Edición Activado",
+            "Los datos de tu receta han sido cargados. Ya puedes modificarlos."
+        );
+    };;
 
     // Opción reemplazar
     const handleReplaceRecipe = () => {
@@ -405,6 +418,7 @@ const CreateRecipe = () => {
 
             if (recipeIdToUpdate) {
                 await putDatosWithAuth(`recipe/update/${recipeIdToUpdate}`, recipeData, "Error al modificar la receta");
+                console.log("Receta modificada:", recipeIdToUpdate);
                 showInfoModal("¡Receta Modificada!", "Tu receta se ha actualizado exitosamente.", { onClose: navigateBack, cancelText: "¡Genial!" });
             
             } else if (existingRecipeData?.idReceta) {
@@ -448,14 +462,14 @@ const CreateRecipe = () => {
                         <Text className="text-gray-700 mb-2 font-medium">Nombre de la Receta</Text>
                         <TextInput
                             className={`border rounded-xl px-4 py-2 mb-2 text-gray-800 bg-gray-50 ${
-                                isRecipeNameAvailable ? 'border-red-500' : 'border-gray-300'
+                                isNameDuplicate ? 'border-red-500' : 'border-gray-300' 
                             }`}
                             placeholder="Nombre de la receta"
                             value={recipeName}
                             onBlur={checkRecipeName}
                             onChangeText={setRecipeName}
                         />
-                        {isRecipeNameAvailable && (
+                        {isNameDuplicate && ( 
                             <Text className="text-red-600 text-sm">Ya estás usando este nombre en otra receta</Text>
                         )}
                     </View>
@@ -684,7 +698,7 @@ const CreateRecipe = () => {
                         <Text className="text-base text-gray-600 mb-6">
                             Ya tienes una receta llamada "{recipeName}". ¿Qué te gustaría hacer?
                         </Text>
-                        <View className="flex-col space-y-2">
+                        <View className="flex-col space-y-4">
                             <TouchableOpacity
                                 onPress={handleModifyRecipe}
                                 className="bg-blue-500 px-4 py-3 rounded-md"
@@ -693,7 +707,7 @@ const CreateRecipe = () => {
                             </TouchableOpacity>
                             <TouchableOpacity
                                 onPress={handleReplaceRecipe} 
-                                className="bg-red-500 px-4 py-3 rounded-md"
+                                className="bg-yellow-500 px-4 py-3 rounded-md"
                             >
                                 <Text className="text-white font-semibold text-center">Reemplazar con la Nueva</Text>
                             </TouchableOpacity>

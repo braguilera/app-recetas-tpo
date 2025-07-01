@@ -1,89 +1,175 @@
-import { useState, useEffect } from "react"
-import { View, Text, TouchableOpacity, StatusBar, Image, Alert } from "react-native"
-import { useNavigation, useRoute } from "@react-navigation/native"
-import { AntDesign } from "@expo/vector-icons"
-import { useSafeAreaInsets } from "react-native-safe-area-context"
+import React, { useState, useContext } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator } from 'react-native';
+import { CameraView, useCameraPermissions } from 'expo-camera';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { Contexto } from 'contexto/Provider';
+import { postDatosWithAuth } from 'api/crud';
+import { AntDesign } from '@expo/vector-icons';
 
 const ScanQR = () => {
-  const navigation = useNavigation()
-  const route = useRoute()
-  const insets = useSafeAreaInsets()
+    const navigation = useNavigation();
+    const route = useRoute();
+    const { token } = useContext(Contexto);
 
-  const { courseId = 1 } = route.params || {}
+    const [permission, requestPermission] = useCameraPermissions();
+    const [scanned, setScanned] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
-  const [scanning, setScanning] = useState(true)
-  const [scanned, setScanned] = useState(false)
-
-  useEffect(() => {
-    if (scanning && !scanned) {
-      const timer = setTimeout(() => {
-        setScanned(true)
-        setScanning(false)
-        Alert.alert("Asistencia registrada", "Tu asistencia ha sido registrada correctamente", [
-          { text: "OK", onPress: () => navigation.goBack() },
-        ])
-      }, 3000)
-
-      return () => clearTimeout(timer)
+    if (!permission) {
+      return <View />;
     }
-  }, [scanning, scanned])
 
-  const handleRescan = () => {
-    setScanning(true)
-    setScanned(false)
-  }
-
-  return (
-    <View style={{ flex: 1, backgroundColor: "#000", paddingTop: insets.top }}>
-      <StatusBar barStyle="light-content" backgroundColor="#000" />
-
-      <View className="flex-row items-center p-4">
-        <TouchableOpacity className="mr-4" onPress={() => navigation.goBack()} accessibilityLabel="Volver atrás">
-          <AntDesign name="arrowleft" size={24} color="#FFF" />
-        </TouchableOpacity>
-        <Text className="text-xl font-bold text-white">Scanear QR</Text>
-      </View>
-
-      <View className="flex-1 justify-center items-center p-4">
-        <View className="w-full aspect-square bg-gray-900 rounded-lg overflow-hidden relative">
-          <Image source={{ uri: "https://picsum.photos/seed/qrcode/800/800" }} className="w-full h-full opacity-70" />
-
-          <View className="absolute inset-0 flex items-center justify-center">
-            <Image
-              source={{ uri: "https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=CourseAttendance" }}
-              className="w-40 h-40"
-            />
-          </View>
-
-          <View className="absolute inset-0 border-2 border-amber-400 m-16 rounded-lg" />
-
-          {scanning && (
-            <View
-              className="absolute top-1/2 left-0 right-0 h-0.5 bg-amber-400"
-              style={{
-                transform: [{ translateY: -1 }],
-                shadowColor: "#F59E0B",
-                shadowOffset: { width: 0, height: 0 },
-                shadowOpacity: 0.8,
-                shadowRadius: 10,
-              }}
-            />
-          )}
+    if (!permission.granted) {
+      return (
+        <View style={styles.container}>
+          <Text style={styles.text}>Necesitamos tu permiso para usar la cámara</Text>
+          <TouchableOpacity style={styles.permissionButton} onPress={requestPermission}>
+            <Text style={styles.buttonText}>Otorgar Permiso</Text>
+          </TouchableOpacity>
         </View>
+      );
+    }
 
-        <Text className="text-white text-center mt-6 mb-8">
-          Apunta la cámara al código QR para registrar tu asistencia
-        </Text>
+    const handleBarcodeScanned = async ({ data }) => {
+        setScanned(true);
+        setIsLoading(true);
 
-        <TouchableOpacity
-          className="w-16 h-16 rounded-full bg-white items-center justify-center"
-          onPress={handleRescan}
-        >
-          <View className="w-14 h-14 rounded-full border-2 border-gray-300" />
-        </TouchableOpacity>
-      </View>
-    </View>
-  )
-}
+        let qrData;
+        try {
+            qrData = JSON.parse(data);
+            if (!qrData.idCronograma || !qrData.fechaClase || !qrData.idAlumno) {
+                throw new Error("El formato del QR es inválido.");
+            }
+        } catch (e) {
+            Alert.alert(
+                'QR Inválido',
+                `Este código QR no tiene el formato esperado.\n\nContenido leído: "${data}"`,
+                [{ text: 'Reintentar', onPress: () => setScanned(false) }],
+                { cancelable: false }
+            );
+            setIsLoading(false);
+            return;
+        }
+        
+        try {
+            await postDatosWithAuth('asistencia/registrar', qrData, 'Error al registrar la asistencia', token);
+            
+            Alert.alert(
+                'Asistencia Registrada',
+                'Tu asistencia ha sido registrada con éxito.',
+                [{
+                    text: 'Entendido',
+                    onPress: () => navigation.goBack(),
+                }],
+                { cancelable: false }
+            );
+        } catch (error) {
+            Alert.alert(
+                'Error',
+                `No se pudo registrar la asistencia: ${error.message}`,
+                [{ text: 'Reintentar', onPress: () => setScanned(false) }],
+                { cancelable: false }
+            );
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-export default ScanQR
+    return (
+        <View style={styles.container}>
+            <CameraView
+                onBarcodeScanned={scanned ? undefined : handleBarcodeScanned}
+                barcodeScannerSettings={{
+                  barcodeTypes: ["qr"],
+                }}
+                style={StyleSheet.absoluteFillObject}
+            />
+            
+            <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
+                <AntDesign name="arrowleft" size={28} color="white" />
+            </TouchableOpacity>
+
+            <View style={styles.scannerOverlay}>
+                {isLoading ? (
+                    <ActivityIndicator size="large" color="white" />
+                ) : (
+                    <>
+                        <View style={styles.scannerBox} />
+                        <Text style={styles.scannerText}>Apunta la cámara al código QR</Text>
+                    </>
+                )}
+            </View>
+
+            {scanned && !isLoading && (
+                <TouchableOpacity style={styles.button} onPress={() => setScanned(false)}>
+                    <Text style={styles.buttonText}>Escanear de Nuevo</Text>
+                </TouchableOpacity>
+            )}
+        </View>
+    );
+};
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+        backgroundColor: 'black',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    permissionButton: {
+        backgroundColor: '#F59E0B',
+        paddingVertical: 12,
+        paddingHorizontal: 30,
+        borderRadius: 10,
+    },
+    text: {
+        fontSize: 18,
+        color: 'white',
+        textAlign: 'center',
+        marginBottom: 20,
+    },
+    button: {
+        position: 'absolute',
+        bottom: 50,
+        backgroundColor: '#F59E0B',
+        paddingVertical: 12,
+        paddingHorizontal: 30,
+        borderRadius: 10,
+    },
+    buttonText: {
+        color: 'white',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+    backButton: {
+        position: 'absolute',
+        top: 60,
+        left: 20,
+        backgroundColor: 'rgba(0,0,0,0.4)',
+        padding: 8,
+        borderRadius: 20,
+    },
+    scannerOverlay: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    scannerBox: {
+        width: 250,
+        height: 250,
+        borderWidth: 2,
+        borderColor: 'white',
+        borderRadius: 10,
+    },
+    scannerText: {
+        marginTop: 20,
+        color: 'white',
+        fontSize: 16,
+        backgroundColor: 'rgba(0,0,0,0.6)',
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: 5,
+    },
+});
+
+export default ScanQR;

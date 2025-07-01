@@ -263,7 +263,7 @@ const BuyCourse = () => {
           </View>
           {selectedPaymentMethod === 'card' && <MaterialIcons name="check-circle" size={20} color="#ca8a04" />}
           {!studentData.numeroTarjeta && !loading && (
-             <Text className="text-red-500 text-xs absolute right-2 bottom-2">Tarjeta no disponible</Text>
+            <Text className="text-red-500 text-xs absolute right-2 bottom-2">Tarjeta no disponible</Text>
           )}
         </TouchableOpacity>
 
@@ -287,7 +287,7 @@ const BuyCourse = () => {
 
         {/* Botón de Confirmación */}
         <TouchableOpacity
-          className={`py-3 rounded-xl items-center mt-4 ${
+          className={`py-3 mb-40 rounded-xl items-center mt-4 ${
             selectedPaymentMethod && !loading ? 'bg-amber-400' : 'bg-gray-400'
           }`}
           onPress={handleConfirmPaymentButton}
