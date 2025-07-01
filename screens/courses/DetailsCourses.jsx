@@ -206,11 +206,12 @@ const DetailsCourses = () => {
 
                       <View className="p-4 flex-row">
                         <TouchableOpacity
-                          className="flex-1 bg-amber-400 py-3 rounded-xl items-center mr-2"
+                          disabled={schedule.vacantesDisponibles === 0}
+                          className="flex-1 bg-amber-400 py-3 rounded-xl items-center mr-2 disabled:opacity-70"
                           accessibilityLabel={`Inscribirse al curso en ${schedule.nombreSede}`}
                           onPress={() => navigation.navigate("BuyCourse", { courseId: course.idCurso, scheduleId: schedule.idCronograma })}
                         >
-                          <Text className="text-white font-bold text-lg">Inscribirse en {schedule.nombreSede}</Text>
+                          <Text className="text-white font-bold text-lg"> { schedule.vacantesDisponibles === 0 ? "No hay vacantes disponibles" : "Inscribirse en" + schedule.nombreSede}</Text>
                         </TouchableOpacity>
                       </View>
                     </View>

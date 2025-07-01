@@ -29,7 +29,6 @@ const NoConexion = () => {
 
   return (
     <View className="flex-1 justify-center items-center bg-amber-50 p-5">
-      <Text className="text-8xl mb-5">⚠️</Text>
       <Text className="text-2xl font-bold text-gray-800 mb-2 text-center">
         Sin Conexión a Internet
       </Text>

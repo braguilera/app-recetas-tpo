@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   StatusBar,
   Alert,
+  Modal,
+  Pressable,
 } from "react-native";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -31,6 +33,7 @@ const DetailsRecipes = () => {
   const [recipe, setRecipe] = useState({});
   const [isFavorite, setIsFavorite] = useState(false);
   const [activeTab, setActiveTab] = useState("ingredientes");
+  const [loginModalVisible, setLoginModalVisible] = useState(false);
 
   const [peopleCount, setPeopleCount] = useState(1);
   const [originalPeopleCount, setOriginalPeopleCount] = useState(1);
@@ -47,6 +50,14 @@ const DetailsRecipes = () => {
     calificacion: "",
     comentarios: "",
   });
+
+  const checkAuth = () => {
+    if (!logeado) {
+      setLoginModalVisible(true);
+      return false;
+    }
+    return true;
+  };
 
   const verifyFavorite = useCallback(async () => {
     if (!userId || !recipeId) {
@@ -114,13 +125,14 @@ const DetailsRecipes = () => {
   }, [recipe.usedIngredients, originalPeopleCount]);
 
   const handleIngredientUpdate = useCallback((ingredientId, newValueStr) => {
+    if (!checkAuth()) return;
     const newValue = parseFloat(newValueStr.replace(',', '.'));
 
     if (isNaN(newValue) || newValue < 0) {
       Alert.alert("Valor inválido", "Por favor, introduce un número válido.");
       return;
     }
-    
+
     if (newValue === 0) {
       Alert.alert("Cantidad no permitida", "La cantidad de un ingrediente no puede ser cero.");
       return;
@@ -149,14 +161,14 @@ const DetailsRecipes = () => {
       }
       return { ...ing, cantidad: formattedQuantity };
     });
-    
+
     const proportionalPeople = originalPeopleCount * scalingFactor;
     const roundedPeople = Math.max(1, Math.round(proportionalPeople));
 
     setPeopleCount(roundedPeople);
     setAdjustedIngredients(newAdjustedIngredients);
 
-  }, [recipe.usedIngredients, originalPeopleCount]);
+  }, [recipe.usedIngredients, originalPeopleCount, logeado]);
 
 
   const handleComment = async () => {
@@ -204,7 +216,7 @@ const DetailsRecipes = () => {
   }, [logeado, userId, recipeId, verifyFavorite, modifiedData]);
 
   useEffect(() => {
-    if (!recipeId) return;
+    if (!logeado) return;
     const found = modifiedRecipes.find(
       (r) =>
         String(r.originalRecipeId) === String(recipeId) &&
@@ -213,32 +225,35 @@ const DetailsRecipes = () => {
 
     setIsCurrentModifiedVersionSaved(!!found);
     setCurrentModifiedId(found ? found.modifiedId : null);
-  }, [modifiedRecipes, recipeId, peopleCount, adjustedIngredients]);
+  }, [modifiedRecipes, recipeId, peopleCount, adjustedIngredients, logeado]);
 
   const increasePeople = useCallback(() => {
+    if (!checkAuth()) return;
     const currentPeople = Math.round(peopleCount);
     if (currentPeople < 10) {
-      const newCount = currentPeople + 1;
-      setPeopleCount(newCount);
-      const newIngredients = calculateAdjustedQuantities(newCount);
-      setAdjustedIngredients(newIngredients);
+        const newCount = currentPeople + 1;
+        setPeopleCount(newCount);
+        const newIngredients = calculateAdjustedQuantities(newCount);
+        setAdjustedIngredients(newIngredients);
     }
-  }, [peopleCount, calculateAdjustedQuantities]);
+  }, [peopleCount, calculateAdjustedQuantities, logeado]);
 
   const decreasePeople = useCallback(() => {
+    if (!checkAuth()) return;
     const currentPeople = Math.round(peopleCount);
     if (currentPeople > 1) {
-      const newCount = currentPeople - 1;
-      setPeopleCount(newCount);
-      const newIngredients = calculateAdjustedQuantities(newCount);
-      setAdjustedIngredients(newIngredients);
+        const newCount = currentPeople - 1;
+        setPeopleCount(newCount);
+        const newIngredients = calculateAdjustedQuantities(newCount);
+        setAdjustedIngredients(newIngredients);
     }
-  }, [peopleCount, calculateAdjustedQuantities]);
+  }, [peopleCount, calculateAdjustedQuantities, logeado]);
 
   const resetPeopleAndIngredients = useCallback(() => {
+    if (!checkAuth()) return;
     setPeopleCount(originalPeopleCount);
     setAdjustedIngredients(recipe.usedIngredients || []);
-  }, [originalPeopleCount, recipe.usedIngredients]);
+  }, [originalPeopleCount, recipe.usedIngredients, logeado]);
 
   const addToFavorite = async () => {
     try {
@@ -259,12 +274,13 @@ const DetailsRecipes = () => {
   };
 
   const handleFavoritePress = useCallback(() => {
+    if (!checkAuth()) return;
     if (isFavorite) {
       removeFromFavorite();
     } else {
       addToFavorite();
     }
-  }, [isFavorite, addToFavorite, removeFromFavorite]);
+  }, [isFavorite, addToFavorite, removeFromFavorite, logeado]);
 
   const handleSaveRemoveModifiedRecipe = async () => {
     if (!logeado) {
@@ -293,7 +309,6 @@ const DetailsRecipes = () => {
     }
   };
 
-
   return (
     <View style={{ paddingTop: insets.top }} className="pb-20 flex-1 bg-slate-50">
       <StatusBar barStyle="dark-content" backgroundColor="transparent" translucent />
@@ -302,7 +317,7 @@ const DetailsRecipes = () => {
           imageUrl={recipe.fotoPrincipal}
           recipeType={recipe.tipoRecetaDescripcion}
           isFavorite={isFavorite}
-          logeado={logeado && !isRecipeModified && !modifiedData}
+          logeado={logeado}
           onToggleFavorite={handleFavoritePress}
         />
 
@@ -336,6 +351,7 @@ const DetailsRecipes = () => {
                 decreasePeople={decreasePeople}
                 resetPeopleAndIngredients={resetPeopleAndIngredients}
                 onIngredientUpdate={handleIngredientUpdate}
+                isUserLogged={logeado}
               />
               {logeado && isRecipeModified && (
                 <View className="mt-6 p-4 items-center">
@@ -417,6 +433,42 @@ const DetailsRecipes = () => {
           )}
         </View>
       </ScrollView>
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={loginModalVisible}
+        onRequestClose={() => setLoginModalVisible(false)}
+      >
+        <Pressable 
+          className="flex-1 justify-center items-center bg-black/60" 
+          onPress={() => setLoginModalVisible(false)}
+        >
+          <Pressable className="bg-white rounded-lg p-6 w-4/5 shadow-xl">
+            <Text className="text-lg font-bold mb-4 text-gray-800">Función para Usuarios</Text>
+            <Text className="text-base text-gray-600 mb-6">
+              Para usar esta funcionalidad, por favor inicia sesión o crea una cuenta.
+            </Text>
+            <View className="flex-row justify-end">
+              <TouchableOpacity
+                onPress={() => setLoginModalVisible(false)}
+                className="bg-gray-200 px-4 py-2 rounded-md mr-2"
+              >
+                <Text className="text-gray-700 font-semibold">Cerrar</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => {
+                  setLoginModalVisible(false);
+                  navigation.navigate("AuthStack", { screen: "Login" });
+                }}
+                className="bg-amber-500 px-4 py-2 rounded-md"
+              >
+                <Text className="text-white font-semibold">Iniciar Sesión</Text>
+              </TouchableOpacity>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 };

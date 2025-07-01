@@ -505,8 +505,8 @@ const Profile = () => {
                 title="Baja de Curso Confirmada"
                 message={
                     `¡Te has dado de baja de "${courseUnsubscribeResult?.courseName || 'el curso'}"!\n\n` +
-                    `Reintegro: ${courseUnsubscribeResult?.refundPercentage}% (${formatPrice(courseUnsubscribeResult?.refundAmount)}) ` +
-                    `en ${courseUnsubscribeResult?.medioDevolucion === 'tarjeta' ? 'tu tarjeta' : 'tu cuenta corriente'}.\n\n` +
+                    //`Reintegro: ${courseUnsubscribeResult?.refundPercentage}% (${formatPrice(courseUnsubscribeResult?.refundAmount)}) ` +
+                    //en ${courseUnsubscribeResult?.medioDevolucion === 'tarjeta' ? 'tu tarjeta' : 'tu cuenta corriente'}.\n\n +
                     (courseUnsubscribeResult?.refundMessage || 'Operación completada exitosamente.')
                 }
                 onCancel={navigateToHomeCursos}

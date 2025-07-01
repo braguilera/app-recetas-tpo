@@ -1,17 +1,5 @@
 import { useEffect, useState, useRef, useContext } from "react"
-import {
-    ScrollView,
-    Text,
-    View,
-    TouchableOpacity,
-    Image,
-    TextInput,
-    StatusBar,
-    Alert,
-    Switch,
-    ActivityIndicator,
-    StyleSheet
-} from "react-native"
+import {ScrollView, Text, View, TouchableOpacity, Image, TextInput, StatusBar, Alert, Switch, ActivityIndicator, StyleSheet} from "react-native"
 import { useNavigation } from "@react-navigation/native"
 import { AntDesign } from "@expo/vector-icons"
 import { useSafeAreaInsets } from "react-native-safe-area-context"
@@ -20,6 +8,7 @@ import { Picker } from '@react-native-picker/picker'
 import UploadMediaFile from "components/utils/UploadMediaFIle"
 import { Contexto } from "contexto/Provider"
 import LoadingModal from "components/utils/LoadingModal"
+import ConfirmModal from "components/common/ConfirmModal"
 
 const CreateRecipe = () => {
     const { userId } = useContext(Contexto);
@@ -55,6 +44,20 @@ const CreateRecipe = () => {
             ],
         },
     ]);
+    const [modalState, setModalState] = useState({
+        visible: false,
+        title: '',
+        message: '',
+        onConfirm: () => {},
+        onCancel: () => {},
+        confirmText: 'Confirmar',
+        cancelText: 'Cancelar'
+    });
+
+    // Variables para duplicar receta
+    const [existingRecipeData, setExistingRecipeData] = useState(null); 
+    const [isDuplicateModalVisible, setDuplicateModalVisible] = useState(false); 
+    const [recipeIdToUpdate, setRecipeIdToUpdate] = useState(null);
 
     const addIngredient = () => {
         setIngredients([
@@ -200,104 +203,228 @@ const CreateRecipe = () => {
         loadInitialData();
     }, []);
 
+    const showConfirmationModal = (title, message, onConfirmAction) => {
+        setModalState({
+            visible: true,
+            title,
+            message,
+            onConfirm: () => {
+                hideModal();
+                onConfirmAction();
+            },
+            onCancel: hideModal,
+            confirmText: 'Confirmar',
+            cancelText: 'Cancelar'
+        });
+    };
+
+    const showInfoModal = (title, message, options = {}) => {
+        const primaryAction = () => {
+            hideModal();
+            if (options.onClose) {
+                options.onClose();
+            }
+        };
+
+        setModalState({
+            visible: true,
+            title,
+            message,
+            onConfirm: primaryAction,
+            onCancel: primaryAction,
+            confirmText: "Aceptar",
+            cancelText: "Cerrar",  
+        });
+    };
+    
+
+    // Se asegura si existe una receta con el mismo nombre
     const checkRecipeName = async () => {
         if (!recipeName.trim()) return;
-        try{
-            const data = await getDatosWithAuth(`recipe/check-name/${userId}/${recipeName}`, "Error al verificar el nombre de la receta");
-            setIsRecipeAvailable(data);
-        } catch (error) {
-            console.error("Error checking recipe name:", error.message)
-        }
-    }
+        try {
+            const data = await getDatosWithAuth(`recipe/check-name/${userId}/${recipeName}`);
+            
+            const isDuplicate = data && data.idReceta;
+            setIsRecipeAvailable(!isDuplicate);
 
-    const handleSubmitRecipe = async () => {
+            if (isDuplicate) {
+                setExistingRecipeData(data);
+                setDuplicateModalVisible(true);
+            } else {
+                setExistingRecipeData(null);
+                setRecipeIdToUpdate(null);
+            }
+        } catch (error) {
+            console.error("Error checking recipe name:", error.message);
+        }
+    };
+
+    // Opcion modificar, llena los campos con los datos de la receta existente
+    const handleModifyRecipe = () => {
+        if (!existingRecipeData) return;
+
+        setRecipeIdToUpdate(existingRecipeData.idReceta);
+
+        setRecipeName(existingRecipeData.nombreReceta);
+        setRecipeDescription(existingRecipeData.descripcionReceta);
+        setPortions(String(existingRecipeData.porciones));
+        setPeopleCount(String(existingRecipeData.cantidadPersonas));
+        setSelectedTypeRecipe(existingRecipeData.tipoReceta.idTipoReceta); 
+
+        setRecipeImage(existingRecipeData.fotoPrincipal);
+
+        const formattedIngredients = existingRecipeData.usedIngredients.map(ing => ({
+            ingredientId: ing.ingrediente.idIngrediente,
+            ingredientName: ing.ingrediente.nombre,
+            amount: String(ing.cantidad),
+            unitAmountId: ing.unidad.idUnidad,
+            observation: ing.observaciones || "",
+            useSelectForIngredientName: true, 
+        }));
+        setIngredients(formattedIngredients);
+
+        const formattedSteps = existingRecipeData.steps.map(step => ({
+            number: step.stepNumber,
+            description: step.description,
+            multimediaList: step.multimediaList.length > 0
+                ? step.multimediaList.map(media => ({
+                    tipoContenido: media.tipoContenido,
+                    extension: media.extension,
+                    urlContenido: media.urlContenido, 
+                }))
+                : [{ tipoContenido: "foto", extension: "jpg", urlContenido: null }], 
+        }));
+        setSteps(formattedSteps);
+        
+        setDuplicateModalVisible(false);
+    };
+
+    // Opción reemplazar
+    const handleReplaceRecipe = () => {
+        setRecipeIdToUpdate(null);
+        setDuplicateModalVisible(false);
+        Alert.alert("Modo Reemplazar", "Continúa editando la nueva receta. Al guardar, se reemplazará la versión anterior.");
+    };
+
+
+    // Valida los campos del formulario antes de enviar
+    const validateForm = () => {
         if (!recipeName.trim()) {
-            Alert.alert("Error", "Por favor ingresa el nombre de la receta")
-            return
+            showInfoModal("Campo Requerido", "Por favor, ingresa el nombre de la receta.");
+            return false;
         }
         if (!recipeDescription.trim()) {
-            Alert.alert("Error", "Por favor ingresa la descripción de la receta")
-            return
+            showInfoModal("Campo Requerido", "Por favor, ingresa la descripción de la receta.");
+            return false;
         }
         if (!selectedTypeRecipe) {
-            Alert.alert("Error", "Por favor selecciona el tipo de receta")
-            return
+            showInfoModal("Campo Requerido", "Por favor, selecciona un tipo de receta.");
+            return false;
         }
-
         const ingredientsForRecipe = ingredients.filter(ing => ing.ingredientName.trim() && ing.amount);
         if (ingredientsForRecipe.length === 0) {
-            Alert.alert("Error", "Por favor agrega al menos un ingrediente con nombre y cantidad.");
-            return;
+            showInfoModal("Campo Requerido", "Agrega al menos un ingrediente con nombre y cantidad.");
+            return false;
         }
-        setLoading(true);
-        try {
-            let finalRecipeImagePath = null;
-            if (mainImageUploadRef.current) {
-                const uploadResult = await mainImageUploadRef.current.upload();
-                if (uploadResult && uploadResult.url && uploadResult.path) {
-                    finalRecipeImagePath = uploadResult.path;
-                    setRecipeImage(uploadResult.url);
-                }
+        return true;
+    };
+
+    const uploadAllImages = async () => {
+        let finalRecipeImagePath = null;
+
+        if (mainImageUploadRef.current) {
+            const mainUploadResult = await mainImageUploadRef.current.upload();
+            if (mainUploadResult?.path) {
+                finalRecipeImagePath = mainUploadResult.path;
             }
-            const uploadedSteps = [];
-            for (let sIndex = 0; sIndex < steps.length; sIndex++) {
-                const step = steps[sIndex];
+        }
+
+        const uploadedSteps = await Promise.all(
+            steps.map(async (step, sIndex) => {
                 const stepMultimedia = [];
                 for (let mIndex = 0; mIndex < step.multimediaList.length; mIndex++) {
-                    const media = step.multimediaList[mIndex];
                     const uploadRef = stepImageRefs.current.get(`${sIndex}-${mIndex}`);
-                    let mediaUrlContenido = media.urlContenido;
                     if (uploadRef) {
-                        const uploadResult = await uploadRef.upload();
-                        if (uploadResult && uploadResult.path) {
-                            mediaUrlContenido = uploadResult.path;
+                        const stepUploadResult = await uploadRef.upload();
+                        if (stepUploadResult?.path) {
+                            stepMultimedia.push({
+                                tipoContenido: "foto",
+                                extension: "jpg", 
+                                urlContenido: stepUploadResult.path,
+                            });
                         }
                     }
-                    if (mediaUrlContenido) {
-                        stepMultimedia.push({
-                            tipoContenido: media.tipoContenido,
-                            extension: media.extension,
-                            urlContenido: mediaUrlContenido,
-                        });
-                    }
                 }
-                uploadedSteps.push({
+                return {
                     number: step.number,
                     description: step.description,
                     multimediaList: stepMultimedia,
-                });
-            }
-            const formattedIngredients = ingredientsForRecipe.map(ing => ({
-                ingredientId: ing.useSelectForIngredientName && ing.ingredientId ? ing.ingredientId : null,
-                ingredientName: ing.ingredientName,
-                amount: Number.parseFloat(ing.amount) || 0,
-                unitAmountId: ing.unitAmountId ? Number.parseInt(ing.unitAmountId) : null,
-                observation: ing.observation || "",
-            }));
+                };
+            })
+        );
+        
+        return { finalRecipeImagePath, uploadedSteps };
+    };
 
-            const recipeData = {
-                nombreReceta: recipeName,
-                descripcionReceta: recipeDescription,
-                fotoPrincipal: finalRecipeImagePath,
-                porciones: Number.parseInt(portions) || 1,
-                cantidadPersonas: Number.parseInt(peopleCount) || 1,
-                idUsuario: userId,
-                idTipoReceta: Number.parseInt(selectedTypeRecipe),
-                ingredientsForRecipe: formattedIngredients,
-                steps: uploadedSteps,
+    // Contruye el payload de la receta
+    const buildRecipePayload = (finalRecipeImagePath, uploadedSteps) => {
+        const ingredientsForRecipe = ingredients.filter(ing => ing.ingredientName.trim() && ing.amount);
+        const formattedIngredients = ingredientsForRecipe.map(ing => ({
+            ingredientId: ing.useSelectForIngredientName && ing.ingredientId ? ing.ingredientId : null,
+            ingredientName: ing.ingredientName,
+            amount: Number.parseFloat(ing.amount) || 0,
+            unitAmountId: ing.unitAmountId ? Number.parseInt(ing.unitAmountId) : null,
+            observation: ing.observation || "",
+        }));
+
+        const recipeData = {
+            nombreReceta: recipeName,
+            descripcionReceta: recipeDescription,
+            fotoPrincipal: finalRecipeImagePath,
+            porciones: Number.parseInt(portions) || 1,
+            cantidadPersonas: Number.parseInt(peopleCount) || 1,
+            idUsuario: userId,
+            idTipoReceta: Number.parseInt(selectedTypeRecipe),
+            ingredientsForRecipe: formattedIngredients,
+            steps: uploadedSteps,
+        };
+
+        return recipeData;
+    };
+    
+    // Envío de la receta
+    const handleSubmitRecipe = async () => {
+        if (!validateForm()) return;
+
+        setLoading(true);
+        try {
+            const { finalRecipeImagePath, uploadedSteps } = await uploadAllImages();
+            const recipeData = buildRecipePayload(finalRecipeImagePath, uploadedSteps);
+            
+            const navigateBack = () => navigation.goBack();
+
+            if (recipeIdToUpdate) {
+                await putDatosWithAuth(`recipe/update/${recipeIdToUpdate}`, recipeData, "Error al modificar la receta");
+                showInfoModal("¡Receta Modificada!", "Tu receta se ha actualizado exitosamente.", { onClose: navigateBack, cancelText: "¡Genial!" });
+            
+            } else if (existingRecipeData?.idReceta) {
+                await postDatosWithAuth(`recipe/replace/${existingRecipeData.idReceta}`, recipeData, "Error al reemplazar la receta");
+                showInfoModal("¡Receta Reemplazada!", "La receta anterior fue reemplazada por la nueva.", { onClose: navigateBack, cancelText: "¡Entendido!" });
+            
+            } else {
+                await postDatosWithAuth("recipe/create", recipeData, "Error al crear receta");
+                showInfoModal("¡Receta Creada!", "La receta se ha creado exitosamente.", { onClose: navigateBack, cancelText: "OK" });
             }
-            console.log("Datos de la receta a enviar:", JSON.stringify(recipeData, null, 2))
-            await postDatosWithAuth("recipe/create", recipeData, "Error al crear receta")
-            Alert.alert("¡Receta creada!", "La receta se ha creado exitosamente.", [
-                { text: "OK", onPress: () => navigation.goBack() },
-            ])
+
         } catch (error) {
-            console.error("Error creating recipe:", error.message)
-            Alert.alert("Error", `No se pudo crear la receta: ${error.message}`)
+            console.error("Error en el proceso de envío de receta:", error.message);
+            showInfoModal("Error Inesperado", `No se pudo completar la operación: ${error.message}`);
         } finally {
             setLoading(false);
         }
-    }
+    };
+
+    
     return (
         <View style={{ flex: 1, backgroundColor: "white", paddingTop: insets.top }} className="pb-20">
             <StatusBar barStyle="dark-content" backgroundColor="white" />
@@ -321,14 +448,14 @@ const CreateRecipe = () => {
                         <Text className="text-gray-700 mb-2 font-medium">Nombre de la Receta</Text>
                         <TextInput
                             className={`border rounded-xl px-4 py-2 mb-2 text-gray-800 bg-gray-50 ${
-                                isRecipeNameAvailable === false ? 'border-red-500' : 'border-gray-300'
+                                isRecipeNameAvailable ? 'border-red-500' : 'border-gray-300'
                             }`}
                             placeholder="Nombre de la receta"
                             value={recipeName}
                             onBlur={checkRecipeName}
                             onChangeText={setRecipeName}
                         />
-                        {isRecipeNameAvailable === false && (
+                        {isRecipeNameAvailable && (
                             <Text className="text-red-600 text-sm">Ya estás usando este nombre en otra receta</Text>
                         )}
                     </View>
@@ -543,6 +670,55 @@ const CreateRecipe = () => {
                     </TouchableOpacity>
                 </View>
             </ScrollView>
+
+            {/* Modal para Receta Duplicada */}
+            <Modal
+                visible={isDuplicateModalVisible}
+                transparent={true}
+                animationType="fade"
+                onRequestClose={() => setDuplicateModalVisible(false)}
+            >
+                <View className="flex-1 justify-center items-center bg-black/50 p-4">
+                    <View className="bg-white rounded-lg p-6 w-full max-w-sm shadow-xl">
+                        <Text className="text-lg font-bold mb-2 text-gray-800">Receta Encontrada</Text>
+                        <Text className="text-base text-gray-600 mb-6">
+                            Ya tienes una receta llamada "{recipeName}". ¿Qué te gustaría hacer?
+                        </Text>
+                        <View className="flex-col space-y-2">
+                            <TouchableOpacity
+                                onPress={handleModifyRecipe}
+                                className="bg-blue-500 px-4 py-3 rounded-md"
+                            >
+                                <Text className="text-white font-semibold text-center">Modificar Existente</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                onPress={handleReplaceRecipe} 
+                                className="bg-red-500 px-4 py-3 rounded-md"
+                            >
+                                <Text className="text-white font-semibold text-center">Reemplazar con la Nueva</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                onPress={() => setDuplicateModalVisible(false)}
+                                className="bg-gray-200 px-4 py-3 rounded-md mt-2"
+                            >
+                                <Text className="text-gray-700 font-semibold text-center">Cancelar</Text>
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+
+            {/* Modal de Confirmación */}
+            <ConfirmModal
+                visible={modalState.visible}
+                title={modalState.title}
+                message={modalState.message}
+                onConfirm={modalState.onConfirm}
+                onCancel={modalState.onCancel}
+                confirmText={modalState.confirmText}
+                cancelText={modalState.cancelText}
+            />
+
             <LoadingModal visible={loading} message={"Creando receta, esto puede tardar un momento"}></LoadingModal>
         </View>
     )

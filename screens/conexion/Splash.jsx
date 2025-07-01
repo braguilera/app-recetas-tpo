@@ -66,7 +66,7 @@ const Splash = () => {
 
   useEffect(() => {
     if (animationCompleted && isConnected !== null) {
-      console.log(`[Splash - Navigation] Animación completa y conexión detectada: isConnected=${isConnected}, Type=${connectionType}, Gen=${cellularGeneration || 'N/A'}`);
+      console.log(`Conexión detectada: isConnected=${isConnected}, Type=${connectionType}, Gen=${cellularGeneration || 'N/A'}`);
       if (isConnected) {
         navigation.replace('MainTabs');
       } else {
